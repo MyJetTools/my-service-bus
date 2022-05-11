@@ -1,6 +1,6 @@
 [package]
 name = "my-service-bus"
-version = "2.1.0-rc03"
+version = "2.1.0-rc04"
 authors = ["amigin <amigin@gmail.com>"]
 edition = "2021"
 

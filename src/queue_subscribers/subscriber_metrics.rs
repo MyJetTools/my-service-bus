@@ -82,7 +82,13 @@ impl SubscriberMetrics {
         delivery_duration: Duration,
     ) {
         self.delivery_mode = DELIVERY_STATE_READY_TO_DELIVER;
-        let value = delivery_duration.as_micros() as i32 / -delivered_messages;
+
+        let mut del_mess = 1;
+        if delivered_messages != 0 {
+            del_mess = delivered_messages;
+        }
+
+        let value = delivery_duration.as_micros() as i32 / -del_mess;
         self.delivery_history.put(value);
     }
 
