@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_service_bus_tcp_shared::DeliveryPackageBuilder;
+use my_service_bus_tcp_shared::{DeliveryPackageBuilder, PacketProtVer};
 
 use crate::{
     queues::delivery_iterator::DeliveryIterator,
@@ -85,7 +85,12 @@ fn deliver_messages<TDeliveryDependecies: DeliveryDependecies>(
         }
         #[cfg(test)]
         crate::sessions::SessionConnection::Test(_) => {
-            todo!("Implement")
+            let packet_prot_version = PacketProtVer {
+                packet_version: 1,
+                protocol_version: 1,
+            };
+            let tcp_packet = delivery_package_builder.build_tcp_contract(packet_prot_version);
+            delivery.send_package(delivery_iterator.subscriber.session.clone(), tcp_packet);
         }
         crate::sessions::SessionConnection::Http(_) => {
             todo!("Implement")
@@ -138,15 +143,14 @@ mod tests {
                 TopicQueueType::Permanent,
             );
 
-            queue
-                .subscribers
-                .subscribe(
-                    SUBSCRIBER_ID,
-                    TOPIC_NAME.to_string(),
-                    QUEUE_NAME.to_string(),
-                    session,
-                )
-                .unwrap();
+            let prev_subscriber = queue.subscribers.subscribe(
+                SUBSCRIBER_ID,
+                TOPIC_NAME.to_string(),
+                QUEUE_NAME.to_string(),
+                session,
+            );
+
+            assert_eq!(prev_subscriber.is_none(), true);
         }
 
         let msg1 = MessageToPublishTcpContract {
@@ -207,15 +211,14 @@ mod tests {
                 TopicQueueType::Permanent,
             );
 
-            queue
-                .subscribers
-                .subscribe(
-                    SUBSCRIBER_ID,
-                    TOPIC_NAME.to_string(),
-                    QUEUE_NAME.to_string(),
-                    session,
-                )
-                .unwrap();
+            let prev_subscriber = queue.subscribers.subscribe(
+                SUBSCRIBER_ID,
+                TOPIC_NAME.to_string(),
+                QUEUE_NAME.to_string(),
+                session,
+            );
+
+            assert_eq!(prev_subscriber.is_none(), true);
         }
 
         let msg1 = MessageToPublishTcpContract {
@@ -275,15 +278,13 @@ mod tests {
                 TopicQueueType::Permanent,
             );
 
-            queue
-                .subscribers
-                .subscribe(
-                    SUBSCRIBER_ID,
-                    TOPIC_NAME.to_string(),
-                    QUEUE_NAME.to_string(),
-                    session,
-                )
-                .unwrap();
+            let prev_subscrber = queue.subscribers.subscribe(
+                SUBSCRIBER_ID,
+                TOPIC_NAME.to_string(),
+                QUEUE_NAME.to_string(),
+                session,
+            );
+            assert_eq!(prev_subscrber.is_none(), true);
         }
 
         //Restoring Page with  #0 - NotLoaded, #1 - Loaded;
@@ -358,15 +359,14 @@ mod tests {
                 TopicQueueType::Permanent,
             );
 
-            queue
-                .subscribers
-                .subscribe(
-                    SUBSCRIBER_ID,
-                    TOPIC_NAME.to_string(),
-                    QUEUE_NAME.to_string(),
-                    session,
-                )
-                .unwrap();
+            let prev_subscriber = queue.subscribers.subscribe(
+                SUBSCRIBER_ID,
+                TOPIC_NAME.to_string(),
+                QUEUE_NAME.to_string(),
+                session,
+            );
+
+            assert_eq!(prev_subscriber.is_none(), true);
         }
 
         //Restoring Page with  #0 - NotLoaded, #1 - Loaded;

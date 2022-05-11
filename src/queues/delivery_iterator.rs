@@ -153,10 +153,12 @@ mod tests {
                 my_service_bus_shared::queue::TopicQueueType::Permanent,
             );
 
-            queue
-                .subscribers
-                .subscribe(1, topic_id.to_string(), queue_id.to_string(), session)
-                .unwrap();
+            let prev_subscrber =
+                queue
+                    .subscribers
+                    .subscribe(1, topic_id.to_string(), queue_id.to_string(), session);
+
+            assert_eq!(prev_subscrber.is_none(), true);
         }
 
         let msg = MessageToPublishTcpContract {

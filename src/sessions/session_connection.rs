@@ -10,6 +10,7 @@ pub struct TestConnection {
     pub ip: String,
     pub connected: std::sync::atomic::AtomicBool,
     pub sent_packets: Mutex<Vec<TcpContract>>,
+    pub tcp_contract: Mutex<Option<TcpContract>>,
 }
 
 #[cfg(test)]
@@ -20,7 +21,13 @@ impl TestConnection {
             ip,
             connected: std::sync::atomic::AtomicBool::new(true),
             sent_packets: Mutex::new(vec![]),
+            tcp_contract: Mutex::new(None),
         }
+    }
+
+    pub fn send_package(&self, tcp_contract: TcpContract) {
+        let mut place_holder = self.tcp_contract.lock().unwrap();
+        *place_holder = Some(tcp_contract);
     }
 }
 
