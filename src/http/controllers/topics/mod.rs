@@ -1,5 +1,5 @@
+mod crate_topic_action;
+mod get_list_of_topics_action;
 mod models;
-
-mod topics_controller;
-
-pub use topics_controller::TopicsController;
+pub use crate_topic_action::*;
+pub use get_list_of_topics_action::*;

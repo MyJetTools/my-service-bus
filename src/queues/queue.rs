@@ -1,6 +1,6 @@
-use my_service_bus_shared::{
-    queue::TopicQueueType,
+use my_service_bus_abstractions::{
     queue_with_intervals::{QueueIndexRange, QueueWithIntervals},
+    subscriber::TopicQueueType,
     MessageId,
 };
 use rust_extensions::date_time::DateTimeAsMicroseconds;

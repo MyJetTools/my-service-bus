@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use my_service_bus_abstractions::publisher::MessageToPublish;
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::page_id::get_page_id;
 use my_service_bus_shared::MySbMessageContent;
-use my_service_bus_shared::{queue_with_intervals::QueueWithIntervals, MessageId};
-use my_service_bus_tcp_shared::MessageToPublishTcpContract;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::messages_page::MessagesPageList;
@@ -41,11 +42,7 @@ impl TopicData {
         self.publishers.insert(session_id, BADGE_HIGHLIGHT_TIMOUT);
     }
 
-    pub fn publish_messages(
-        &mut self,
-        session_id: SessionId,
-        messages: Vec<MessageToPublishTcpContract>,
-    ) {
+    pub fn publish_messages(&mut self, session_id: SessionId, messages: Vec<MessageToPublish>) {
         self.set_publisher_as_active(session_id);
 
         let mut ids = QueueWithIntervals::new();

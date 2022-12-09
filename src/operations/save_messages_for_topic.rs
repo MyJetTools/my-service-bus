@@ -28,10 +28,10 @@ pub async fn save_messages_for_topic(app: &Arc<AppContext>, topic: &Arc<Topic>) 
                 crate::app::logs::SystemProcess::Timer,
                 "persist_messages".to_string(),
                 format!(
-                    "Can not persist messages from id:{:?}",
-                    messages_to_persist.first_message_id
+                    "Can not persist messages from id:{:?}. Err: {:?}",
+                    messages_to_persist.first_message_id, err
                 ),
-                Some(format!("{:?}", err)),
+                None,
             );
         } else {
             commit_persisted(topic.as_ref(), sub_page_id, &messages_to_persist, true).await;

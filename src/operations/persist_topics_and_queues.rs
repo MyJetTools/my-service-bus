@@ -22,8 +22,8 @@ pub async fn persist_topics_and_queues(app: &Arc<AppContext>) {
             None,
             crate::app::logs::SystemProcess::TcpSocket,
             "persist::sync_topics_and_queues".to_string(),
-            "Failed to save topics and queues snapshot".to_string(),
-            Some(format!("{:?}", err)),
+            format!("Failed to save topics and queues snapshot. Err: {:?}", err),
+            None,
         );
     }
 

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_service_bus_shared::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 
 use crate::{app::AppContext, queue_subscribers::SubscriberId};
 

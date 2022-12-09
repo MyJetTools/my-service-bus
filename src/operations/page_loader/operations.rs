@@ -1,9 +1,10 @@
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
+use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::{
     page_id::PageId,
     sub_page::{SubPage, SubPageId},
-    MessageId, MySbMessageContent,
+    MySbMessageContent,
 };
 
 use crate::{app::logs::Logs, persistence::MessagesPagesRepo, topics::Topic};
@@ -57,10 +58,10 @@ async fn load_page_from_repo(
                         crate::app::logs::SystemProcess::Init,
                         "get_page".to_string(),
                         format!(
-                            "Can not load page #{} from persistence storage. Attempt #{}. Creating empty page",
-                            page_id, attempt_no
+                            "Can not load page #{} from persistence storage. Attempt #{}. Creating empty page. Err: {:?}",
+                            page_id, attempt_no, zip_error
                         ),
-                        Some(format!("{:?}", zip_error)),
+                        None,
                     );
                 }
 
@@ -73,10 +74,10 @@ async fn load_page_from_repo(
                         crate::app::logs::SystemProcess::Init,
                         "get_page".to_string(),
                         format!(
-                            "Can not load page #{} from persistence storage. Attempt #{}. Retrying...",
-                            page_id, attempt_no
+                            "Can not load page #{} from persistence storage. Attempt #{}. Err: {:?}, Retrying...",
+                            page_id, attempt_no, err
                         ),
-                        Some(format!("{:?}", err)),
+                            None,
                     );
                 }
             }

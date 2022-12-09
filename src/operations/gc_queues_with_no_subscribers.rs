@@ -1,4 +1,4 @@
-use my_service_bus_shared::queue::TopicQueueType;
+use my_service_bus_abstractions::subscriber::TopicQueueType;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{app::AppContext, topics::TopicData};

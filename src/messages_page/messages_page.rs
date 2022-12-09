@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 
+use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::{
     page_id::PageId,
     sub_page::{SubPage, SubPageId},
-    MessageId, MySbMessageContent,
+    MySbMessageContent,
 };
 
 use crate::utils::MinMessageIdCalculator;

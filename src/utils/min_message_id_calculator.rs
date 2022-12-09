@@ -1,4 +1,4 @@
-use my_service_bus_shared::MessageId;
+use my_service_bus_abstractions::MessageId;
 
 pub struct MinMessageIdCalculator {
     pub value: Option<MessageId>,

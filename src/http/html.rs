@@ -1,6 +1,6 @@
-use my_http_server::{HttpOkResult, HttpOutput, WebContentType};
+use my_http_server::{HttpFailResult, HttpOkResult, HttpOutput, WebContentType};
 
-pub fn compile(title: String, body: String) -> HttpOkResult {
+pub fn compile(title: String, body: String) -> Result<HttpOkResult, HttpFailResult> {
     let content = format!(
         r###"<html><head><title>{ver} MyServiceBus {title}</title>
         <link href="/css/bootstrap.css" rel="stylesheet" type="text/css" />

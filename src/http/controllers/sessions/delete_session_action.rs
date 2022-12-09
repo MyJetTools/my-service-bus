@@ -1,12 +1,22 @@
-use async_trait::async_trait;
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput};
-use my_http_server_controllers::controllers::{
-    actions::DeleteAction, documentation::HttpActionDescription,
-};
+
 use std::sync::Arc;
 
-use super::{super::contracts::response, *};
 use crate::app::AppContext;
+
+use super::DeleteSessionInputContract;
+
+#[my_http_server_swagger::http_route(
+    method: "DELETE",
+    route: "/Sessions",
+    summary: "Kicks a session",
+    description: "Kicks a session",
+    input_data: "DeleteSessionInputContract",
+    controller: "Sessions",
+    result:[
+        {status_code: 204, description: "Session is kicked"},    
+    ]
+)]
 pub struct DeleteSessionAction {
     app: Arc<AppContext>,
 }
@@ -17,39 +27,19 @@ impl DeleteSessionAction {
     }
 }
 
-#[async_trait]
-impl DeleteAction for DeleteSessionAction {
-    fn get_route(&self) -> &str {
-        "/Sessions"
-    }
-
-    fn get_description(&self) -> Option<HttpActionDescription> {
-        HttpActionDescription {
-            controller_name: "Sessions",
-            description: "Disconnect and kick session",
-
-            input_params: DeleteSessionInputContract::get_input_params().into(),
-
-            results: vec![
-                response::empty("Session is kicked"),
-                response::session_is_not_found(),
-            ],
+async fn handle_request(
+    action: &DeleteSessionAction,
+    input_data: DeleteSessionInputContract,
+    _ctx: &mut HttpContext,
+) -> Result<HttpOkResult, HttpFailResult> {
+    match action.app.sessions.get(input_data.connection_id).await {
+        Some(session) => {
+            session.disconnect().await;
+            HttpOutput::Empty.into_ok_result(true).into()
         }
-        .into()
-    }
-
-    async fn handle_request(&self, ctx: &mut HttpContext) -> Result<HttpOkResult, HttpFailResult> {
-        let input_data = DeleteSessionInputContract::parse_http_input(ctx).await?;
-
-        match self.app.sessions.get(input_data.connection_id).await {
-            Some(session) => {
-                session.disconnect().await;
-                HttpOutput::Empty.into_ok_result(true).into()
-            }
-            None => Err(HttpFailResult::as_not_found(
-                format!("Session {} is not found", input_data.connection_id),
-                false,
-            )),
-        }
+        None => Err(HttpFailResult::as_not_found(
+            format!("Session {} is not found", input_data.connection_id),
+            false,
+        )),
     }
 }

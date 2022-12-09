@@ -3,7 +3,9 @@ use std::collections::{
     HashMap,
 };
 
-use my_service_bus_shared::{queue::TopicQueueType, queue_with_intervals::QueueWithIntervals};
+use my_service_bus_abstractions::{
+    queue_with_intervals::QueueWithIntervals, subscriber::TopicQueueType,
+};
 
 use crate::{queue_subscribers::QueueSubscriber, sessions::SessionId, topics::TopicQueueSnapshot};
 

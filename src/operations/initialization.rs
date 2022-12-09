@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use my_service_bus_shared::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 use rust_extensions::StopWatch;
 
 use crate::topics::{Topic, TopicSnapshot};
@@ -95,8 +95,8 @@ async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
             None,
             crate::app::logs::SystemProcess::Init,
             "restore_topics_and_queues".to_string(),
-            "Can not restore topics and queues".to_string(),
-            Some(format!("{:?}", err)),
+            format!("Can not restore topics and queues, Err: {:?}", err),
+            None,
         );
 
         tokio::time::sleep(Duration::from_secs(5)).await;

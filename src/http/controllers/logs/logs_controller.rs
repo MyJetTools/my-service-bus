@@ -1,7 +1,4 @@
-use async_trait::async_trait;
-use my_http_server_controllers::controllers::{
-    actions::GetAction, documentation::HttpActionDescription,
-};
+use my_http_server_swagger::http_route;
 use std::sync::Arc;
 
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult};
@@ -9,37 +6,24 @@ use rust_extensions::StopWatch;
 
 use crate::app::AppContext;
 
-pub struct LogsController {
+#[http_route(method: "GET", route: "/Logs")]
+pub struct GetLogsAction {
     app: Arc<AppContext>,
 }
 
-impl LogsController {
+impl GetLogsAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
-#[async_trait]
-impl GetAction for LogsController {
-    fn get_route(&self) -> &str {
-        "/Logs"
-    }
+async fn handle_request(
+    action: &GetLogsAction,
+    _ctx: &mut HttpContext,
+) -> Result<HttpOkResult, HttpFailResult> {
+    let mut sw = StopWatch::new();
+    sw.start();
+    let logs = action.app.logs.get().await;
 
-    fn get_description(&self) -> Option<HttpActionDescription> {
-        HttpActionDescription {
-            controller_name: "Logs",
-            description: "Show Logs",
-            input_params: None,
-            results: vec![],
-        }
-        .into()
-    }
-
-    async fn handle_request(&self, _ctx: &mut HttpContext) -> Result<HttpOkResult, HttpFailResult> {
-        let mut sw = StopWatch::new();
-        sw.start();
-        let logs = self.app.logs.get().await;
-
-        return super::renderers::compile_result("logs", logs, sw);
-    }
+    return super::renderers::compile_result("logs", logs, sw);
 }

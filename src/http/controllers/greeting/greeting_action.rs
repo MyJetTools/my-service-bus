@@ -11,7 +11,8 @@ use super::models::{GreetingInputModel, GreetingJsonResult};
     method: "POST",
     route: "/Greeting",
     controller: "Greeting",
-    description: "Issue new Http Session",
+    summary: "Issue new Http Session",
+    description: "Issues new Http Session",
     input_data: "GreetingInputModel",
     result: [
         {status_code: 200, description: "Session description", model: "GreetingJsonResult"},

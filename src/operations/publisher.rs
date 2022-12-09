@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_service_bus_tcp_shared::MessageToPublishTcpContract;
+use my_service_bus_abstractions::publisher::MessageToPublish;
 
 use crate::{app::AppContext, sessions::SessionId, topics::Topic};
 
@@ -28,7 +28,7 @@ pub async fn create_topic_if_not_exists(
 pub async fn publish(
     app: &Arc<AppContext>,
     topic_id: &str,
-    messages: Vec<MessageToPublishTcpContract>,
+    messages: Vec<MessageToPublish>,
     persist_immediately: bool,
     session_id: SessionId,
 ) -> Result<(), OperationFailResult> {

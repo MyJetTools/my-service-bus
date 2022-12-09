@@ -55,6 +55,7 @@ impl MessageToPublishJsonModel {
                 content: format!("Can not convert content from Base64. Err: Err{}", err)
                     .into_bytes(),
                 write_telemetry: false,
+                write_to_log: false,
             }),
         }
     }

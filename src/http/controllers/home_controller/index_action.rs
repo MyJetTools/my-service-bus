@@ -21,7 +21,7 @@ async fn handle_request(
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
     let content = format!(
-        r###"<html><head><title>{} MyServiceBus</title>
+        r###"<html><head><title>{ver} MyServiceBus</title>
         <link href="/css/bootstrap.css" rel="stylesheet" type="text/css" />
         <link href="/css/site.css?ver={rnd}" rel="stylesheet" type="text/css" />
         <script src="/js/jquery.js"></script><script src="/js/app.js?ver={rnd}"></script>

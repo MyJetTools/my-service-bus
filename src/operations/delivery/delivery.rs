@@ -186,11 +186,12 @@ fn start_loading(
 #[cfg(test)]
 mod tests {
 
-    use my_service_bus_shared::{
-        protobuf_models::MessageProtobufModel, queue::TopicQueueType,
-        queue_with_intervals::QueueWithIntervals,
+    use my_service_bus_abstractions::{
+        publisher::MessageToPublish, queue_with_intervals::QueueWithIntervals,
+        subscriber::TopicQueueType,
     };
-    use my_service_bus_tcp_shared::{MessageToPublishTcpContract, TcpContract};
+    use my_service_bus_shared::protobuf_models::MessageProtobufModel;
+    use my_service_bus_tcp_shared::TcpContract;
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
     use crate::{
@@ -234,12 +235,12 @@ mod tests {
         .await
         .unwrap();
 
-        let msg1 = MessageToPublishTcpContract {
+        let msg1 = MessageToPublish {
             headers: None,
             content: vec![0u8, 1u8, 2u8],
         };
 
-        let msg2 = MessageToPublishTcpContract {
+        let msg2 = MessageToPublish {
             headers: None,
             content: vec![3u8, 4u8, 5u8],
         };

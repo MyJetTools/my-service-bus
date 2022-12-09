@@ -10,24 +10,25 @@ use super::models::GetOnDeliveryInputModel;
     method: "GET",
     route: "/Debug/OnDelivery",
     input_data: "GetOnDeliveryInputModel",
-    description: "Show messages on delivery",
+    summary: "Show messages on delivery",
+    description: "Shows messages on delivery",
     controller: "Debug",
     result:[
         {status_code: 200, description: "Ids of subscribers on delivery"},
     ]
 )]
-pub struct OnDeliveryAction {
+pub struct GetOnDeliveryAction {
     app: Arc<AppContext>,
 }
 
-impl OnDeliveryAction {
+impl GetOnDeliveryAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
 async fn handle_request(
-    action: &OnDeliveryAction,
+    action: &GetOnDeliveryAction,
     input_model: GetOnDeliveryInputModel,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {

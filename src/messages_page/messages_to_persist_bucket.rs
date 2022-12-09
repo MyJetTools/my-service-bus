@@ -1,4 +1,5 @@
-use my_service_bus_shared::{protobuf_models::MessageProtobufModel, MessageId};
+use my_service_bus_abstractions::MessageId;
+use my_service_bus_shared::protobuf_models::MessageProtobufModel;
 
 pub struct MessagesToPersistBucket {
     messages_to_persist: Option<Vec<MessageProtobufModel>>,

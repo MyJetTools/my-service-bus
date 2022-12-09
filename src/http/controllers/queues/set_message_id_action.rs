@@ -12,7 +12,8 @@ use crate::app::AppContext;
     method: "POST",
     route: "/Queues/SetMessageId",
     controller: "Queues",
-    description: "Set current queue messageId",
+    summary: "Set current queue messageId",
+    description: "Sets current queue messageId",
     input_data: "SetQueueMessageIdInputContract",
     result: [
         {status_code: 202, description: "Operation is succesfull"},

@@ -1,5 +1,4 @@
 pub mod builder;
-mod contracts;
 pub mod debug;
 pub mod extensions;
 pub mod greeting;
