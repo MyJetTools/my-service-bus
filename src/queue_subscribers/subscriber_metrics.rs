@@ -10,8 +10,7 @@ use crate::{
 use super::SubscriberId;
 
 pub const DELIVERY_STATE_READY_TO_DELIVER: u8 = 0;
-pub const DELIVERY_STATE_RENTED: u8 = 1;
-pub const DELIVERY_STATE_ON_DELIVERY: u8 = 2;
+pub const DELIVERY_STATE_ON_DELIVERY: u8 = 1;
 
 #[derive(Clone)]
 pub struct SubscriberMetrics {
@@ -100,13 +99,5 @@ impl SubscriberMetrics {
 
     pub fn set_delivery_mode_as_ready_to_deliver(&mut self) {
         self.delivery_mode = DELIVERY_STATE_READY_TO_DELIVER;
-    }
-
-    pub fn set_delivery_mode_as_rented(&mut self) {
-        self.delivery_mode = DELIVERY_STATE_RENTED;
-    }
-
-    pub fn set_delivery_mode_as_on_delivery(&mut self) {
-        self.delivery_mode = DELIVERY_STATE_ON_DELIVERY;
     }
 }

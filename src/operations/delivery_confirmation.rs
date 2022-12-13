@@ -41,7 +41,7 @@ pub async fn all_confirmed(
         }
     }
 
-    super::delivery::start_new(&app, &topic, &mut topic_data);
+    super::delivery::start_new(&app, &topic, &mut topic_data).await;
 
     Ok(())
 }
@@ -81,7 +81,7 @@ pub async fn all_fail(
         }
     }
 
-    super::delivery::start_new(&app, &topic, &mut topic_data);
+    super::delivery::start_new(&app, &topic, &mut topic_data).await;
 
     Ok(())
 }
@@ -122,7 +122,7 @@ pub async fn intermediary_confirm(
         }
     }
 
-    crate::operations::delivery::start_new(&app, &topic, &mut topic_data);
+    crate::operations::delivery::start_new(&app, &topic, &mut topic_data).await;
 
     Ok(())
 }
@@ -162,7 +162,7 @@ pub async fn some_messages_are_confirmed(
         }
     }
 
-    super::delivery::start_new(&app, &topic, &mut topic_data);
+    super::delivery::start_new(&app, &topic, &mut topic_data).await;
 
     Ok(())
 }

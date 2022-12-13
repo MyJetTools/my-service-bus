@@ -1,4 +1,4 @@
-use my_service_bus_tcp_shared::TcpContract;
+use my_service_bus_shared::MySbMessageContent;
 use tokio::sync::Mutex;
 
 use super::SessionId;
@@ -7,7 +7,7 @@ pub struct TestConnectionData {
     pub id: SessionId,
     pub ip: String,
     pub connected: std::sync::atomic::AtomicBool,
-    pub sent_packets: Mutex<Vec<TcpContract>>,
+    pub sent_messages_to_deliver: Mutex<Vec<(i32, MySbMessageContent)>>,
     pub name: Option<String>,
     pub version: Option<String>,
 }
@@ -18,21 +18,21 @@ impl TestConnectionData {
             id,
             ip: ip.to_string(),
             connected: std::sync::atomic::AtomicBool::new(true),
-            sent_packets: Mutex::new(vec![]),
+            sent_messages_to_deliver: Mutex::new(vec![]),
             name: None,
             version: None,
         }
     }
 
-    pub async fn send_packet(&self, tcp_contract: TcpContract) {
-        let mut write_access = self.sent_packets.lock().await;
-        write_access.push(tcp_contract);
+    pub async fn deliver_messages(&self, msgs: Vec<(i32, &MySbMessageContent)>) {
+        let mut write_access = self.sent_messages_to_deliver.lock().await;
+        for (id, content) in msgs {
+            write_access.push((id, content.clone()));
+        }
     }
 
-    pub async fn get_list_of_packets_and_clear_them(&self) -> Vec<TcpContract> {
-        let mut write_access = self.sent_packets.lock().await;
-        let mut result = Vec::new();
-        std::mem::swap(&mut *write_access, &mut result);
-        result
+    pub async fn get_sent_messages_to_deliver(&self) -> Vec<(i32, MySbMessageContent)> {
+        let read_access = self.sent_messages_to_deliver.lock().await;
+        read_access.clone()
     }
 }

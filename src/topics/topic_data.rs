@@ -6,6 +6,7 @@ use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::sub_page::SubPageId;
 use my_service_bus_shared::MySbMessageContent;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
+use rust_extensions::lazy::LazyVec;
 
 use crate::messages_page::MessagesPageList;
 use crate::queue_subscribers::QueueSubscriber;
@@ -101,7 +102,7 @@ impl TopicData {
     pub fn get_min_message_id(&self) -> Option<MessageId> {
         let mut min_message_id = MinMessageIdCalculator::new();
 
-        if self.message_id > 1 {
+        if self.message_id > 0 {
             min_message_id.add(Some(self.message_id - 1));
         }
 
@@ -130,6 +131,20 @@ impl TopicData {
     pub fn gc_sub_pages(&mut self) {
         let active_pages = self.get_active_sub_pages();
         self.pages.gc_sub_pages(&active_pages);
+    }
+
+    pub async fn try_to_deliver(&mut self, max_packet_size: usize) -> Option<Vec<SubPageId>> {
+        let mut result = LazyVec::new();
+        for topic_queue in self.queues.get_all_mut() {
+            if let Err(sub_page_id) = topic_queue
+                .try_to_deliver(&mut self.pages, max_packet_size)
+                .await
+            {
+                result.add(sub_page_id);
+            }
+        }
+
+        result.get_result()
     }
 }
 

@@ -113,21 +113,19 @@ impl SubscribersList {
         }
     }
 
-    pub fn get_and_rent_next_subscriber_ready_to_deliver(
-        &mut self,
-    ) -> Option<&mut QueueSubscriber> {
-        match &mut self.data {
+    pub fn get_next_subscriber_ready_to_deliver(&self) -> Option<SubscriberId> {
+        match &self.data {
             SubscribersData::MultiSubscribers(state) => {
-                for subscriber in state.values_mut() {
-                    if subscriber.rent_me() {
-                        return Some(subscriber);
+                for subscriber in state.values() {
+                    if subscriber.on_delivery.is_none() {
+                        return Some(subscriber.id);
                     }
                 }
             }
             SubscribersData::SingleSubscriber(state) => {
                 if let Some(subscriber) = state {
-                    if subscriber.rent_me() {
-                        return Some(subscriber);
+                    if subscriber.on_delivery.is_none() {
+                        return Some(subscriber.id);
                     }
                 }
             }

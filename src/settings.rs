@@ -92,23 +92,6 @@ impl SettingsModel {
         result.into()
     }
 
-    #[cfg(test)]
-    pub fn create_test_settings(max_delivery_size: usize) -> Self {
-        Self {
-            persistence_grpc_url: TEST_GRPC_URL.to_string(),
-            eventually_persistence_delay: Duration::from_secs(1),
-            queue_gc_timeout: Duration::from_secs(1),
-            debug_mode: true,
-            max_delivery_size,
-            delivery_timeout: None,
-            auto_create_topic_on_publish: true,
-            auto_create_topic_on_subscribe: true,
-            grpc_timeout: Duration::from_secs(1),
-            persist_timer_interval: Duration::from_secs(1),
-            persist_compressed: false,
-        }
-    }
-
     pub async fn create_topics_and_queues_snapshot_repo(&self) -> TopicsAndQueuesSnapshotRepo {
         #[cfg(test)]
         if self.persistence_grpc_url == TEST_GRPC_URL {

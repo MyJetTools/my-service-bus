@@ -56,7 +56,19 @@ impl TopicQueue {
     }
 
     pub fn get_min_msg_id(&self) -> Option<MessageId> {
-        self.queue.get_min_id()
+        let mut result = self.queue.get_min_id();
+
+        if let Some(subsribers_min_msg_id) = self.subscribers.get_min_message_id() {
+            if result.is_none() {
+                result = Some(subsribers_min_msg_id);
+            } else {
+                if result.unwrap() > subsribers_min_msg_id {
+                    result = Some(subsribers_min_msg_id);
+                }
+            }
+        }
+
+        result
     }
 
     pub fn get_snapshot_to_persist(&self) -> Option<TopicQueueSnapshot> {
@@ -305,5 +317,84 @@ fn update_delivery_time(subscriber: &mut QueueSubscriber, amount: usize, positiv
         subscriber
             .metrics
             .set_not_delivered_statistic(amount as i32, delivery_duration);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::sync::Arc;
+
+    use my_service_bus_abstractions::publisher::MessageToPublish;
+
+    use crate::{
+        sessions::{MyServiceBusSession, SessionConnection, TestConnectionData},
+        topics::TopicData,
+    };
+
+    use super::*;
+
+    #[test]
+    fn test_min_message_id() {
+        let mut queue = TopicQueue::new(
+            "test".to_string(),
+            "test".to_string(),
+            TopicQueueType::Permanent,
+        );
+
+        let messages = QueueWithIntervals {
+            intervals: vec![QueueIndexRange {
+                from_id: 0,
+                to_id: 10,
+            }],
+        };
+        queue.enqueue_messages(&messages);
+
+        assert_eq!(0, queue.get_min_msg_id().unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_min_message_id_when_we_have_on_delivery() {
+        const TOPIC_ID: &str = "test";
+        const QUEUE_ID: &str = "test";
+
+        let mut topic_data = TopicData::new(TOPIC_ID.to_string(), 0);
+
+        let topic_queue = topic_data.queues.add_queue_if_not_exists(
+            TOPIC_ID.to_string(),
+            QUEUE_ID.to_string(),
+            TopicQueueType::PermanentWithSingleConnection,
+        );
+
+        let session_id = 1;
+        let connection = SessionConnection::Test(Arc::new(TestConnectionData::new(1, "127.0.0.1")));
+
+        let session = MyServiceBusSession::new(session_id, connection);
+
+        let session = Arc::new(session);
+
+        topic_queue.subscribers.subscribe(
+            1,
+            TOPIC_ID.to_string(),
+            QUEUE_ID.to_string(),
+            session.clone(),
+        );
+
+        topic_data.publish_messages(vec![
+            MessageToPublish {
+                headers: None,
+                content: vec![],
+            },
+            MessageToPublish {
+                headers: None,
+                content: vec![],
+            },
+        ]);
+
+        let result = topic_data.try_to_deliver(1024).await;
+
+        assert!(result.is_none());
+
+        assert_eq!(topic_data.get_min_message_id().unwrap(), 0);
     }
 }

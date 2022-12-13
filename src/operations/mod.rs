@@ -8,7 +8,6 @@ mod load_page_and_try_to_deliver_again;
 pub mod page_loader;
 mod persist_topics_and_queues;
 mod save_messages_for_topic;
-mod send_package;
 
 pub mod delivery_confirmation;
 pub mod publisher;
@@ -23,4 +22,3 @@ pub use get_next_messages_to_persist::get_next_messages_to_persist;
 pub use load_page_and_try_to_deliver_again::load_page_and_try_to_deliver_again;
 pub use persist_topics_and_queues::persist_topics_and_queues;
 pub use save_messages_for_topic::save_messages_for_topic;
-pub use send_package::send_package;

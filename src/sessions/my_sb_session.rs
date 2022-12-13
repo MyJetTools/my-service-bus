@@ -1,4 +1,3 @@
-use my_service_bus_tcp_shared::PacketProtVer;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use super::{ConnectionMetricsSnapshot, SessionConnection, SessionId};
@@ -80,20 +79,6 @@ impl MyServiceBusSession {
             SessionConnection::Http(_) => "Http".to_string(),
             #[cfg(test)]
             SessionConnection::Test(_) => "Test".to_string(),
-        }
-    }
-
-    pub fn get_message_to_delivery_protocol_version(&self) -> PacketProtVer {
-        match &self.connection {
-            SessionConnection::Tcp(data) => data.get_messages_to_deliver_protocol_version(),
-            SessionConnection::Http(_) => {
-                panic!("Protocol version is not applicable for HTTP Protocol")
-            }
-            #[cfg(test)]
-            SessionConnection::Test(_) => PacketProtVer {
-                protocol_version: 3,
-                packet_version: 0,
-            },
         }
     }
 

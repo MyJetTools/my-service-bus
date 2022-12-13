@@ -65,7 +65,7 @@ pub async fn subscribe_to_queue(
         remove_subscriber(topic_queue, kicked_subscriber);
     }
 
-    super::delivery::start_new(&app, &topic, &mut topic_data);
+    super::delivery::start_new(&app, &topic, &mut topic_data).await;
 
     Ok(())
 }

@@ -70,6 +70,6 @@ pub async fn publish(
         }
     }
 
-    super::delivery::start_new(&app, &topic, &mut topic_data);
+    super::delivery::start_new(&app, &topic, &mut topic_data).await;
     Ok(())
 }

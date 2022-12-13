@@ -43,22 +43,6 @@ impl SessionsList {
         write_access.add(Arc::new(session));
     }
 
-    #[cfg(test)]
-    pub async fn add_test(&self, data: super::TestConnectionData) -> Arc<MyServiceBusSession> {
-        let mut write_access = self.data.write().await;
-
-        let session = MyServiceBusSession::new(
-            write_access.get_next_session_id(),
-            SessionConnection::Test(Arc::new(data)),
-        );
-
-        let session = Arc::new(session);
-
-        write_access.add(session.clone());
-
-        session
-    }
-
     pub async fn get_http(&self, session_id: &str) -> Option<Arc<MyServiceBusSession>> {
         let read_access = self.data.read().await;
         read_access.get_by_http_session(session_id)

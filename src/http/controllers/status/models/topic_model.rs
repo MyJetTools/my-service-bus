@@ -50,7 +50,11 @@ impl TopicJsonContract {
                     subscribers.push(TopicQueueSubscriberJsonModel {
                         session_id: subscriber.session.id,
                         subscriber_id: subscriber.id,
-                        delivery_state: subscriber.delivery_state.to_u8(),
+                        delivery_state: if subscriber.on_delivery.is_some() {
+                            1
+                        } else {
+                            0
+                        },
                         history: subscriber.metrics.delivery_history.get(),
                         active: subscriber.metrics.active,
                         queue_id: queue.queue_id.to_string(),
