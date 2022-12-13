@@ -120,17 +120,26 @@ impl MessagesPagesGrpcRepo {
     pub async fn load_page(
         &self,
         topic_id: &str,
-        page_id: PageId,
         from_message_id: MessageId,
         to_message_id: MessageId,
-    ) -> Result<Option<BTreeMap<MessageId, MySbMessageContent>>, PersistenceError> {
+    ) -> Result<BTreeMap<i64, MySbMessageContent>, PersistenceError> {
+        let page_id = PageId::from_message_id(from_message_id);
+        let page_id_to = PageId::from_message_id(to_message_id);
+
+        if page_id.get_value() != page_id_to.get_value() {
+            panic!(
+                "from_message_id {} and to_message_id {} are not in the same page",
+                from_message_id, to_message_id
+            );
+        }
+
         let mut grpc_client = self.create_grpc_service();
 
         let mut grpc_stream = tokio::time::timeout(
             self.time_out,
             grpc_client.get_page(GetMessagesPageGrpcRequest {
                 topic_id: topic_id.to_string(),
-                page_no: page_id,
+                page_no: page_id.get_value(),
                 from_message_id,
                 to_message_id,
                 version: 1,
@@ -139,7 +148,7 @@ impl MessagesPagesGrpcRepo {
         .await??
         .into_inner();
 
-        let mut messages: BTreeMap<MessageId, MySbMessageContent> = BTreeMap::new();
+        let mut messages: BTreeMap<i64, MySbMessageContent> = BTreeMap::new();
 
         while let Some(stream_result) =
             tokio::time::timeout(self.time_out, grpc_stream.next()).await?
@@ -158,11 +167,11 @@ impl MessagesPagesGrpcRepo {
 
         println!(
             "Read Page {} with messages amount: {}",
-            page_id,
+            page_id.get_value(),
             messages.len()
         );
 
-        Ok(Some(messages))
+        Ok(messages)
     }
 }
 

@@ -40,7 +40,6 @@ interface ITopic {
     messageId: number,
     packetPerSec: number,
     messagesPerSec: number,
-    persistSize: number,
     publishHistory: number[],
     pages: IPage[],
     publishers: ITopicPublisherApiContract[],

@@ -1,7 +1,4 @@
-use crate::{
-    messages_page::PageSizeMetrics,
-    metric_data::{MetricOneSecond, MetricsHistory},
-};
+use crate::metric_data::{MetricOneSecond, MetricsHistory};
 
 pub struct TopicMetrics {
     messages_per_second_going: MetricOneSecond,
@@ -11,8 +8,6 @@ pub struct TopicMetrics {
     pub packets_per_second: usize,
 
     pub publish_history: MetricsHistory,
-
-    pub size_metrics: PageSizeMetrics,
 }
 
 impl TopicMetrics {
@@ -23,8 +18,6 @@ impl TopicMetrics {
             messages_per_second: 0,
             packets_per_second: 0,
             publish_history: MetricsHistory::new(),
-
-            size_metrics: PageSizeMetrics::new(),
         }
     }
 
@@ -34,8 +27,9 @@ impl TopicMetrics {
         self.packets_per_second_going.increase(1);
     }
 
-    pub fn one_second_tick(&mut self, metrics: &PageSizeMetrics) {
-        self.size_metrics.update(metrics);
+    pub fn one_second_tick(&mut self) {
+        // todo!("Commented out because of ....????'")
+        // self.size_metrics.update(metrics);
 
         let messages_per_second = self.messages_per_second_going.get_and_reset();
         self.packets_per_second = self.packets_per_second_going.get_and_reset();

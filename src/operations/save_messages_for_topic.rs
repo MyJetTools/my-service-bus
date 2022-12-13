@@ -1,52 +1,47 @@
 use std::sync::Arc;
 
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus_shared::sub_page::SubPageId;
 
-use crate::{app::AppContext, messages_page::MessagesToPersistBucket, topics::Topic};
+use crate::{app::AppContext, topics::Topic};
 
 pub async fn save_messages_for_topic(app: &Arc<AppContext>, topic: &Arc<Topic>) {
-    while let Some((sub_page_id, mut messages_to_persist)) =
+    while let Some((sub_page_id, messages_to_persist, queue)) =
         super::get_next_messages_to_persist(topic.as_ref()).await
     {
-        let messages = messages_to_persist.get();
-
         let result = if app.persist_compressed {
             app.messages_pages_repo
-                .save_messages(topic.topic_id.as_str(), messages)
+                .save_messages(topic.topic_id.as_str(), messages_to_persist)
                 .await
         } else {
             app.messages_pages_repo
-                .save_messages_uncompressed(topic.topic_id.as_str(), messages)
+                .save_messages_uncompressed(topic.topic_id.as_str(), messages_to_persist)
                 .await
         };
 
         if let Err(err) = result {
-            commit_persisted(topic.as_ref(), sub_page_id, &messages_to_persist, false).await;
+            commit_persisted(topic.as_ref(), sub_page_id, queue.clone()).await;
 
-            app.logs.add_error(
+            crate::LOGS.add_error(
                 Some(topic.topic_id.to_string()),
                 crate::app::logs::SystemProcess::Timer,
                 "persist_messages".to_string(),
                 format!(
                     "Can not persist messages from id:{:?}. Err: {:?}",
-                    messages_to_persist.first_message_id, err
+                    queue.peek(),
+                    err
                 ),
                 None,
             );
         } else {
-            commit_persisted(topic.as_ref(), sub_page_id, &messages_to_persist, true).await;
+            commit_persisted(topic.as_ref(), sub_page_id, queue).await;
         }
     }
 }
 
-async fn commit_persisted(
-    topic: &Topic,
-    sub_page_id: SubPageId,
-    messages_to_persist: &MessagesToPersistBucket,
-    persisted: bool,
-) {
+async fn commit_persisted(topic: &Topic, sub_page_id: SubPageId, persisted: QueueWithIntervals) {
     let mut topic_data = topic.get_access().await;
     topic_data
         .pages
-        .commit_persisted_messages(sub_page_id, messages_to_persist, persisted);
+        .commit_persisted_messages(sub_page_id, persisted);
 }

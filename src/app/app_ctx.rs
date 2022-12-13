@@ -12,7 +12,7 @@ use crate::{
     topics::{Topic, TopicsList},
 };
 
-use super::{logs::Logs, prometheus_metrics::PrometheusMetrics};
+use super::prometheus_metrics::PrometheusMetrics;
 
 pub const APP_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -28,7 +28,6 @@ pub struct AppContext {
     pub max_delivery_size: usize,
     pub topics_and_queues_repo: Arc<TopicsAndQueuesSnapshotRepo>,
     pub messages_pages_repo: Arc<MessagesPagesRepo>,
-    pub logs: Arc<Logs>,
     pub sessions: SessionsList,
     pub process_id: String,
     pub subscriber_id_generator: SubscriberIdGenerator,
@@ -52,8 +51,6 @@ pub struct AppContext {
 
 impl AppContext {
     pub async fn new(settings: &SettingsModel) -> Self {
-        let logs = Arc::new(Logs::new());
-
         let topics_and_queues_repo = settings.create_topics_and_queues_snapshot_repo().await;
         let messages_pages_repo = settings.create_messages_pages_repo().await;
         Self {
@@ -62,7 +59,6 @@ impl AppContext {
             max_delivery_size: settings.max_delivery_size,
             topics_and_queues_repo: Arc::new(topics_and_queues_repo),
             messages_pages_repo: Arc::new(messages_pages_repo),
-            logs,
             sessions: SessionsList::new(),
             process_id: uuid::Uuid::new_v4().to_string(),
             empty_queue_gc_timeout: settings.queue_gc_timeout,

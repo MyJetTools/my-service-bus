@@ -22,7 +22,7 @@ impl MessagesPagesMockRepo {
         topic_id: &str,
         from_message_id: MessageId,
         to_message_id: MessageId,
-    ) -> Result<Option<BTreeMap<MessageId, MySbMessageContent>>, PersistenceError> {
+    ) -> Result<BTreeMap<i64, MySbMessageContent>, PersistenceError> {
         let mut result = BTreeMap::new();
 
         let mut write_access = self.messages.lock().await;
@@ -38,12 +38,7 @@ impl MessagesPagesMockRepo {
                 result.insert(message_id, message.clone());
             }
         }
-
-        if result.len() == 0 {
-            return Ok(None);
-        } else {
-            Ok(Some(result))
-        }
+        Ok(result)
     }
 
     pub async fn save_messages(

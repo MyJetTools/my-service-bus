@@ -34,6 +34,10 @@ pub mod persistence_grpc {
     tonic::include_proto!("persistence");
 }
 
+lazy_static::lazy_static! {
+    pub static ref LOGS: Arc<crate::app::logs::Logs> = Arc::new(crate::app::logs::Logs::new());
+}
+
 #[tokio::main]
 async fn main() {
     let settings = settings::SettingsModel::read().await;
@@ -63,7 +67,7 @@ async fn main() {
             }),
             Arc::new(TcpServerEvents::new(app.clone())),
             app.states.clone(),
-            app.logs.clone(),
+            crate::LOGS.clone(),
         )
         .await;
 
@@ -85,11 +89,11 @@ async fn main() {
         Arc::new(DeadSubscribersKickerTimer::new(app.clone())),
     );
 
-    metrics_timer.start(app.clone(), app.logs.clone());
-    persist_and_gc_timer.start(app.clone(), app.logs.clone());
-    dead_subscribers.start(app.clone(), app.logs.clone());
+    metrics_timer.start(app.clone(), crate::LOGS.clone());
+    persist_and_gc_timer.start(app.clone(), crate::LOGS.clone());
+    dead_subscribers.start(app.clone(), crate::LOGS.clone());
     app.immediatly_persist_event_loop
-        .start(app.clone(), app.logs.clone())
+        .start(app.clone(), crate::LOGS.clone())
         .await;
 
     signal_hook::flag::register(

@@ -54,7 +54,9 @@ pub async fn publish(
 
     let messages_count = messages.len();
 
-    topic_data.publish_messages(session_id, messages);
+    topic_data.publish_messages(messages);
+
+    topic_data.set_publisher_as_active(session_id);
 
     topic_data.metrics.update_topic_metrics(messages_count);
 

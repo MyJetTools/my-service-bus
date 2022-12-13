@@ -53,13 +53,9 @@ impl MyTimerTick for MetricsTimer {
                 topics_without_queues += 1;
             }
 
-            let metrics = topic_data.pages.get_page_size_metrics();
+            self.app.prometheus.update_topic_size_metrics(&topic_data);
 
-            self.app
-                .prometheus
-                .update_topic_size_metrics(topic.topic_id.as_str(), &metrics);
-
-            topic_data.metrics.one_second_tick(&metrics);
+            topic_data.metrics.one_second_tick();
         }
 
         self.app

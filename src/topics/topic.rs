@@ -2,7 +2,6 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::page_id::{get_page_id, PageId};
 use my_service_bus_shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use tokio::sync::Mutex;
@@ -40,13 +39,12 @@ impl Topic {
         read_access.message_id
     }
 
-    pub async fn get_current_page(&self) -> (PageId, SubPageId) {
+    pub async fn get_current_page_and_message_id(&self) -> (SubPageId, MessageId) {
         let read_access = self.data.lock().await;
 
-        let page_id = get_page_id(read_access.message_id);
         let sub_page_id = SubPageId::from_message_id(read_access.message_id);
 
-        (page_id, sub_page_id)
+        (sub_page_id, read_access.message_id)
     }
 
     pub async fn one_second_tick(&self) {

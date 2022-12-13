@@ -9,15 +9,15 @@ pub async fn execute(app: Arc<AppContext>) {
 
 async fn empty_persistence_queues(app: Arc<AppContext>) {
     for topic in app.topic_list.get_all().await {
-        let metrics = {
+        let amount_to_persist = {
             let topic_data = topic.get_access().await;
-            topic_data.pages.get_page_size_metrics()
+            topic_data.pages.get_amount_to_persist()
         };
 
-        while metrics.persist_size > 0 {
+        while amount_to_persist > 0 {
             println!(
                 "Topic {} has {} messages to persist. Doing Force Persist",
-                topic.topic_id, metrics.persist_size
+                topic.topic_id, amount_to_persist
             );
 
             crate::operations::save_messages_for_topic(&app, &topic).await;

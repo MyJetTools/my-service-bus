@@ -32,7 +32,7 @@ pub async fn all_confirmed(
                 })?;
 
         if let Err(err) = topic_queue.confirmed_delivered(subscriber_id) {
-            app.logs.add_fatal_error(
+            crate::LOGS.add_fatal_error(
                 crate::app::logs::SystemProcess::DeliveryOperation,
                 "confirm_delivery".to_string(),
                 format!("{:?}", err),
@@ -72,7 +72,7 @@ pub async fn all_fail(
                 })?;
 
         if let Err(err) = topic_queue.confirmed_non_delivered(subscriber_id) {
-            app.logs.add_fatal_error(
+            crate::LOGS.add_fatal_error(
                 crate::app::logs::SystemProcess::DeliveryOperation,
                 "confirm_non_delivery".to_string(),
                 format!("{:?}", err),
@@ -113,7 +113,7 @@ pub async fn intermediary_confirm(
                 })?;
 
         if let Err(err) = topic_queue.intermediary_confirmed(subscriber_id, confirmed) {
-            app.logs.add_fatal_error(
+            crate::LOGS.add_fatal_error(
                 crate::app::logs::SystemProcess::DeliveryOperation,
                 "some_messages_are_not_confirmed".to_string(),
                 format!("{:?}", err),
@@ -153,7 +153,7 @@ pub async fn some_messages_are_confirmed(
                 })?;
 
         if let Err(err) = topic_queue.confirmed_some_delivered(subscriber_id, confirmed_messages) {
-            app.logs.add_fatal_error(
+            crate::LOGS.add_fatal_error(
                 crate::app::logs::SystemProcess::DeliveryOperation,
                 "some_messages_are_confirmed".to_string(),
                 format!("{:?}", err),

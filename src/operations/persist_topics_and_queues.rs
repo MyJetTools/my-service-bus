@@ -18,7 +18,7 @@ pub async fn persist_topics_and_queues(app: &Arc<AppContext>) {
     let result = app.topics_and_queues_repo.save(topics_snapshots).await;
 
     if let Err(err) = result {
-        app.logs.add_error(
+        crate::LOGS.add_error(
             None,
             crate::app::logs::SystemProcess::TcpSocket,
             "persist::sync_topics_and_queues".to_string(),

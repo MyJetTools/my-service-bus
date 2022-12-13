@@ -18,12 +18,12 @@ impl GetLogsAction {
 }
 
 async fn handle_request(
-    action: &GetLogsAction,
+    _action: &GetLogsAction,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
     let mut sw = StopWatch::new();
     sw.start();
-    let logs = action.app.logs.get().await;
+    let logs = crate::LOGS.get().await;
 
     return super::renderers::compile_result("logs", logs, sw);
 }

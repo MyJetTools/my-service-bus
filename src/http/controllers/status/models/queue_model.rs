@@ -1,6 +1,7 @@
 use crate::{queues::TopicQueue, topics::TopicData};
 
 use my_http_server_swagger::MyHttpObjectStructure;
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
@@ -45,7 +46,7 @@ impl QueueJsonContract {
             queue_type: topic_queue.queue_type.into_u8(),
             size: topic_queue.get_queue_size(),
             on_delivery: topic_queue.get_on_delivery(),
-            data: QueueIndex::get_queue_snapshot(topic_queue),
+            data: QueueIndex::from(&topic_queue.queue),
         }
     }
 }
@@ -59,13 +60,14 @@ pub struct QueueIndex {
 }
 
 impl QueueIndex {
-    pub fn get_queue_snapshot(topic_queue: &TopicQueue) -> Vec<Self> {
-        let mut result = Vec::new();
+    pub fn from(src: &QueueWithIntervals) -> Vec<Self> {
+        let snapshot = src.get_snapshot();
+        let mut result = Vec::with_capacity(snapshot.len());
 
-        for queue_index in &topic_queue.queue.intervals {
+        for index in snapshot {
             result.push(Self {
-                from_id: queue_index.from_id,
-                to_id: queue_index.to_id,
+                from_id: index.from_id,
+                to_id: index.to_id,
             })
         }
 

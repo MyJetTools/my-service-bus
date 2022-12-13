@@ -1,9 +1,7 @@
 use std::collections::BTreeMap;
 
 use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::{
-    page_id::PageId, protobuf_models::MessageProtobufModel, MySbMessageContent,
-};
+use my_service_bus_shared::{protobuf_models::MessageProtobufModel, MySbMessageContent};
 
 use crate::settings::SettingsModel;
 
@@ -30,13 +28,12 @@ impl MessagesPagesRepo {
     pub async fn load_page(
         &self,
         topic_id: &str,
-        page_id: PageId,
         from_message_id: MessageId,
         to_message_id: MessageId,
-    ) -> Result<Option<BTreeMap<MessageId, MySbMessageContent>>, PersistenceError> {
+    ) -> Result<BTreeMap<i64, MySbMessageContent>, PersistenceError> {
         match self {
             MessagesPagesRepo::Grpc(repo) => {
-                repo.load_page(topic_id, page_id, from_message_id, to_message_id)
+                repo.load_page(topic_id, from_message_id, to_message_id)
                     .await
             }
             #[cfg(test)]

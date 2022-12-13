@@ -49,7 +49,7 @@ impl SocketEventCallback<TcpContract, MySbTcpSerializer> for TcpServerEvents {
                     let mut ctx = HashMap::new();
                     ctx.insert("ConnectionId".to_string(), connection_id.to_string());
 
-                    self.app.logs.add_error(
+                    crate::LOGS.add_error(
                         None,
                         SystemProcess::TcpSocket,
                         "Handle Payload".to_string(),

@@ -25,7 +25,7 @@ impl MyTimerTick for DeadSubscribersKickerTimer {
                 .await
             {
                 for dead_subscriber in dead_subscribers {
-                    self.app.logs.add_info(
+                    crate::LOGS.add_info(
                         Some(topic.topic_id.to_string()),
                         crate::app::logs::SystemProcess::Timer,
                         "Dead subscribers detector".to_string(),

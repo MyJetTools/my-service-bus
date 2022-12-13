@@ -4,7 +4,8 @@ use my_http_server_swagger::MyHttpObjectStructure;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    topic_publisher::TopicPublisherJsonModel, topic_queue_subscriber::TopicQueueSubscriberJsonModel,
+    queue_model::QueueIndex, topic_publisher::TopicPublisherJsonModel,
+    topic_queue_subscriber::TopicQueueSubscriberJsonModel,
 };
 
 #[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
@@ -24,8 +25,6 @@ pub struct TopicJsonContract {
     #[serde(rename = "messagesPerSec")]
     pub messages_per_second: usize,
     pub pages: Vec<TopicPageJsonContract>,
-    #[serde(rename = "persistSize")]
-    pub persist_size: usize,
     #[serde(rename = "publishHistory")]
     pub publish_history: Vec<i32>,
     pub publishers: Vec<TopicPublisherJsonModel>,
@@ -66,20 +65,20 @@ impl TopicJsonContract {
             packets_per_second: topic_data.metrics.packets_per_second,
             messages_per_second: topic_data.metrics.messages_per_second,
             publish_history: topic_data.metrics.publish_history.get(),
-            persist_size: topic_data.metrics.size_metrics.persist_size,
             publishers,
             pages: topic_data
                 .pages
                 .pages
-                .iter()
-                .map(|(page_id, page)| {
-                    let metrics = page.get_page_size_metrics();
+                .values()
+                .map(|page| {
+                    let size_and_amount = page.get_size_and_amount();
                     TopicPageJsonContract {
-                        id: *page_id,
-                        amount: metrics.messages_amount,
-                        size: metrics.data_size,
-                        persist_size: metrics.persist_size,
-                        sub_pages: page.get_sub_pages(),
+                        id: page.sub_page_id.get_value(),
+                        amount: size_and_amount.amount,
+                        size: size_and_amount.size,
+                        loaded: QueueIndex::from(&page.loaded),
+                        to_persist: QueueIndex::from(&page.to_persist),
+                        gced: QueueIndex::from(&page.gced),
                     }
                 })
                 .collect(),
@@ -93,8 +92,7 @@ pub struct TopicPageJsonContract {
     pub id: i64,
     pub amount: usize,
     pub size: usize,
-    pub persist_size: usize,
-
-    #[serde(rename = "subPages")]
-    pub sub_pages: Vec<usize>,
+    pub loaded: Vec<QueueIndex>,
+    pub gced: Vec<QueueIndex>,
+    pub to_persist: Vec<QueueIndex>,
 }

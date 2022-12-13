@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use my_service_bus_abstractions::publisher::MessageToPublish;
 use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::page_id::get_page_id;
+use my_service_bus_shared::sub_page::SubPageId;
 use my_service_bus_shared::MySbMessageContent;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
@@ -42,9 +42,7 @@ impl TopicData {
         self.publishers.insert(session_id, BADGE_HIGHLIGHT_TIMOUT);
     }
 
-    pub fn publish_messages(&mut self, session_id: SessionId, messages: Vec<MessageToPublish>) {
-        self.set_publisher_as_active(session_id);
-
+    pub fn publish_messages(&mut self, messages: Vec<MessageToPublish>) {
         let mut ids = QueueWithIntervals::new();
 
         for msg in messages {
@@ -57,11 +55,7 @@ impl TopicData {
 
             ids.enqueue(message.id);
 
-            let page_id = get_page_id(message.id);
-
-            self.pages
-                .get_or_create_page_mut(page_id)
-                .publish_message(message);
+            self.pages.publish_brand_new_message(message);
 
             self.message_id = self.message_id + 1;
         }
@@ -79,6 +73,20 @@ impl TopicData {
         }
 
         self.queues.one_second_tick();
+    }
+
+    pub fn get_active_sub_pages(&self) -> HashMap<SubPageId, ()> {
+        let mut result = HashMap::new();
+
+        result.insert(SubPageId::from_message_id(self.message_id), ());
+
+        for queue in self.queues.get_queues() {
+            if let Some(min_message_id) = queue.get_min_msg_id() {
+                result.insert(SubPageId::from_message_id(min_message_id), ());
+            }
+        }
+
+        result
     }
 
     pub fn disconnect(
@@ -107,7 +115,67 @@ impl TopicData {
         min_message_id.value
     }
 
-    pub fn gc_messages(&mut self, min_message_id: MessageId) {
-        self.pages.gc_messages(min_message_id);
+    pub fn gc_messages(&mut self) {
+        let min_msg_id = self.get_min_message_id();
+
+        if min_msg_id.is_none() {
+            return;
+        }
+
+        let min_msg_id = min_msg_id.unwrap();
+
+        self.pages.gc_messages(min_msg_id);
+    }
+
+    pub fn gc_sub_pages(&mut self) {
+        let active_pages = self.get_active_sub_pages();
+        self.pages.gc_sub_pages(&active_pages);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use my_service_bus_abstractions::{
+        queue_with_intervals::{QueueIndexRange, QueueWithIntervals},
+        subscriber::TopicQueueType,
+    };
+    use my_service_bus_shared::sub_page::{SubPageId, SUB_PAGE_MESSAGES_AMOUNT};
+
+    use super::TopicData;
+
+    #[test]
+    fn test_get_active_pages_on_brand_new_topic() {
+        let topic_data = TopicData::new("test".to_string(), 0);
+
+        let active_pages = topic_data.get_active_sub_pages();
+
+        assert_eq!(1, active_pages.len());
+        assert_eq!(true, active_pages.contains_key(&SubPageId::new(0)))
+    }
+    #[test]
+    fn test_get_active_pages_when_one_of_queue_on_previous_page() {
+        let mut topic_data = TopicData::new("test".to_string(), 0);
+
+        topic_data.message_id = SUB_PAGE_MESSAGES_AMOUNT * 1;
+
+        topic_data.queues.restore(
+            "test".to_string(),
+            "test-queue".to_string(),
+            TopicQueueType::Permanent,
+            QueueWithIntervals {
+                intervals: vec![QueueIndexRange {
+                    from_id: 0,
+                    to_id: topic_data.message_id - 1,
+                }],
+            },
+        );
+
+        let active_pages = topic_data.get_active_sub_pages();
+
+        assert_eq!(2, active_pages.len());
+        assert_eq!(true, active_pages.contains_key(&SubPageId::new(0)));
+        assert_eq!(true, active_pages.contains_key(&SubPageId::new(1)));
+    }
+}
+
+//todo!("Write test for gc_sub_pages");

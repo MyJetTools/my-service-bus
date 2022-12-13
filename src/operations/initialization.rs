@@ -1,6 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_shared::sub_page::SubPageId;
 use rust_extensions::StopWatch;
 
 use crate::topics::{Topic, TopicSnapshot};
@@ -43,7 +44,7 @@ pub async fn init(app: Arc<AppContext>) {
     app.states.set_initialized();
     sw.pause();
 
-    app.logs.add_info(
+    crate::LOGS.add_info(
         None,
         crate::app::logs::SystemProcess::Init,
         format!("Initialization is done in {:?}", sw.duration()),
@@ -58,13 +59,13 @@ pub async fn init(app: Arc<AppContext>) {
 }
 
 async fn restore_topic_pages(app: Arc<AppContext>, topic: Arc<Topic>) {
-    let (page_id, sub_page_id) = topic.get_current_page().await;
+    let (_, message_id) = topic.get_current_page_and_message_id().await;
+
+    let sub_page_id = SubPageId::from_message_id(message_id);
 
     crate::operations::page_loader::load_page_to_cache(
         topic,
         app.messages_pages_repo.clone(),
-        Some(app.logs.as_ref()),
-        page_id,
         sub_page_id,
     )
     .await
@@ -77,7 +78,7 @@ async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
 
         let topics_and_queues = app.topics_and_queues_repo.load().await;
 
-        app.logs.add_info(
+        crate::LOGS.add_info(
             None,
             crate::app::logs::SystemProcess::Init,
             "restore_topics_and_queues".to_string(),
@@ -91,7 +92,7 @@ async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
 
         let err = topics_and_queues.err().unwrap();
 
-        app.logs.add_error(
+        crate::LOGS.add_error(
             None,
             crate::app::logs::SystemProcess::Init,
             "restore_topics_and_queues".to_string(),

@@ -20,7 +20,7 @@ impl GetLogsByProcessAction {
 }
 
 async fn handle_request(
-    action: &GetLogsByProcessAction,
+    _action: &GetLogsByProcessAction,
     input_data: ReadLogsByProcessInputModel,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
@@ -46,7 +46,7 @@ async fn handle_request(
 
     let mut sw = StopWatch::new();
     sw.start();
-    let logs_result = action.app.logs.get_by_process(process).await;
+    let logs_result = crate::LOGS.get_by_process(process).await;
 
     match logs_result {
         Some(logs) => super::renderers::compile_result("logs by process", logs, sw),
