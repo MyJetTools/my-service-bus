@@ -133,7 +133,14 @@ impl QueueSubscriber {
             }
             #[cfg(test)]
             crate::sessions::SessionConnection::Test(connection) => {
+                let mut messages_on_delivery = QueueWithIntervals::new();
+
+                for (_, msg) in &messages {
+                    messages_on_delivery.enqueue(msg.id);
+                }
+
                 connection.deliver_messages(messages).await;
+                self.set_messages_on_delivery(messages_on_delivery);
             }
         }
     }

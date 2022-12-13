@@ -8,6 +8,13 @@ use crate::messages_page::MessagesPageList;
 
 use super::TopicQueue;
 
+enum CompileSubpageResult<'s> {
+    Ok(Vec<(i32, &'s MySbMessageContent)>),
+    OkWithGcFound(Vec<(i32, &'s MySbMessageContent)>),
+    GcFound,
+    Empty,
+}
+
 impl TopicQueue {
     pub async fn try_to_deliver<'s>(
         &mut self,
@@ -18,22 +25,8 @@ impl TopicQueue {
             return Ok(());
         }
 
-        loop {
-            let mut subscriber_id = self.subscribers.get_next_subscriber_ready_to_deliver();
-
-            if subscriber_id.is_none() {
-                return Ok(());
-            }
-
-            loop {
-                let message_id = self.queue.peek();
-
-                if message_id.is_none() {
-                    return Ok(());
-                }
-
-                let message_id = message_id.unwrap();
-
+        while let Some(subscriber_id) = self.subscribers.find_subscriber_ready_to_deliver() {
+            while let Some(message_id) = self.queue.peek() {
                 let sub_page_id = SubPageId::from_message_id(message_id);
 
                 let sub_page = pages.get_sub_page(sub_page_id);
@@ -42,20 +35,31 @@ impl TopicQueue {
                     return Err(sub_page_id);
                 }
 
-                let to_publish =
-                    self.compile_sub_page(sub_page_id, max_delivery_size, sub_page.unwrap());
-
-                if let Some(to_publish) = to_publish {
-                    self.subscribers
-                        .get_by_id_mut(subscriber_id.unwrap())
-                        .unwrap()
-                        .deliver_messages(to_publish)
-                        .await;
-
-                    subscriber_id = None;
+                match self.compile_sub_page(sub_page_id, max_delivery_size, sub_page.unwrap()) {
+                    CompileSubpageResult::Ok(to_publish) => {
+                        self.subscribers
+                            .get_by_id_mut(subscriber_id)
+                            .unwrap()
+                            .deliver_messages(to_publish)
+                            .await;
+                    }
+                    CompileSubpageResult::OkWithGcFound(to_publish) => {
+                        self.subscribers
+                            .get_by_id_mut(subscriber_id)
+                            .unwrap()
+                            .deliver_messages(to_publish)
+                            .await;
+                        return Err(sub_page_id);
+                    }
+                    CompileSubpageResult::GcFound => {
+                        return Err(sub_page_id);
+                    }
+                    CompileSubpageResult::Empty => {}
                 }
             }
         }
+
+        Ok(())
     }
 
     fn compile_sub_page<'s>(
@@ -63,17 +67,14 @@ impl TopicQueue {
         sub_page_id: SubPageId,
         max_delivery_size: usize,
         sub_page: &'s SubPage,
-    ) -> Option<Vec<(i32, &'s MySbMessageContent)>> {
+    ) -> CompileSubpageResult<'s> {
         let mut data_size = 0;
         let mut result = LazyVec::new();
-        while data_size < max_delivery_size {
-            let message_id = self.queue.dequeue();
-
-            if message_id.is_none() {
+        let mut gced_found = false;
+        while let Some(message_id) = self.queue.peek() {
+            if data_size > max_delivery_size {
                 break;
             }
-
-            let message_id = message_id.unwrap();
 
             let msg_sub_page_id = SubPageId::from_message_id(message_id);
 
@@ -83,18 +84,39 @@ impl TopicQueue {
 
             match sub_page.get_message(message_id) {
                 my_service_bus_shared::sub_page::GetMessageResult::Message(msg) => {
+                    self.queue.dequeue();
                     data_size += msg.content.len();
                     let attempt_no = self.delivery_attempts.get(msg.id);
                     result.add((attempt_no, msg));
                 }
-                my_service_bus_shared::sub_page::GetMessageResult::Missing => {}
+                my_service_bus_shared::sub_page::GetMessageResult::Missing => {
+                    self.queue.dequeue();
+                }
                 my_service_bus_shared::sub_page::GetMessageResult::Gced => {
+                    gced_found = true;
                     break;
                 }
             }
         }
 
-        result.get_result()
+        let result = result.get_result();
+
+        match result {
+            Some(result) => {
+                if gced_found {
+                    CompileSubpageResult::OkWithGcFound(result)
+                } else {
+                    CompileSubpageResult::Ok(result)
+                }
+            }
+            None => {
+                if gced_found {
+                    CompileSubpageResult::GcFound
+                } else {
+                    CompileSubpageResult::Empty
+                }
+            }
+        }
     }
 }
 

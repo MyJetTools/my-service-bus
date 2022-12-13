@@ -113,7 +113,7 @@ impl SubscribersList {
         }
     }
 
-    pub fn get_next_subscriber_ready_to_deliver(&self) -> Option<SubscriberId> {
+    pub fn find_subscriber_ready_to_deliver(&self) -> Option<SubscriberId> {
         match &self.data {
             SubscribersData::MultiSubscribers(state) => {
                 for subscriber in state.values() {
