@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use my_tcp_sockets::{ConnectionEvent, SocketEventCallback};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use my_service_bus_tcp_shared::{MySbTcpSerializer, TcpContract};
 
@@ -46,12 +46,14 @@ impl SocketEventCallback<TcpContract, MySbTcpSerializer> for TcpServerEvents {
                 if let Err(err) =
                     super::incoming_packets::handle(&self.app, payload, connection).await
                 {
+                    let mut ctx = HashMap::new();
+                    ctx.insert("ConnectionId".to_string(), connection_id.to_string());
                     self.app.logs.add_error(
                         None,
                         SystemProcess::TcpSocket,
                         "Handle Payload".to_string(),
                         format!("Err: {:?}", err),
-                        Some(format!("ConnectionId:{}", connection_id)),
+                        Some(ctx),
                     );
                 }
             }

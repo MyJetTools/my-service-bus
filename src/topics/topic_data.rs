@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
-use my_service_bus_shared::page_id::get_page_id;
+use my_service_bus_abstractions::publisher::MessageToPublish;
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::MySbMessageContent;
-use my_service_bus_shared::{queue_with_intervals::QueueWithIntervals, MessageId};
-use my_service_bus_tcp_shared::MessageToPublishTcpContract;
+
+use my_service_bus_shared::page_id::PageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::messages_page::MessagesPageList;
@@ -13,7 +15,7 @@ use crate::sessions::SessionId;
 use crate::utils::MinMessageIdCalculator;
 
 use super::TopicMetrics;
-const BADGE_HIGHLIGHT_TIMOUT: u8 = 2;
+const BADGE_HIGHLIGHT_TIME_OUT: u8 = 2;
 
 pub struct TopicData {
     pub topic_id: String,
@@ -25,10 +27,10 @@ pub struct TopicData {
 }
 
 impl TopicData {
-    pub fn new(topic_id: String, message_id: MessageId) -> Self {
+    pub fn new(topic_id: String, message_id: i64) -> Self {
         Self {
             topic_id,
-            message_id,
+            message_id: message_id.into(),
             queues: TopicQueuesList::new(),
             metrics: TopicMetrics::new(),
             pages: MessagesPageList::new(),
@@ -38,35 +40,31 @@ impl TopicData {
 
     #[inline]
     pub fn set_publisher_as_active(&mut self, session_id: SessionId) {
-        self.publishers.insert(session_id, BADGE_HIGHLIGHT_TIMOUT);
+        self.publishers.insert(session_id, BADGE_HIGHLIGHT_TIME_OUT);
     }
 
-    pub fn publish_messages(
-        &mut self,
-        session_id: SessionId,
-        messages: Vec<MessageToPublishTcpContract>,
-    ) {
+    pub fn publish_messages(&mut self, session_id: SessionId, messages: Vec<MessageToPublish>) {
         self.set_publisher_as_active(session_id);
 
         let mut ids = QueueWithIntervals::new();
 
         for msg in messages {
             let message = MySbMessageContent {
-                id: self.message_id,
+                id: self.message_id.into(),
                 content: msg.content,
                 time: DateTimeAsMicroseconds::now(),
                 headers: msg.headers,
             };
 
-            ids.enqueue(message.id);
+            ids.enqueue(message.id.into());
 
-            let page_id = get_page_id(message.id);
+            let page_id = PageId::from_message_id(message.id);
 
             self.pages
                 .get_or_create_page_mut(page_id)
                 .publish_message(message);
 
-            self.message_id = self.message_id + 1;
+            self.message_id.increment();
         }
 
         for topic_queue in self.queues.get_all_mut() {
@@ -96,8 +94,8 @@ impl TopicData {
     pub fn get_min_message_id(&self) -> Option<MessageId> {
         let mut min_message_id = MinMessageIdCalculator::new();
 
-        if self.message_id > 1 {
-            min_message_id.add(Some(self.message_id - 1));
+        if self.message_id.get_value() > 1 {
+            min_message_id.add(Some(self.message_id.get_value() - 1));
         }
 
         for topic_queue in self.queues.get_all() {
@@ -107,7 +105,7 @@ impl TopicData {
             min_message_id.add(self.pages.get_persisted_min_message_id());
         }
 
-        min_message_id.value
+        min_message_id.get()
     }
 
     pub fn gc_messages(&mut self, min_message_id: MessageId) {

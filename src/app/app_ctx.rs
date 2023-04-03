@@ -43,7 +43,7 @@ pub struct AppContext {
     pub auto_create_topic_on_publish: bool,
     pub auto_create_topic_on_subscribe: bool,
 
-    pub immediatly_persist_event_loop: EventsLoop<Arc<Topic>>,
+    pub immediately_persist_event_loop: EventsLoop<Arc<Topic>>,
 
     pub persist_compressed: bool,
 
@@ -78,7 +78,7 @@ impl AppContext {
             debug_topic_and_queue: RwLock::new(None),
             auto_create_topic_on_publish: settings.auto_create_topic_on_publish,
             auto_create_topic_on_subscribe: settings.auto_create_topic_on_subscribe,
-            immediatly_persist_event_loop: EventsLoop::new("ImmediatelyPersist".to_string()),
+            immediately_persist_event_loop: EventsLoop::new("ImmediatelyPersist".to_string()),
             persistence_version: Mutex::new(String::new()),
         }
     }

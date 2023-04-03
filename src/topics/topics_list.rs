@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
-use my_service_bus_shared::{validators::InvalidTopicName, MessageId};
+use my_service_bus_abstractions::MessageId;
+use my_service_bus_shared::validators::InvalidTopicName;
 use tokio::sync::RwLock;
 
 use super::topic::Topic;
@@ -82,7 +83,7 @@ impl TopicsList {
     pub async fn restore(&self, topic_id: String, message_id: MessageId) -> Arc<Topic> {
         let mut write_access = self.data.write().await;
 
-        let topic = Topic::new(topic_id.to_string(), message_id);
+        let topic = Topic::new(topic_id.to_string(), message_id.get_value());
         let result = Arc::new(topic);
 
         write_access.topics.insert(topic_id, result.clone());

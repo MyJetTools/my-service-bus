@@ -19,6 +19,7 @@ impl AsHttpFailResult for hyper::Error {
             status_code: 500,
             content: format!("Can not get body from Request. Err:{:?}", self).into_bytes(),
             write_telemetry: true,
+            write_to_log: true,
         }
     }
 }

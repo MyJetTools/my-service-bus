@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use my_service_bus_shared::sub_page::SubPageId;
 
@@ -23,15 +23,19 @@ pub async fn save_messages_for_topic(app: &Arc<AppContext>, topic: &Arc<Topic>) 
         if let Err(err) = result {
             commit_persisted(topic.as_ref(), sub_page_id, &messages_to_persist, false).await;
 
+            let mut ctx = HashMap::new();
+
+            ctx.insert(
+                "firstMessageId".to_string(),
+                messages_to_persist.first_message_id.to_string(),
+            );
+
             app.logs.add_error(
                 Some(topic.topic_id.to_string()),
                 crate::app::logs::SystemProcess::Timer,
                 "persist_messages".to_string(),
-                format!(
-                    "Can not persist messages from id:{:?}",
-                    messages_to_persist.first_message_id
-                ),
-                Some(format!("{:?}", err)),
+                format!("Can not persist messages from id. Err: {:?}", err),
+                Some(ctx),
             );
         } else {
             commit_persisted(topic.as_ref(), sub_page_id, &messages_to_persist, true).await;

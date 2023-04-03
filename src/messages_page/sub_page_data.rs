@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
-use my_service_bus_shared::{
-    protobuf_models::MessageProtobufModel, queue_with_intervals::QueueWithIntervals,
-    sub_page::SubPage,
-};
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_shared::{protobuf_models::MessageProtobufModel, sub_page::SubPage};
 
 use super::MessagesToPersistBucket;
 
@@ -29,15 +27,24 @@ impl SubPageData {
         let mut ids = QueueWithIntervals::new();
 
         while let Some(message_id) = self.messages_to_persist.dequeue() {
-            if let Some(msg) = self.sub_page.get_message(message_id) {
-                let model: MessageProtobufModel = msg.into();
-                messages_to_persist.push(model);
-                ids.enqueue(message_id);
-            } else {
-                println!(
-                    "Topic:{}. Somehow we can not find message {} to persist",
-                    topic_id, message_id
-                );
+            match self.sub_page.get_message(message_id.into()) {
+                my_service_bus_shared::sub_page::GetMessageResult::Message(msg) => {
+                    let model: MessageProtobufModel = msg.into();
+                    messages_to_persist.push(model);
+                    ids.enqueue(message_id);
+                }
+                my_service_bus_shared::sub_page::GetMessageResult::Missing => {
+                    println!(
+                        "Topic:{}. Somehow we can not find message {} to persist. It's missing",
+                        topic_id, message_id
+                    );
+                }
+                my_service_bus_shared::sub_page::GetMessageResult::GarbageCollected => {
+                    println!(
+                        "Topic:{}. Somehow we can not find message {} to persist. It's Garbage collected",
+                        topic_id, message_id
+                    );
+                }
             }
         }
 

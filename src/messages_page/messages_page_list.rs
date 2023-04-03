@@ -3,10 +3,10 @@ use std::collections::{
     BTreeMap,
 };
 
+use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::{
-    page_id::{get_page_id, PageId},
+    page_id::PageId,
     sub_page::{SubPage, SubPageId},
-    MessageId,
 };
 
 use crate::utils::MinMessageIdCalculator;
@@ -57,8 +57,7 @@ impl MessagesPageList {
     }
 
     pub fn restore_subpage(&mut self, sub_page: SubPage) {
-        let first_message_id = sub_page.sub_page_id.get_first_message_id();
-        let page_id = get_page_id(first_message_id);
+        let page_id = PageId::from_message_id(sub_page.sub_page_id.get_first_message_id());
 
         if let Some(page) = self.pages.get_mut(&page_id) {
             page.add_sub_page(sub_page);
@@ -75,7 +74,7 @@ impl MessagesPageList {
         messages_to_persist: &MessagesToPersistBucket,
         persisted: bool,
     ) {
-        let page_id = get_page_id(sub_page_id.get_first_message_id());
+        let page_id = PageId::from_message_id(sub_page_id.get_first_message_id());
 
         if let Some(page) = self.pages.get_mut(&page_id) {
             if let Some(sub_page_data) = page.get_sub_page_mut(&sub_page_id) {
@@ -91,14 +90,14 @@ impl MessagesPageList {
             min_message_id_calculator.add(page.get_persisted_min_message_id());
         }
 
-        min_message_id_calculator.value
+        min_message_id_calculator.get()
     }
 
     pub fn gc_if_possible(
         &mut self,
         sub_page_id: SubPageId,
     ) -> (Option<SubPage>, Option<MessagesPage>) {
-        let page_id = get_page_id(sub_page_id.get_first_message_id());
+        let page_id: PageId = sub_page_id.into();
 
         let (gced_sub_page, remove_page) = {
             if let Some(page) = self.pages.get_mut(&page_id) {

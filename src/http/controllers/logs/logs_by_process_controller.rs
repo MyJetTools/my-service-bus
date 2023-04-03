@@ -1,107 +1,68 @@
-use async_trait::async_trait;
-use my_http_server_controllers::controllers::{
-    actions::GetAction, documentation::HttpActionDescription,
-};
 use std::sync::Arc;
 
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput, WebContentType};
-use rust_extensions::{StopWatch, StringBuilder};
+use rust_extensions::StopWatch;
 
 use crate::app::{logs::SystemProcess, AppContext};
 
-use super::models::ReadLogsByProcessInputModel;
+use super::models::*;
 
-pub struct LogsByProcessController {
+#[my_http_server_swagger::http_route(
+    method: "GET",
+    route: "/Logs/Process/{processId}",
+    input_data: "ReadLogsByProcessInputModel"
+)]
+
+pub struct GetLogsByProcessAction {
     app: Arc<AppContext>,
 }
 
-impl LogsByProcessController {
+impl GetLogsByProcessAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
-#[async_trait]
-impl GetAction for LogsByProcessController {
-    fn get_route(&self) -> &str {
-        "/Logs/Process/{processId}"
+async fn handle_request(
+    action: &GetLogsByProcessAction,
+    input_data: ReadLogsByProcessInputModel,
+    _ctx: &mut HttpContext,
+) -> Result<HttpOkResult, HttpFailResult> {
+    let process = SystemProcess::parse(input_data.process_id.as_str());
+
+    if process.is_none() {
+        return HttpOutput::Content {
+            content_type: Some(WebContentType::Text),
+            content: format!("Invalid process name: {}", input_data.process_id).into(),
+            headers: None,
+        }
+        .into_ok_result(false)
+        .into();
     }
 
-    fn get_description(&self) -> Option<HttpActionDescription> {
-        HttpActionDescription {
-            controller_name: "Logs",
-            description: "Show Logs of speciefic process",
+    let process = process.unwrap();
 
-            input_params: ReadLogsByProcessInputModel::get_input_params().into(),
-            results: vec![],
-        }
-        .into()
-    }
+    let mut sw = StopWatch::new();
+    sw.start();
+    let logs_result = action.app.logs.get_by_process(process).await;
 
-    async fn handle_request(&self, ctx: &mut HttpContext) -> Result<HttpOkResult, HttpFailResult> {
-        let input_params = ReadLogsByProcessInputModel::parse_http_input(ctx).await?;
+    match logs_result {
+        Some(logs) => super::renderers::compile_result("logs by process", logs, sw),
+        None => {
+            sw.pause();
 
-        if input_params.process_id.is_none() {
-            return render_select_process().await;
-        }
-
-        let process_id = input_params.process_id.unwrap();
-
-        let process = SystemProcess::parse(process_id.as_str());
-
-        if process.is_none() {
-            return HttpOutput::Content {
+            HttpOutput::Content {
                 content_type: Some(WebContentType::Text),
-                content: format!("Invalid process name: {}", process_id).into(),
+                content: format!(
+                    "Result compiled in: {:?}. No log records for the process '{}'",
+                    sw.duration(),
+                    input_data.process_id
+                )
+                .into_bytes(),
                 headers: None,
             }
             .into_ok_result(false)
-            .into();
-        }
-
-        let process = process.unwrap();
-
-        let mut sw = StopWatch::new();
-        sw.start();
-        let logs_result = self.app.logs.get_by_process(process).await;
-
-        match logs_result {
-            Some(logs) => super::renderers::compile_result("logs by process", logs, sw),
-            None => {
-                sw.pause();
-
-                HttpOutput::Content {
-                    content_type: Some(WebContentType::Text),
-                    content: format!(
-                        "Result compiled in: {:?}. No log recods for the process '{}'",
-                        sw.duration(),
-                        process_id
-                    )
-                    .into_bytes(),
-                    headers: None,
-                }
-                .into_ok_result(false)
-                .into()
-            }
+            .into()
         }
     }
-}
-
-async fn render_select_process() -> Result<HttpOkResult, HttpFailResult> {
-    let mut sb = StringBuilder::new();
-
-    sb.append_line("<h1>Please, select process to show logs</h1>");
-
-    for process in &SystemProcess::iterate() {
-        let line = format!(
-            "<a class='btn btn-sm btn-outline-primary' href='/logs/process/{process:?}'>{process:?}</a>",
-            process = process
-        );
-        sb.append_line(line.as_str())
-    }
-
-    Ok(crate::http::html::compile(
-        "Select topic to show logs".to_string(),
-        sb.to_string_utf8().unwrap(),
-    ))
 }

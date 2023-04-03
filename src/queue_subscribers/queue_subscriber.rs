@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use my_service_bus_shared::{queue_with_intervals::QueueWithIntervals, MessageId};
+use my_service_bus_abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{queues::DeliveryBucket, sessions::MyServiceBusSession};
@@ -155,6 +155,6 @@ impl QueueSubscriber {
 
     pub fn get_min_message_id(&self) -> Option<MessageId> {
         let messages_on_delivery = self.get_messages_on_delivery()?;
-        return messages_on_delivery.get_min_id();
+        MessageId::from_opt_i64(messages_on_delivery.get_min_id())
     }
 }

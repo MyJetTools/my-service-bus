@@ -1,6 +1,6 @@
-use my_service_bus_shared::{
-    queue::TopicQueueType,
+use my_service_bus_abstractions::{
     queue_with_intervals::{QueueIndexRange, QueueWithIntervals},
+    subscriber::TopicQueueType,
     MessageId,
 };
 use rust_extensions::date_time::DateTimeAsMicroseconds;
@@ -56,7 +56,7 @@ impl TopicQueue {
     }
 
     pub fn get_min_msg_id(&self) -> Option<MessageId> {
-        self.queue.get_min_id()
+        MessageId::from_opt_i64(self.queue.get_min_id())
     }
 
     pub fn get_snapshot_to_persist(&self) -> Option<TopicQueueSnapshot> {
@@ -112,8 +112,8 @@ impl TopicQueue {
         let mut intervals = Vec::new();
 
         intervals.push(QueueIndexRange {
-            from_id: message_id,
-            to_id: max_message_id,
+            from_id: message_id.into(),
+            to_id: max_message_id.into(),
         });
 
         self.queue.reset(intervals);
@@ -127,7 +127,7 @@ impl TopicQueue {
         self.queue.merge_with(not_delivered_ids);
 
         for msg_id in not_delivered_ids {
-            self.delivery_attempts.add(msg_id);
+            self.delivery_attempts.add(msg_id.into());
         }
     }
 
@@ -166,7 +166,7 @@ impl TopicQueue {
 
     fn process_delivered(&mut self, delivered_ids: &QueueWithIntervals) {
         for msg_id in delivered_ids {
-            self.delivery_attempts.reset(msg_id);
+            self.delivery_attempts.reset(msg_id.into());
         }
     }
 

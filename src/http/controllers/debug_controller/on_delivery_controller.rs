@@ -11,6 +11,7 @@ use super::models::GetOnDeliveryInputModel;
     route: "/Debug/OnDelivery",
     input_data: "GetOnDeliveryInputModel",
     description: "Show messages on delivery",
+    summary: "Shows messages on delivery",
     controller: "Debug",
     result:[
         {status_code: 200, description: "Ids of subscribers on delivery"},

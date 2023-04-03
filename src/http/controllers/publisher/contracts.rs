@@ -5,6 +5,8 @@ use my_http_server::{HttpFailResult, WebContentType};
 use my_http_server_swagger::{MyHttpInput, MyHttpObjectStructure};
 use serde::{Deserialize, Serialize};
 
+use crate::utils::FromBase64;
+
 #[derive(MyHttpInput)]
 pub struct PublishMessageHttpInput {
     #[http_header(description = "Http session")]
@@ -47,7 +49,7 @@ impl MessageToPublishJsonModel {
     }
 
     pub fn get_content(&self) -> Result<Vec<u8>, HttpFailResult> {
-        match base64::decode(self.base64_message.as_str()) {
+        match self.base64_message.from_base64() {
             Ok(bytes) => Ok(bytes),
             Err(err) => Err(HttpFailResult {
                 content_type: WebContentType::Text,
@@ -55,6 +57,7 @@ impl MessageToPublishJsonModel {
                 content: format!("Can not convert content from Base64. Err: Err{}", err)
                     .into_bytes(),
                 write_telemetry: false,
+                write_to_log: false,
             }),
         }
     }

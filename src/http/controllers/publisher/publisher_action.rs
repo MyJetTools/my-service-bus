@@ -1,7 +1,7 @@
 use crate::http::controllers::extensions::HttpContextExtensions;
 
 use my_http_server_swagger::http_route;
-use my_service_bus_tcp_shared::MessageToPublishTcpContract;
+use my_service_bus_abstractions::publisher::MessageToPublish;
 use std::sync::Arc;
 
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput};
@@ -15,6 +15,7 @@ use super::contracts::PublishMessageHttpInput;
     route: "/Publish",
     controller: "Publish",
     description: "Publish messages to topic",
+    summary: "Publishes messages to topic",
     input_data: "PublishMessageHttpInput",
     result: [
         {status_code: 202, description: "Message is published"},
@@ -45,7 +46,7 @@ async fn handle_request(
     let mut content_size = 0;
 
     for mut msg_in_json in http_input.messages {
-        let msg = MessageToPublishTcpContract {
+        let msg = MessageToPublish {
             headers: msg_in_json.get_headers(),
             content: msg_in_json.get_content()?,
         };

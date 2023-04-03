@@ -3,9 +3,10 @@ use std::time::Duration;
 
 use futures_util::stream;
 
+use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::page_id::PageId;
 use my_service_bus_shared::protobuf_models::MessageProtobufModel;
-use my_service_bus_shared::{MessageId, MySbMessageContent};
+use my_service_bus_shared::MySbMessageContent;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use tokio_stream::StreamExt;
 use tonic::transport::Channel;
@@ -122,32 +123,32 @@ impl MessagesPagesGrpcRepo {
         page_id: PageId,
         from_message_id: MessageId,
         to_message_id: MessageId,
-    ) -> Result<Option<BTreeMap<MessageId, MySbMessageContent>>, PersistenceError> {
+    ) -> Result<Option<BTreeMap<i64, MySbMessageContent>>, PersistenceError> {
         let mut grpc_client = self.create_grpc_service();
 
         let mut grpc_stream = tokio::time::timeout(
             self.time_out,
             grpc_client.get_page(GetMessagesPageGrpcRequest {
                 topic_id: topic_id.to_string(),
-                page_no: page_id,
-                from_message_id,
-                to_message_id,
+                page_no: page_id.get_value(),
+                from_message_id: from_message_id.into(),
+                to_message_id: to_message_id.into(),
                 version: 1,
             }),
         )
         .await??
         .into_inner();
 
-        let mut messages: BTreeMap<MessageId, MySbMessageContent> = BTreeMap::new();
+        let mut messages: BTreeMap<i64, MySbMessageContent> = BTreeMap::new();
 
         while let Some(stream_result) =
             tokio::time::timeout(self.time_out, grpc_stream.next()).await?
         {
             let grpc_model = stream_result?;
             messages.insert(
-                grpc_model.message_id,
+                grpc_model.message_id.into(),
                 MySbMessageContent {
-                    id: grpc_model.message_id,
+                    id: grpc_model.message_id.into(),
                     content: grpc_model.data,
                     time: DateTimeAsMicroseconds::new(grpc_model.created),
                     headers: restore_headers(grpc_model.meta_data),
@@ -157,7 +158,7 @@ impl MessagesPagesGrpcRepo {
 
         println!(
             "Read Page {} with messages amount: {}",
-            page_id,
+            page_id.get_value(),
             messages.len()
         );
 

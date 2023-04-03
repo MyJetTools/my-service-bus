@@ -55,8 +55,8 @@ pub fn compile_result(
         let line = format!("<b>Msg:</b> {}</br>", log_item.message.as_str());
         sb.append_line(line.as_str());
 
-        if let Some(err_ctx) = &log_item.err_ctx {
-            let line = format!("<b>ErrCTX:</b> {}</br>", err_ctx);
+        if let Some(ctx) = &log_item.ctx {
+            let line = format!("<b>CTX:</b> {:?}</br>", ctx);
             sb.append_line(line.as_str());
         }
 
@@ -68,10 +68,7 @@ pub fn compile_result(
     let line = format!("Rendered in {:?}", sw.duration());
     sb.append_line(line.as_str());
 
-    Ok(crate::http::html::compile(
-        title.to_string(),
-        sb.to_string_utf8().unwrap(),
-    ))
+    crate::http::html::compile(title.to_string(), sb.to_string_utf8())
 }
 
 fn get_log_level_color(item: &LogItem) -> &str {

@@ -1,9 +1,10 @@
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-use my_service_bus_shared::page_id::{get_page_id, PageId};
+use my_service_bus_abstractions::MessageId;
+use my_service_bus_shared::page_id::PageId;
 use my_service_bus_shared::sub_page::SubPageId;
-use my_service_bus_shared::MessageId;
+
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use tokio::sync::Mutex;
 
@@ -17,16 +18,16 @@ pub struct Topic {
     pub topic_id: String,
     data: Mutex<TopicData>,
     pub restore_page_lock: Mutex<DateTimeAsMicroseconds>,
-    pub immediatelly_persist_is_charged: AtomicBool,
+    pub immediately_persist_is_charged: AtomicBool,
 }
 
 impl Topic {
-    pub fn new(topic_id: String, message_id: MessageId) -> Self {
+    pub fn new(topic_id: String, message_id: i64) -> Self {
         Self {
             topic_id: topic_id.to_string(),
             data: Mutex::new(TopicData::new(topic_id, message_id)),
             restore_page_lock: Mutex::new(DateTimeAsMicroseconds::now()),
-            immediatelly_persist_is_charged: AtomicBool::new(false),
+            immediately_persist_is_charged: AtomicBool::new(false),
         }
     }
 
@@ -37,14 +38,14 @@ impl Topic {
 
     pub async fn get_message_id(&self) -> MessageId {
         let read_access = self.data.lock().await;
-        read_access.message_id
+        read_access.message_id.into()
     }
 
     pub async fn get_current_page(&self) -> (PageId, SubPageId) {
         let read_access = self.data.lock().await;
 
-        let page_id = get_page_id(read_access.message_id);
-        let sub_page_id = SubPageId::from_message_id(read_access.message_id);
+        let page_id = PageId::from_message_id(read_access.message_id.into());
+        let sub_page_id = SubPageId::from_message_id(read_access.message_id.into());
 
         (page_id, sub_page_id)
     }
@@ -58,7 +59,7 @@ impl Topic {
         let topic_data = self.data.lock().await;
 
         TopicSnapshot {
-            message_id: topic_data.message_id,
+            message_id: topic_data.message_id.into(),
             topic_id: topic_data.topic_id.to_string(),
             queues: topic_data.queues.get_snapshot_to_persist(),
         }

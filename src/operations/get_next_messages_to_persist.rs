@@ -29,7 +29,7 @@ fn get_messages_to_persist(
 #[cfg(test)]
 mod tests {
 
-    use my_service_bus_tcp_shared::MessageToPublishTcpContract;
+    use my_service_bus_abstractions::publisher::MessageToPublish;
 
     use super::*;
 
@@ -49,7 +49,7 @@ mod tests {
 
         let mut topic_data = TopicData::new(TOPIC_NAME.to_string(), 0);
 
-        let msg = MessageToPublishTcpContract {
+        let msg = MessageToPublish {
             content: vec![0u8, 1u8, 2u8],
             headers: None,
         };

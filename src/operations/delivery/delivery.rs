@@ -1,4 +1,9 @@
-use my_service_bus_shared::{page_id::get_page_id, sub_page::SubPageId};
+use my_service_bus_abstractions::AsMessageId;
+use my_service_bus_shared::{
+    page_id::PageId,
+    sub_page::{GetMessageResult, SubPageId},
+};
+
 use std::sync::Arc;
 
 use crate::{
@@ -36,11 +41,8 @@ fn build_new_package_builder(
         let result = SubscriberPackageBuilder::new(
             topic.clone(),
             topic_queue.queue_id.to_string(),
-            subscriber.session.clone(),
             subscriber.id,
-            subscriber
-                .session
-                .get_message_to_delivery_protocol_version(),
+            subscriber.session.clone(),
         );
 
         return Some(result);
@@ -84,7 +86,7 @@ fn compile_and_deliver(
     println!("compile_and_deliver");
 
     if let Some(topic_queue) = topic_data.queues.get_mut(package_builder.queue_id.as_ref()) {
-        while package_builder.data_size() < app.get_max_delivery_size() {
+        while package_builder.get_data_size() < app.get_max_delivery_size() {
             let message_id = topic_queue.queue.peek();
 
             if message_id.is_none() {
@@ -93,8 +95,8 @@ fn compile_and_deliver(
 
             let message_id = message_id.unwrap();
 
-            let page_id = get_page_id(message_id);
-            let sub_page_id = SubPageId::from_message_id(message_id);
+            let page_id = PageId::from_message_id(message_id.as_message_id());
+            let sub_page_id = SubPageId::from_message_id(message_id.as_message_id());
 
             let page = topic_data.pages.get_page(page_id);
 
@@ -132,11 +134,13 @@ fn compile_and_deliver(
 
             topic_queue.queue.dequeue();
 
-            if let Some(message_content) = sub_page.sub_page.get_message(message_id) {
-                let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
-                package_builder.add_message(message_content, attempt_no);
-            } else {
-                if sub_page.sub_page.has_gced_messages() {
+            match sub_page.sub_page.get_message(message_id.as_message_id()) {
+                GetMessageResult::Message(message_content) => {
+                    let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
+                    package_builder.add_message(message_content, attempt_no);
+                }
+                GetMessageResult::Missing => {}
+                GetMessageResult::GarbageCollected => {
                     start_loading(
                         app,
                         topic,
@@ -158,11 +162,11 @@ fn start_loading(
     app: &Arc<AppContext>,
     topic: &Arc<Topic>,
     topic_data: &mut TopicData,
-    page_id: i64,
+    page_id: PageId,
     sub_page_id: SubPageId,
     package_builder: SubscriberPackageBuilder,
 ) {
-    if package_builder.data_size() > 0 {
+    if package_builder.get_data_size() > 0 {
         crate::operations::send_package::send_new_messages_to_deliver(package_builder, topic_data);
 
         crate::operations::load_page_and_try_to_deliver_again(
@@ -186,11 +190,12 @@ fn start_loading(
 #[cfg(test)]
 mod tests {
 
-    use my_service_bus_shared::{
-        protobuf_models::MessageProtobufModel, queue::TopicQueueType,
-        queue_with_intervals::QueueWithIntervals,
+    use my_service_bus_abstractions::{
+        publisher::MessageToPublish, queue_with_intervals::QueueWithIntervals,
+        subscriber::TopicQueueType,
     };
-    use my_service_bus_tcp_shared::{MessageToPublishTcpContract, TcpContract};
+    use my_service_bus_shared::protobuf_models::MessageProtobufModel;
+    use my_service_bus_tcp_shared::TcpContract;
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
     use crate::{
@@ -234,12 +239,12 @@ mod tests {
         .await
         .unwrap();
 
-        let msg1 = MessageToPublishTcpContract {
+        let msg1 = MessageToPublish {
             headers: None,
             content: vec![0u8, 1u8, 2u8],
         };
 
-        let msg2 = MessageToPublishTcpContract {
+        let msg2 = MessageToPublish {
             headers: None,
             content: vec![3u8, 4u8, 5u8],
         };
@@ -281,7 +286,9 @@ mod tests {
             .add_test(TestConnectionData::new(SESSION_ID, "127.0.0.1"))
             .await;
 
-        app.topic_list.restore(TOPIC_NAME.to_string(), 3).await;
+        app.topic_list
+            .restore(TOPIC_NAME.to_string(), 3.into())
+            .await;
 
         //Simulate that we have persisted messages
         let msg1 = MessageProtobufModel {

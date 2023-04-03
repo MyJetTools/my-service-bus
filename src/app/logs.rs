@@ -95,7 +95,7 @@ pub struct LogItem {
 
     pub message: String,
 
-    pub err_ctx: Option<String>,
+    pub ctx: Option<HashMap<String, String>>,
 }
 
 struct LogsData {
@@ -152,7 +152,7 @@ impl Logs {
         process: SystemProcess,
         process_name: String,
         message: String,
-        context: Option<String>,
+        ctx: Option<HashMap<String, String>>,
     ) {
         let item = LogItem {
             date: DateTimeAsMicroseconds::now(),
@@ -161,7 +161,7 @@ impl Logs {
             process_name,
             process,
             message: message,
-            err_ctx: context,
+            ctx,
         };
 
         self.add_item(item);
@@ -181,7 +181,7 @@ impl Logs {
         process: SystemProcess,
         process_name: String,
         message: String,
-        err_ctx: Option<String>,
+        ctx: Option<HashMap<String, String>>,
     ) {
         let item = LogItem {
             date: DateTimeAsMicroseconds::now(),
@@ -190,18 +190,18 @@ impl Logs {
             process_name,
             process,
             message: message,
-            err_ctx,
+            ctx,
         };
 
         println!(
-                "{dt} {level:?} {proces:?}\n Topic:{topic:?}\n Process:{processname}\n Message:{message}\n Ctx:{err_ctx:?}",
+                "{dt} {level:?} {process:?}\n Topic:{topic:?}\n Process:{process_name}\n Message:{message}\n Ctx:{ctx:?}",
                 topic= item.topic,
                 dt = item.date.to_rfc3339(),
                 level = item.level,
-                proces = item.process,
-                processname = item.process_name,
+                process = item.process,
+                process_name = item.process_name,
                 message = item.message,
-                err_ctx = item.err_ctx
+                ctx = item.ctx
             );
         println!("-------------");
         self.add_item(item);
@@ -212,7 +212,7 @@ impl Logs {
         process: SystemProcess,
         process_name: String,
         message: String,
-        context: Option<String>,
+        ctx: Option<HashMap<String, String>>,
     ) {
         let item = LogItem {
             date: DateTimeAsMicroseconds::now(),
@@ -221,15 +221,15 @@ impl Logs {
             process_name,
             process,
             message,
-            err_ctx: context,
+            ctx,
         };
 
         println!(
-            "{dt} {level:?} {proces:?}\n Process:{processname}\n Message:{message}",
+            "{dt} {level:?} {process:?}\n Process:{process_name}\n Message:{message}",
             dt = item.date.to_rfc3339(),
             level = item.level,
-            proces = item.process,
-            processname = item.process_name,
+            process = item.process,
+            process_name = item.process_name,
             message = item.message
         );
         println!("-------------");
@@ -288,11 +288,16 @@ async fn log_writer_thread(mut recv: UnboundedReceiver<LogItem>, logs_data: Arc<
 }
 
 impl Logger for Logs {
-    fn write_info(&self, process: String, message: String, ctx: Option<String>) {
+    fn write_info(&self, process: String, message: String, ctx: Option<HashMap<String, String>>) {
         self.add_info(None, SystemProcess::System, process, message, ctx);
     }
 
-    fn write_warning(&self, process: String, message: String, ctx: Option<String>) {
+    fn write_warning(
+        &self,
+        process: String,
+        message: String,
+        ctx: Option<HashMap<String, String>>,
+    ) {
         self.add_info(
             None,
             SystemProcess::System,
@@ -302,11 +307,25 @@ impl Logger for Logs {
         );
     }
 
-    fn write_error(&self, process: String, message: String, ctx: Option<String>) {
+    fn write_error(&self, process: String, message: String, ctx: Option<HashMap<String, String>>) {
         self.add_error(None, SystemProcess::System, process, message, ctx);
     }
 
-    fn write_fatal_error(&self, process: String, message: String, ctx: Option<String>) {
+    fn write_fatal_error(
+        &self,
+        process: String,
+        message: String,
+        ctx: Option<HashMap<String, String>>,
+    ) {
         self.add_fatal_error(SystemProcess::System, process, message, ctx);
+    }
+
+    fn write_debug_info(
+        &self,
+        process: String,
+        message: String,
+        ctx: Option<HashMap<String, String>>,
+    ) {
+        self.add_info(None, SystemProcess::System, process, message, ctx);
     }
 }

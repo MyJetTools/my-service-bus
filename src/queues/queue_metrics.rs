@@ -1,4 +1,6 @@
-use my_service_bus_shared::{queue::TopicQueueType, queue_with_intervals::QueueIndexRange};
+use my_service_bus_abstractions::{
+    queue_with_intervals::QueueIndexRange, subscriber::TopicQueueType,
+};
 
 #[derive(Clone)]
 pub struct TopicQueueMetrics {

@@ -7,13 +7,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-my-service-bus-shared = { branch = "0.2.3", git = "https://github.com/MyJetTools/my-service-bus-shared.git" }
-my-service-bus-tcp-shared = { branch = "0.2.5", git = "https://github.com/MyJetTools/my-service-bus-tcp-shared.git" }
-my-tcp-sockets = { branch = "0.1.6", git = "https://github.com/MyJetTools/my-tcp-sockets.git" }
-rust-extensions = { branch = "0.1.1", git = "https://github.com/MyJetTools/rust-extensions.git" }
-my-http-server = { branch = "0.2.6", git = "https://github.com/MyJetTools/my-http-server.git" }
-my-http-server-swagger = { branch = "0.2.6", git = "https://github.com/MyJetTools/my-http-server-swagger.git" }
-my-http-server-controllers = { branch = "0.2.6", git = "https://github.com/MyJetTools/my-http-server-controllers.git" }
+my-service-bus-abstractions = { tag = "0.1.1", git = "https://github.com/MyJetTools/my-service-bus-abstractions.git" }
+my-service-bus-shared = { tag = "0.3.2", git = "https://github.com/MyJetTools/my-service-bus-shared.git" }
+my-service-bus-tcp-shared = { tag = "0.3.2", git = "https://github.com/MyJetTools/my-service-bus-tcp-shared.git" }
+my-tcp-sockets = { tag = "0.1.7", git = "https://github.com/MyJetTools/my-tcp-sockets.git" }
+rust-extensions = { tag = "0.1.3", git = "https://github.com/MyJetTools/rust-extensions.git" }
+my-http-server = { tag = "0.5.0", git = "https://github.com/MyJetTools/my-http-server.git", features = [
+    "static-files",
+] }
+my-http-server-swagger = { tag = "0.5.0", git = "https://github.com/MyJetTools/my-http-server-swagger.git" }
+my-http-server-controllers = { tag = "0.5.0", git = "https://github.com/MyJetTools/my-http-server-controllers.git" }
 
 
 tonic = { version = "*", features = ["tls", "tls-roots", "prost"] }

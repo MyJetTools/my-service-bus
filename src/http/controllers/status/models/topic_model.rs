@@ -62,7 +62,7 @@ impl TopicJsonContract {
 
         Self {
             id: topic_data.topic_id.to_string(),
-            message_id: topic_data.message_id,
+            message_id: topic_data.message_id.into(),
             packets_per_second: topic_data.metrics.packets_per_second,
             messages_per_second: topic_data.metrics.messages_per_second,
             publish_history: topic_data.metrics.publish_history.get(),
@@ -75,7 +75,7 @@ impl TopicJsonContract {
                 .map(|(page_id, page)| {
                     let metrics = page.get_page_size_metrics();
                     TopicPageJsonContract {
-                        id: *page_id,
+                        id: page_id.into(),
                         amount: metrics.messages_amount,
                         size: metrics.data_size,
                         persist_size: metrics.persist_size,
@@ -94,7 +94,6 @@ pub struct TopicPageJsonContract {
     pub amount: usize,
     pub size: usize,
     pub persist_size: usize,
-
     #[serde(rename = "subPages")]
-    pub sub_pages: Vec<usize>,
+    pub sub_pages: Vec<i64>,
 }

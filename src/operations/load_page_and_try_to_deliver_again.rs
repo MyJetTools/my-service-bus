@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use my_service_bus_shared::page_id::PageId;
+
 use crate::app::AppContext;
 
 use super::delivery::SubscriberPackageBuilder;
@@ -7,7 +9,7 @@ use super::delivery::SubscriberPackageBuilder;
 pub fn load_page_and_try_to_deliver_again(
     app: &Arc<AppContext>,
     topic: Arc<crate::topics::Topic>,
-    page_id: my_service_bus_shared::page_id::PageId,
+    page_id: PageId,
     sub_page_id: my_service_bus_shared::sub_page::SubPageId,
     builder: Option<SubscriberPackageBuilder>,
 ) {

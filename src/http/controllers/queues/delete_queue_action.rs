@@ -12,11 +12,12 @@ use crate::app::AppContext;
     method: "DELETE",
     route: "/Queues",
     controller: "Queues",
-    description: "Queue is deleted",
+    description: "Delete queue",
+    summary: "Deletes queue",
     input_data: "DeleteQueueInputContract",
     result: [
         {status_code: 202, description: "Queue is deleted"},
-             {status_code: 404, description: "Topic or Queue is not found"}
+        {status_code: 404, description: "Topic or Queue is not found"}
     ]
 )]
 pub struct DeleteQueueAction {

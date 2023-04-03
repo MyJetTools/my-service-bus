@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use my_service_bus_shared::MessageId;
+use my_service_bus_abstractions::MessageId;
 
 pub struct DeliveryAttempts {
     attempts: HashMap<MessageId, i32>,

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_service_bus_tcp_shared::MessageToPublishTcpContract;
+use my_service_bus_abstractions::publisher::MessageToPublish;
 
 use crate::{app::AppContext, sessions::SessionId, topics::Topic};
 
@@ -28,7 +28,7 @@ pub async fn create_topic_if_not_exists(
 pub async fn publish(
     app: &Arc<AppContext>,
     topic_id: &str,
-    messages: Vec<MessageToPublishTcpContract>,
+    messages: Vec<MessageToPublish>,
     persist_immediately: bool,
     session_id: SessionId,
 ) -> Result<(), OperationFailResult> {
@@ -60,11 +60,11 @@ pub async fn publish(
 
     if persist_immediately {
         let prev = topic
-            .immediatelly_persist_is_charged
+            .immediately_persist_is_charged
             .swap(true, std::sync::atomic::Ordering::SeqCst);
 
         if !prev {
-            app.immediatly_persist_event_loop.send(topic.clone());
+            app.immediately_persist_event_loop.send(topic.clone());
         }
     }
 

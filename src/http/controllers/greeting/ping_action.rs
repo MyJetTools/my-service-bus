@@ -12,6 +12,7 @@ use super::models::PingInputModel;
     route: "/Greeting/Ping",
     controller: "Greeting",
     description: "Ping Http Session",
+    summary: "Pings Http Session",
     input_data: "PingInputModel",
     ok_result_description: "Session is alive",
     result: [

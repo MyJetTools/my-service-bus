@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_service_bus_shared::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus_tcp_shared::{MySbTcpSerializer, TcpContract};
 use my_tcp_sockets::tcp_connection::SocketConnection;
 
@@ -23,12 +23,12 @@ pub async fn handle(
             name,
             protocol_version,
         } => {
-            let splited: Vec<&str> = name.split(";").collect();
+            let splitted: Vec<&str> = name.split(";").collect();
 
             if let Some(session) = app.sessions.get_by_tcp_connection_id(connection.id).await {
-                if splited.len() == 2 {
+                if splitted.len() == 2 {
                     session
-                        .set_tcp_socket_name(splited[0].to_string(), Some(splited[1].to_string()))
+                        .set_tcp_socket_name(splitted[0].to_string(), Some(splitted[1].to_string()))
                         .await;
                 } else {
                     session.set_tcp_socket_name(name, None).await;

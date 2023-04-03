@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
+use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::{
-    page_id::PageId, protobuf_models::MessageProtobufModel, MessageId, MySbMessageContent,
+    page_id::PageId, protobuf_models::MessageProtobufModel, MySbMessageContent,
 };
 
 use crate::settings::SettingsModel;
@@ -32,7 +33,7 @@ impl MessagesPagesRepo {
         page_id: PageId,
         from_message_id: MessageId,
         to_message_id: MessageId,
-    ) -> Result<Option<BTreeMap<MessageId, MySbMessageContent>>, PersistenceError> {
+    ) -> Result<Option<BTreeMap<i64, MySbMessageContent>>, PersistenceError> {
         match self {
             MessagesPagesRepo::Grpc(repo) => {
                 repo.load_page(topic_id, page_id, from_message_id, to_message_id)

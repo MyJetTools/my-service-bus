@@ -1,7 +1,7 @@
 use app::AppContext;
 
 use background::{
-    DeadSubscribersKickerTimer, GcTimer, ImmediatlyPersistEventLoop, MetricsTimer,
+    DeadSubscribersKickerTimer, GcTimer, ImmediatelyPersistEventLoop, MetricsTimer,
     PersistTopicsAndQueuesTimer,
 };
 use my_service_bus_tcp_shared::{ConnectionAttributes, MySbTcpSerializer};
@@ -13,7 +13,6 @@ use std::time::Duration;
 use std::{net::SocketAddr, sync::Arc};
 
 mod app;
-
 mod errors;
 mod grpc;
 mod http;
@@ -26,10 +25,10 @@ mod queues;
 mod sessions;
 mod settings;
 mod tcp;
+mod utils;
 
 mod background;
 mod topics;
-mod utils;
 pub mod persistence_grpc {
     tonic::include_proto!("persistence");
 }
@@ -40,8 +39,8 @@ async fn main() {
 
     let app = Arc::new(AppContext::new(&settings).await);
 
-    app.immediatly_persist_event_loop
-        .register_event_loop(Arc::new(ImmediatlyPersistEventLoop::new(app.clone())))
+    app.immediately_persist_event_loop
+        .register_event_loop(Arc::new(ImmediatelyPersistEventLoop::new(app.clone())))
         .await;
 
     let mut tasks = Vec::new();
@@ -67,7 +66,7 @@ async fn main() {
         )
         .await;
 
-    crate::http::start_up::setup_server(app.clone());
+    crate::http::start_up::setup_server(&app);
 
     let mut metrics_timer = MyTimer::new(Duration::from_secs(1));
     metrics_timer.register_timer("Metrics", Arc::new(MetricsTimer::new(app.clone())));
@@ -88,7 +87,7 @@ async fn main() {
     metrics_timer.start(app.clone(), app.logs.clone());
     persist_and_gc_timer.start(app.clone(), app.logs.clone());
     dead_subscribers.start(app.clone(), app.logs.clone());
-    app.immediatly_persist_event_loop
+    app.immediately_persist_event_loop
         .start(app.clone(), app.logs.clone())
         .await;
 

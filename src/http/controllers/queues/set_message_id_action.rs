@@ -13,6 +13,7 @@ use crate::app::AppContext;
     route: "/Queues/SetMessageId",
     controller: "Queues",
     description: "Set current queue messageId",
+    summary: "Sets current queue messageId",
     input_data: "SetQueueMessageIdInputContract",
     result: [
         {status_code: 202, description: "Operation is succesfull"},
@@ -39,7 +40,7 @@ async fn handle_request(
         action.app.as_ref(),
         input_data.topic_id.as_str(),
         input_data.queue_id.as_str(),
-        input_data.message_id,
+        input_data.message_id.into(),
     )
     .await?;
 

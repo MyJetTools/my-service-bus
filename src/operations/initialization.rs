@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use my_service_bus_shared::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 use rust_extensions::StopWatch;
 
 use crate::topics::{Topic, TopicSnapshot};
@@ -20,7 +20,10 @@ pub async fn init(app: Arc<AppContext>) {
     for topic_and_queues in topics_and_queues {
         let topic = app
             .topic_list
-            .restore(topic_and_queues.topic_id, topic_and_queues.message_id)
+            .restore(
+                topic_and_queues.topic_id,
+                topic_and_queues.message_id.into(),
+            )
             .await;
 
         for queue in topic_and_queues.queues {
@@ -95,8 +98,8 @@ async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
             None,
             crate::app::logs::SystemProcess::Init,
             "restore_topics_and_queues".to_string(),
-            "Can not restore topics and queues".to_string(),
-            Some(format!("{:?}", err)),
+            format!("Can not restore topics and queues. Err: {:?}", err),
+            None,
         );
 
         tokio::time::sleep(Duration::from_secs(5)).await;

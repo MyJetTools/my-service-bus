@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use my_service_bus_abstractions::subscriber::TopicQueueType;
 use rust_extensions::MyTimerTick;
 
 use crate::app::AppContext;
@@ -38,11 +39,9 @@ impl MyTimerTick for MetricsTimer {
                 );
 
                 let is_permanent = match &queue.queue_type {
-                    my_service_bus_shared::queue::TopicQueueType::Permanent => true,
-                    my_service_bus_shared::queue::TopicQueueType::DeleteOnDisconnect => false,
-                    my_service_bus_shared::queue::TopicQueueType::PermanentWithSingleConnection => {
-                        true
-                    }
+                    TopicQueueType::Permanent => true,
+                    TopicQueueType::DeleteOnDisconnect => false,
+                    TopicQueueType::PermanentWithSingleConnection => true,
                 };
 
                 if is_permanent && queue.subscribers.get_amount() == 0 {

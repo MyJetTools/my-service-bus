@@ -13,6 +13,7 @@ use crate::app::AppContext;
     route: "/Queues",
     controller: "Queues",
     description: "Get list of queues",
+    summary: "Returns list of queues",
     input_data: "GetListOfQueuesInputContract",
     result: [
         {status_code: 200, description: "Session description", model_as_array: "String"},

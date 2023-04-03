@@ -1,6 +1,5 @@
 pub mod builder;
-mod contracts;
-pub mod debug;
+pub mod debug_controller;
 pub mod extensions;
 pub mod greeting;
 mod home_controller;
@@ -10,4 +9,4 @@ pub mod publisher;
 pub mod queues;
 pub mod sessions;
 pub mod status;
-pub mod topics;
+pub mod topics_controller;
