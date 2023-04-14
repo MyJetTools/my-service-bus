@@ -50,6 +50,8 @@ impl<'s> Drop for TopicDataAccess<'s> {
         tokio::spawn(async move {
             let mut write_access = process_taken.lock().await;
             write_access.retain(|p| p != &process);
+
+            println!("Dropped Access {:?}", &write_access);
         });
     }
 }
