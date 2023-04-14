@@ -22,7 +22,7 @@ pub fn load_page_and_try_to_deliver_again(
         )
         .await;
 
-        let mut topic_data = topic.get_access("load_page_and_try_to_deliver_again").await;
+        let mut topic_data = topic.get_access().await;
         topic_data.pages.restore_sub_page(sub_page);
         crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
     });

@@ -31,7 +31,7 @@ pub async fn subscribe_to_queue(
         }
     };
 
-    let mut topic_data = topic.get_access("subscribe_to_queue").await;
+    let mut topic_data = topic.get_access().await;
 
     let topic_queue = topic_data.queues.add_queue_if_not_exists(
         topic.topic_id.to_string(),

@@ -45,7 +45,7 @@ impl StatusJsonResult {
         let sessions = SessionsJsonResult::new(app).await;
 
         for topic in all_topics {
-            let topic_data = topic.get_access("StatusJsonResult").await;
+            let topic_data = topic.get_access().await;
             queues.insert(
                 topic_data.topic_id.to_string(),
                 QueuesJsonResult::new(&topic_data),

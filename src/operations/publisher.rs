@@ -17,7 +17,7 @@ pub async fn create_topic_if_not_exists(
 
     {
         if let Some(session_id) = session_id {
-            let mut topic_data = topic.get_access("create_topic_if_not_exists").await;
+            let mut topic_data = topic.get_access().await;
             topic_data.set_publisher_as_active(session_id);
         }
     }
@@ -50,7 +50,7 @@ pub async fn publish(
 
     let topic = topic.unwrap();
 
-    let mut topic_data = topic.get_access("publish").await;
+    let mut topic_data = topic.get_access().await;
 
     let messages_count = messages.len();
 

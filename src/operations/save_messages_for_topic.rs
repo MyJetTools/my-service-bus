@@ -49,7 +49,7 @@ async fn commit_persisted(
     messages_to_persist: &MessagesToPersistBucket,
     persisted: bool,
 ) {
-    let mut topic_data = topic.get_access("commit_persisted").await;
+    let mut topic_data = topic.get_access().await;
     topic_data
         .pages
         .commit_persisted_messages(sub_page_id, messages_to_persist, persisted);

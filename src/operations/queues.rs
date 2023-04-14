@@ -18,7 +18,7 @@ pub async fn set_message_id(
             topic_id: topic_id.to_string(),
         })?;
 
-    let mut topic_data = topic.get_access("set_message_id").await;
+    let mut topic_data = topic.get_access().await;
 
     let topic_message_id = topic_data.message_id;
 
@@ -48,7 +48,7 @@ pub async fn delete_queue(
             topic_id: topic_id.to_string(),
         })?;
 
-    let mut topic_data = topic.get_access("delete_queue").await;
+    let mut topic_data = topic.get_access().await;
 
     topic_data.queues.delete_queue(queue_id);
 

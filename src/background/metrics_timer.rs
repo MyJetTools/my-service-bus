@@ -24,7 +24,7 @@ impl MyTimerTick for MetricsTimer {
 
         for topic in self.app.topic_list.get_all().await {
             let metrics = {
-                let mut topic_data = topic.get_access("Metrics").await;
+                let mut topic_data = topic.get_access().await;
 
                 topic_data.one_second_tick();
 
