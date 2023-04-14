@@ -169,7 +169,7 @@ impl TopicQueue {
             return Ok(());
         };
 
-        update_delivery_time(subscriber, messages_bucket.confirmed, true);
+        update_delivery_time(subscriber, messages_bucket.ids.len() as usize, true);
 
         self.process_delivered(&messages_bucket.ids);
 
@@ -209,7 +209,7 @@ impl TopicQueue {
 
         let messages_bucket = messages_bucket.unwrap();
 
-        update_delivery_time(subscriber, messages_bucket.confirmed, false);
+        update_delivery_time(subscriber, messages_bucket.ids.len() as usize, false);
 
         self.process_not_delivered(&messages_bucket.ids);
 
