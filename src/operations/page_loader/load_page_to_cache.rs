@@ -40,7 +40,7 @@ pub async fn load_page_to_cache(
 
     {
         let mut topic_data = topic.get_access().await;
-        topic_data.pages.restore_subpage(sub_page);
+        topic_data.pages.restore_sub_page(sub_page);
     }
 
     *dt = DateTimeAsMicroseconds::now();

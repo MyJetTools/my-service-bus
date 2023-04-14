@@ -56,7 +56,7 @@ impl MessagesPageList {
         self.pages.values_mut()
     }
 
-    pub fn restore_subpage(&mut self, sub_page: SubPage) {
+    pub fn restore_sub_page(&mut self, sub_page: SubPage) {
         let page_id = PageId::from_message_id(sub_page.sub_page_id.get_first_message_id());
 
         if let Some(page) = self.pages.get_mut(&page_id) {
@@ -99,7 +99,7 @@ impl MessagesPageList {
     ) -> (Option<SubPage>, Option<MessagesPage>) {
         let page_id: PageId = sub_page_id.into();
 
-        let (gced_sub_page, remove_page) = {
+        let (garbage_collected_sub_page, remove_page) = {
             if let Some(page) = self.pages.get_mut(&page_id) {
                 let result = page.gc_if_possible(&sub_page_id);
                 let remove_page = page.sub_pages_amount() == 0;
@@ -110,13 +110,13 @@ impl MessagesPageList {
             }
         };
 
-        let gced_page = if remove_page {
+        let garbage_collected_page = if remove_page {
             self.pages.remove(&page_id)
         } else {
             None
         };
 
-        (gced_sub_page, gced_page)
+        (garbage_collected_sub_page, garbage_collected_page)
     }
 
     pub fn gc_messages(&mut self, min_message_id: MessageId) {
