@@ -296,6 +296,14 @@ impl TopicQueue {
             },
         }
     }
+
+    pub fn is_permanent(&self) -> bool {
+        match &self.queue_type {
+            TopicQueueType::Permanent => true,
+            TopicQueueType::DeleteOnDisconnect => false,
+            TopicQueueType::PermanentWithSingleConnection => true,
+        }
+    }
 }
 
 fn update_delivery_time(subscriber: &mut QueueSubscriber, amount: usize, positive: bool) {

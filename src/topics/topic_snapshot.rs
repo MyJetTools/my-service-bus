@@ -1,6 +1,7 @@
 use my_service_bus_abstractions::{
     queue_with_intervals::QueueIndexRange, subscriber::TopicQueueType,
 };
+use rust_extensions::ShortString;
 
 #[derive(Clone)]
 pub struct TopicQueueSnapshot {
@@ -10,7 +11,7 @@ pub struct TopicQueueSnapshot {
 }
 #[derive(Clone)]
 pub struct TopicSnapshot {
-    pub topic_id: String,
+    pub topic_id: ShortString,
     pub message_id: i64,
     pub queues: Vec<TopicQueueSnapshot>,
 }

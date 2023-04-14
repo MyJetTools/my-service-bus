@@ -246,9 +246,7 @@ mod tests {
             .add_test(TestConnectionData::new(SESSION_ID, "127.0.0.1"))
             .await;
 
-        app.topic_list
-            .restore(TOPIC_NAME.to_string(), 3.into())
-            .await;
+        app.topic_list.restore(TOPIC_NAME, 3.into()).await;
 
         //Simulate that we have persisted messages
         let msg1 = MessageProtobufModel::new(

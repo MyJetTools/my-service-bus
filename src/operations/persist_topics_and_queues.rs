@@ -10,7 +10,7 @@ pub async fn persist_topics_and_queues(app: &Arc<AppContext>) {
     }
 
     let topics = app.topic_list.get_all().await;
-    let mut topics_snapshots = Vec::new();
+    let mut topics_snapshots = Vec::with_capacity(topics.len());
 
     for topic in &topics {
         topics_snapshots.push(topic.get_topic_snapshot().await);

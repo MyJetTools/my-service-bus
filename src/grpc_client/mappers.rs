@@ -25,7 +25,7 @@ impl From<&TopicSnapshot> for TopicAndQueuesSnapshotGrpcModel {
 impl From<TopicAndQueuesSnapshotGrpcModel> for TopicSnapshot {
     fn from(src: TopicAndQueuesSnapshotGrpcModel) -> Self {
         Self {
-            topic_id: src.topic_id,
+            topic_id: src.topic_id.as_str().into(),
             message_id: src.message_id,
             queues: src
                 .queue_snapshots

@@ -50,10 +50,10 @@ impl TopicListInner {
         return Ok(result);
     }
 
-    pub fn restore(&mut self, topic_id: String, message_id: MessageId) -> Arc<Topic> {
+    pub fn restore(&mut self, topic_id: &str, message_id: MessageId) -> Arc<Topic> {
         let topic = Topic::new(topic_id.to_string(), message_id.get_value());
         let result = Arc::new(topic);
-        self.topics.insert(topic_id, result.clone());
+        self.topics.insert(topic_id.to_string(), result.clone());
 
         self.snapshot_id += 1;
         return result;

@@ -55,7 +55,7 @@ impl Topic {
 
         TopicSnapshot {
             message_id: topic_data.message_id.into(),
-            topic_id: topic_data.topic_id.to_string(),
+            topic_id: topic_data.topic_id.as_str().into(),
             queues: topic_data.queues.get_snapshot_to_persist(),
         }
     }

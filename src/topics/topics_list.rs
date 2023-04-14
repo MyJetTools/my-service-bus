@@ -38,7 +38,7 @@ impl TopicsList {
         write_access.add_if_not_exists(topic_id)
     }
 
-    pub async fn restore(&self, topic_id: String, message_id: MessageId) -> Arc<Topic> {
+    pub async fn restore(&self, topic_id: &str, message_id: MessageId) -> Arc<Topic> {
         let mut write_access = self.data.write().await;
         write_access.restore(topic_id, message_id)
     }

@@ -21,7 +21,7 @@ pub async fn init(app: Arc<AppContext>) {
         let topic = app
             .topic_list
             .restore(
-                topic_and_queues.topic_id,
+                topic_and_queues.topic_id.as_str(),
                 topic_and_queues.message_id.into(),
             )
             .await;
