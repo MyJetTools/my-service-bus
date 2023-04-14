@@ -23,6 +23,7 @@ pub async fn handle(
             name,
             protocol_version,
         } => {
+            println!("Greeting: {}. Protocol: {}", name, protocol_version);
             let splitted: Vec<&str> = name.split(";").collect();
 
             if let Some(session) = app.sessions.get_by_tcp_connection_id(connection.id).await {
@@ -45,6 +46,7 @@ pub async fn handle(
             persist_immediately,
             data_to_publish,
         } => {
+            println!("Publish: {}.", topic_id);
             if let Some(session_id) = app
                 .sessions
                 .resolve_session_id_by_tcp_connection_id(connection.id)
@@ -84,6 +86,7 @@ pub async fn handle(
             queue_id,
             queue_type,
         } => {
+            println!("Subscribe: {}/{}.", topic_id, queue_id);
             if let Some(session) = app.sessions.get_by_tcp_connection_id(connection.id).await {
                 operations::subscriber::subscribe_to_queue(
                     app, topic_id, queue_id, queue_type, &session,
@@ -109,6 +112,7 @@ pub async fn handle(
             queue_id,
             confirmation_id,
         } => {
+            println!("Confirm: {}/{}.", topic_id, queue_id);
             operations::delivery_confirmation::all_confirmed(
                 app,
                 topic_id.as_str(),
