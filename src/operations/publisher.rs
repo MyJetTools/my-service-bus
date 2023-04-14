@@ -39,7 +39,7 @@ pub async fn publish(
     let topic = app.topic_list.get(topic_id).await;
 
     if topic.is_none() {
-        if app.auto_create_topic_on_publish {
+        if app.settings.auto_create_topic_on_publish {
             app.topic_list.add_if_not_exists(topic_id).await?;
         } else {
             return Err(OperationFailResult::TopicNotFound {
@@ -68,6 +68,6 @@ pub async fn publish(
         }
     }
 
-    super::delivery::start_new(&app, &topic, &mut topic_data);
+    super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
     Ok(())
 }

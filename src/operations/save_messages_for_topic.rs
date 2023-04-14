@@ -10,7 +10,7 @@ pub async fn save_messages_for_topic(app: &Arc<AppContext>, topic: &Arc<Topic>) 
     {
         let messages = messages_to_persist.get();
 
-        let result = if app.persist_compressed {
+        let result = if app.settings.persist_compressed {
             app.messages_pages_repo
                 .save_messages(topic.topic_id.as_str(), messages)
                 .await

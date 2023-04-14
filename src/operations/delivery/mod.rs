@@ -6,4 +6,4 @@ mod subscriber_package_builder;
 
 pub use subscriber_package_builder::*;
 
-pub use delivery::{continue_delivering, start_new};
+pub use delivery::*;

@@ -19,7 +19,7 @@ pub async fn subscribe_to_queue(
     let mut topic = app.topic_list.get(topic_id.as_str()).await;
 
     if topic.is_none() {
-        if app.auto_create_topic_on_subscribe {
+        if app.settings.auto_create_topic_on_subscribe {
             topic = Some(app.topic_list.add_if_not_exists(topic_id.as_str()).await?);
         } else {
             return Err(OperationFailResult::TopicNotFound { topic_id });
@@ -65,7 +65,7 @@ pub async fn subscribe_to_queue(
         remove_subscriber(topic_queue, kicked_subscriber);
     }
 
-    super::delivery::start_new(&app, &topic, &mut topic_data);
+    super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
 
     Ok(())
 }

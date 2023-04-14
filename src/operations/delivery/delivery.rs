@@ -13,7 +13,11 @@ use crate::{
 
 use super::SubscriberPackageBuilder;
 
-pub fn start_new(app: &Arc<AppContext>, topic: &Arc<Topic>, topic_data: &mut TopicData) {
+pub fn try_to_deliver_to_subscribers(
+    app: &Arc<AppContext>,
+    topic: &Arc<Topic>,
+    topic_data: &mut TopicData,
+) {
     while let Some(package_builder) = build_new_package_builder(topic, topic_data) {
         compile_and_deliver(app, package_builder, topic, topic_data);
     }
@@ -51,31 +55,6 @@ fn build_new_package_builder(
     None
 }
 
-pub async fn continue_delivering(
-    app: &Arc<AppContext>,
-    topic: &Arc<Topic>,
-    package_builder: SubscriberPackageBuilder,
-) {
-    let mut topic_data = topic.get_access().await;
-    let queue = topic_data.queues.get_mut(package_builder.queue_id.as_str());
-
-    if queue.is_none() {
-        return;
-    }
-
-    let queue = queue.unwrap();
-
-    let subscriber = queue
-        .subscribers
-        .get_by_id_mut(package_builder.subscriber_id);
-
-    if subscriber.is_none() {
-        return;
-    }
-
-    compile_and_deliver(app, package_builder, topic, &mut topic_data);
-}
-
 fn compile_and_deliver(
     app: &Arc<AppContext>,
     mut package_builder: SubscriberPackageBuilder,
@@ -93,21 +72,20 @@ fn compile_and_deliver(
                 break;
             }
 
-            let message_id = message_id.unwrap();
+            let message_id = message_id.unwrap().as_message_id();
 
-            let page_id = PageId::from_message_id(message_id.as_message_id());
-            let sub_page_id = SubPageId::from_message_id(message_id.as_message_id());
+            let page_id: PageId = message_id.into();
+
+            let sub_page_id: SubPageId = message_id.into();
 
             let page = topic_data.pages.get_page(page_id);
 
             if page.is_none() {
-                start_loading(
+                crate::operations::load_page_and_try_to_deliver_again(
                     app,
-                    topic,
-                    topic_data,
+                    topic.clone(),
                     page_id,
                     sub_page_id,
-                    package_builder,
                 );
 
                 return;
@@ -118,13 +96,16 @@ fn compile_and_deliver(
             let sub_page = page.get_sub_page(&sub_page_id);
 
             if sub_page.is_none() {
-                start_loading(
-                    app,
-                    topic,
+                crate::operations::send_package::send_new_messages_to_deliver(
+                    package_builder,
                     topic_data,
+                );
+
+                crate::operations::load_page_and_try_to_deliver_again(
+                    app,
+                    topic.clone(),
                     page_id,
                     sub_page_id,
-                    package_builder,
                 );
 
                 return;
@@ -141,13 +122,11 @@ fn compile_and_deliver(
                 }
                 GetMessageResult::Missing => {}
                 GetMessageResult::GarbageCollected => {
-                    start_loading(
+                    crate::operations::load_page_and_try_to_deliver_again(
                         app,
-                        topic,
-                        topic_data,
+                        topic.clone(),
                         page_id,
                         sub_page_id,
-                        package_builder,
                     );
                     return;
                 }
@@ -156,35 +135,6 @@ fn compile_and_deliver(
     }
 
     crate::operations::send_package::send_new_messages_to_deliver(package_builder, topic_data);
-}
-
-fn start_loading(
-    app: &Arc<AppContext>,
-    topic: &Arc<Topic>,
-    topic_data: &mut TopicData,
-    page_id: PageId,
-    sub_page_id: SubPageId,
-    package_builder: SubscriberPackageBuilder,
-) {
-    if package_builder.get_data_size() > 0 {
-        crate::operations::send_package::send_new_messages_to_deliver(package_builder, topic_data);
-
-        crate::operations::load_page_and_try_to_deliver_again(
-            app,
-            topic.clone(),
-            page_id,
-            sub_page_id,
-            None,
-        );
-    } else {
-        crate::operations::load_page_and_try_to_deliver_again(
-            app,
-            topic.clone(),
-            page_id,
-            sub_page_id,
-            Some(package_builder),
-        );
-    }
 }
 
 #[cfg(test)]
@@ -206,7 +156,7 @@ mod tests {
     use super::*;
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn test_publish_subsribe_case() {
+    async fn test_publish_subscribe_case() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
         const SESSION_ID: SessionId = 13;
@@ -214,7 +164,7 @@ mod tests {
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
 
-        let app = Arc::new(AppContext::new(&settings).await);
+        let app = Arc::new(AppContext::new(settings).await);
 
         let session = app
             .sessions
@@ -279,7 +229,7 @@ mod tests {
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
 
-        let app = Arc::new(AppContext::new(&settings).await);
+        let app = Arc::new(AppContext::new(settings).await);
 
         let session = app
             .sessions

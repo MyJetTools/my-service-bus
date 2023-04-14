@@ -33,10 +33,10 @@ pub fn send_new_messages_to_deliver(builder: SubscriberPackageBuilder, topic_dat
             messages_on_delivery,
         } => {
             if let Some(queue) = topic_data.queues.get_mut(queue_id.as_str()) {
-                if let Some(subsciber) = queue.subscribers.get_by_id_mut(subscriber_id) {
-                    subsciber.set_messages_on_delivery(messages_on_delivery);
+                if let Some(subscriber) = queue.subscribers.get_by_id_mut(subscriber_id) {
+                    subscriber.set_messages_on_delivery(messages_on_delivery);
                     send_package(session, tcp_contract);
-                    subsciber.metrics.set_started_delivery();
+                    subscriber.metrics.set_started_delivery();
                 }
             }
         }

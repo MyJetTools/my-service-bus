@@ -41,7 +41,7 @@ async fn handle_request(
         .get_http_session(http_input.authorization.as_str())
         .await?;
 
-    let mut messages_to_publish = Vec::new();
+    let mut messages_to_publish = Vec::with_capacity(http_input.messages.len());
 
     let mut content_size = 0;
 

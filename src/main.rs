@@ -36,7 +36,7 @@ pub mod persistence_grpc {
 async fn main() {
     let settings = settings::SettingsModel::read().await;
 
-    let app = Arc::new(AppContext::new(&settings).await);
+    let app = Arc::new(AppContext::new(settings).await);
 
     app.immediately_persist_event_loop
         .register_event_loop(Arc::new(ImmediatelyPersistEventLoop::new(app.clone())))
@@ -70,7 +70,7 @@ async fn main() {
     let mut metrics_timer = MyTimer::new(Duration::from_secs(1));
     metrics_timer.register_timer("Metrics", Arc::new(MetricsTimer::new(app.clone())));
 
-    let mut persist_and_gc_timer = MyTimer::new(settings.persist_timer_interval);
+    let mut persist_and_gc_timer = MyTimer::new(app.settings.persist_timer_interval);
     persist_and_gc_timer.register_timer(
         "PersistTopicsAndQueues",
         Arc::new(PersistTopicsAndQueuesTimer::new(app.clone())),
