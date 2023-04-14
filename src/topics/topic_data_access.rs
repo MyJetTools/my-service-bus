@@ -43,15 +43,13 @@ impl<'s> DerefMut for TopicDataAccess<'s> {
 
 impl<'s> Drop for TopicDataAccess<'s> {
     fn drop(&mut self) {
-        println!("Dropping Access {}", self.topic_data.topic_id);
+        println!("{}: Dropping Access ", self.topic_data.topic_id);
         let process_taken = self.process_taken.clone();
         let process = self.process.clone();
 
         tokio::spawn(async move {
             let mut write_access = process_taken.lock().await;
             write_access.retain(|p| p != &process);
-
-            println!("Dropped Access {:?}", &write_access);
         });
     }
 }

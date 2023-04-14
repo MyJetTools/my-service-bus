@@ -35,13 +35,15 @@ impl Topic {
     }
 
     pub async fn get_access<'s>(&'s self, process: &'static str) -> TopicDataAccess<'s> {
-        println!(
-            "{}. Getting access with process: {}",
-            self.topic_id, process
-        );
         let process_taken = {
             let mut process_taken = self.process_taken.lock().await;
             process_taken.push(process);
+
+            println!(
+                "{}. Getting access with process: {}. Already Has: {:?}",
+                self.topic_id, process, &self.process_taken
+            );
+
             self.process_taken.clone()
         };
         let access = self.data.lock().await;
