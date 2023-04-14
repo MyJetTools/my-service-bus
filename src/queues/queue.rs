@@ -158,6 +158,17 @@ impl TopicQueue {
 
         let messages_bucket = messages_bucket.unwrap();
 
+        if messages_bucket.ids.len() == 0 {
+            println!(
+                "{}/{} confirmed_delivered: No messages on delivery at subscriber {}",
+                self.topic_id,
+                self.queue_id,
+                subscriber_id.get_value()
+            );
+
+            return Ok(());
+        };
+
         update_delivery_time(subscriber, messages_bucket.confirmed, true);
 
         self.process_delivered(&messages_bucket.ids);

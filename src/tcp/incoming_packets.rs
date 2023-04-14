@@ -109,7 +109,6 @@ pub async fn handle(
             queue_id,
             confirmation_id,
         } => {
-            println!("Confirm: {}/{}.", topic_id, queue_id);
             operations::delivery_confirmation::all_confirmed(
                 app,
                 topic_id.as_str(),
@@ -118,7 +117,6 @@ pub async fn handle(
             )
             .await?;
 
-            println!("Confirm done: {}/{}.", topic_id, queue_id);
             Ok(())
         }
         TcpContract::CreateTopicIfNotExists { topic_id } => {
