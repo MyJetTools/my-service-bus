@@ -26,7 +26,7 @@ impl MyTimerTick for GcTimer {
             topic_data.gc_queues_with_no_subscribers(self.app.settings.queue_gc_timeout, now);
 
             if let Some(min_message_id) = topic_data.get_min_message_id() {
-                topic_data.gc_messages(min_message_id);
+                //  topic_data.gc_messages(min_message_id);
             }
         }
         crate::operations::gc_http_connections(self.app.as_ref()).await;
