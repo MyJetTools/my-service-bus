@@ -23,8 +23,7 @@ pub fn try_to_deliver_to_subscribers(
     topic: &Arc<Topic>,
     topic_data: &mut TopicData,
 ) {
-    let pages = &topic_data.pages;
-
+    println!("Started Delivery {}", topic.topic_id);
     let mut to_send = LazyVec::new();
 
     for topic_queue in topic_data.queues.get_all_mut() {
@@ -39,8 +38,14 @@ pub fn try_to_deliver_to_subscribers(
 
             let (subscriber_id, session) = subscriber.unwrap();
 
-            let package_builder =
-                compile_package(app, topic, topic_queue, pages, subscriber_id, session);
+            let package_builder = compile_package(
+                app,
+                topic,
+                topic_queue,
+                &topic_data.pages,
+                subscriber_id,
+                session,
+            );
 
             to_send.add(package_builder);
         }
@@ -54,6 +59,8 @@ pub fn try_to_deliver_to_subscribers(
             );
         }
     }
+
+    println!("Ended Delivery {}", topic.topic_id);
 }
 
 fn compile_package(
