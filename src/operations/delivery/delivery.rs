@@ -23,7 +23,6 @@ pub fn try_to_deliver_to_subscribers(
     topic: &Arc<Topic>,
     topic_data: &mut TopicData,
 ) {
-    println!("Started Delivery {}", topic.topic_id);
     let mut to_send = LazyVec::new();
 
     for topic_queue in topic_data.queues.get_all_mut() {
@@ -59,8 +58,6 @@ pub fn try_to_deliver_to_subscribers(
             );
         }
     }
-
-    println!("Ended Delivery {}", topic.topic_id);
 }
 
 fn compile_package(
