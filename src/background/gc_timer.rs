@@ -28,9 +28,9 @@ impl MyTimerTick for GcTimer {
             topic_data.gc_queues_with_no_subscribers(self.app.settings.queue_gc_timeout, now);
 
             println!("get_min_message_id {}", topic.topic_id);
-            if let Some(min_message_id) = topic_data.get_min_message_id() {
-                topic_data.gc_messages(min_message_id);
-            }
+            //if let Some(min_message_id) = topic_data.get_min_message_id() {
+            //    topic_data.gc_messages(min_message_id);
+            // }
         }
 
         println!("GC get_min_message_id");
