@@ -34,7 +34,7 @@ pub struct TopicJsonContract {
 
 impl TopicJsonContract {
     pub fn new(topic_data: &TopicData) -> Self {
-        let mut publishers = Vec::new();
+        let mut publishers = Vec::with_capacity(topic_data.publishers.len());
 
         let mut subscribers = Vec::new();
 
@@ -48,14 +48,7 @@ impl TopicJsonContract {
         for queue in topic_data.queues.get_all() {
             if let Some(queue_subscribers) = queue.subscribers.get_all() {
                 for subscriber in queue_subscribers {
-                    subscribers.push(TopicQueueSubscriberJsonModel {
-                        session_id: subscriber.session.id,
-                        subscriber_id: subscriber.id.get_value(),
-                        delivery_state: subscriber.delivery_state.to_u8(),
-                        history: subscriber.metrics.delivery_history.get(),
-                        active: subscriber.metrics.active,
-                        queue_id: queue.queue_id.to_string(),
-                    });
+                    subscribers.push(TopicQueueSubscriberJsonModel::new(subscriber));
                 }
             }
         }

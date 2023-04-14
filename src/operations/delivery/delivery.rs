@@ -26,28 +26,7 @@ pub fn try_to_deliver_to_subscribers(
     let mut to_send = LazyVec::new();
 
     for topic_queue in topic_data.queues.get_all_mut() {
-        while topic_queue.queue.len() > 0 {
-            let subscriber = topic_queue
-                .subscribers
-                .get_and_rent_next_subscriber_ready_to_deliver();
-
-            if subscriber.is_none() {
-                break;
-            }
-
-            let (subscriber_id, session) = subscriber.unwrap();
-
-            let package_builder = compile_package(
-                app,
-                topic,
-                topic_queue,
-                &topic_data.pages,
-                subscriber_id,
-                session,
-            );
-
-            to_send.add(package_builder);
-        }
+        compile_packages(app, topic, &mut to_send, topic_queue, &topic_data.pages);
     }
 
     if let Some(to_send) = to_send.get_result() {
@@ -57,6 +36,31 @@ pub fn try_to_deliver_to_subscribers(
                 topic_data,
             );
         }
+    }
+}
+
+fn compile_packages(
+    app: &Arc<AppContext>,
+    topic: &Arc<Topic>,
+    to_send: &mut LazyVec<SubscriberPackageBuilder>,
+    topic_queue: &mut TopicQueue,
+    pages: &MessagesPageList,
+) {
+    while topic_queue.queue.len() > 0 {
+        let subscriber = topic_queue
+            .subscribers
+            .get_and_rent_next_subscriber_ready_to_deliver();
+
+        if subscriber.is_none() {
+            break;
+        }
+
+        let (subscriber_id, session) = subscriber.unwrap();
+
+        let package_builder =
+            compile_package(app, topic, topic_queue, pages, subscriber_id, session);
+
+        to_send.add(package_builder);
     }
 }
 

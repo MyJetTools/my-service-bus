@@ -22,23 +22,21 @@ pub async fn all_confirmed(
 
     let mut topic_data = topic.get_access().await;
 
-    {
-        let topic_queue =
-            topic_data
-                .queues
-                .get_mut(queue_id)
-                .ok_or(OperationFailResult::QueueNotFound {
-                    queue_id: queue_id.to_string(),
-                })?;
+    let topic_queue =
+        topic_data
+            .queues
+            .get_mut(queue_id)
+            .ok_or(OperationFailResult::QueueNotFound {
+                queue_id: queue_id.to_string(),
+            })?;
 
-        if let Err(err) = topic_queue.confirmed_delivered(subscriber_id) {
-            app.logs.add_fatal_error(
-                crate::app::logs::SystemProcess::DeliveryOperation,
-                "confirm_delivery".to_string(),
-                format!("{:?}", err),
-                None,
-            );
-        }
+    if let Err(err) = topic_queue.confirmed_delivered(subscriber_id) {
+        app.logs.add_fatal_error(
+            crate::app::logs::SystemProcess::DeliveryOperation,
+            "confirm_delivery".to_string(),
+            format!("{:?}", err),
+            None,
+        );
     }
 
     super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
