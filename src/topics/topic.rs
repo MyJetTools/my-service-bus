@@ -31,7 +31,11 @@ impl Topic {
         }
     }
 
-    pub async fn get_access<'s>(&'s self) -> TopicDataAccess<'s> {
+    pub async fn get_access<'s>(&'s self, process: &str) -> TopicDataAccess<'s> {
+        println!(
+            "Getting access for topic :{} with process: {}",
+            self.topic_id, process
+        );
         let access = self.data.lock().await;
         TopicDataAccess::new(access)
     }

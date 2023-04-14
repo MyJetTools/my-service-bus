@@ -272,7 +272,9 @@ mod tests {
 
         {
             let topic = app.topic_list.get(TOPIC_NAME).await.unwrap();
-            let mut topic_data = topic.get_access().await;
+            let mut topic_data = topic
+                .get_access("test_we_subscriber_and_deliver_persisted_messages")
+                .await;
 
             let mut queue_with_intervals = QueueWithIntervals::new();
 

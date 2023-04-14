@@ -54,7 +54,7 @@ async fn handle_request(
     let mut result = Vec::new();
 
     {
-        let topic_data = topic.get_access().await;
+        let topic_data = topic.get_access("Http GetQueues").await;
         for queue in topic_data.queues.get_queues() {
             result.push(queue.queue_id.clone());
         }

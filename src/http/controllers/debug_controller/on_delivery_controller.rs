@@ -47,7 +47,7 @@ async fn handle_request(
     let topic = topic.unwrap();
 
     let ids = {
-        let topic_data = topic.get_access().await;
+        let topic_data = topic.get_access("Http on delivery").await;
 
         let queue = topic_data.queues.get(input_model.queue_id.as_str());
 

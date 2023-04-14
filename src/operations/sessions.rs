@@ -4,7 +4,7 @@ pub async fn disconnect(app: &AppContext, disconnected_session: &MyServiceBusSes
     let topics = app.topic_list.get_all().await;
 
     for topic in &topics {
-        let mut topic_data = topic.get_access().await;
+        let mut topic_data = topic.get_access("disconnect").await;
 
         let removed_subscribers = topic_data.disconnect(disconnected_session.id);
 

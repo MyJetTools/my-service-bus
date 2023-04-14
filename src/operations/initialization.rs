@@ -29,7 +29,7 @@ pub async fn init(app: Arc<AppContext>) {
         for queue in topic_and_queues.queues {
             let queue_with_intervals = QueueWithIntervals::restore(queue.ranges);
 
-            let mut topic_data = topic.get_access().await;
+            let mut topic_data = topic.get_access("init").await;
             topic_data.queues.restore(
                 topic.topic_id.to_string(),
                 queue.queue_id.to_string(),
@@ -72,7 +72,7 @@ async fn restore_topic_pages(app: Arc<AppContext>, topic: Arc<Topic>) {
     )
     .await;
 
-    let mut topic_data = topic.get_access().await;
+    let mut topic_data = topic.get_access("restore_topic_pages").await;
     topic_data.pages.restore_sub_page(sub_page);
 }
 

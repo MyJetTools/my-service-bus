@@ -8,7 +8,7 @@ use crate::{
 pub async fn get_next_messages_to_persist(
     topic: &Topic,
 ) -> Option<(SubPageId, MessagesToPersistBucket)> {
-    let mut topic_data = topic.get_access().await;
+    let mut topic_data = topic.get_access("get_next_messages_to_persist").await;
     return get_messages_to_persist(&mut topic_data);
 }
 
