@@ -6,7 +6,7 @@ use crate::app::AppContext;
 
 #[my_http_server_swagger::http_route(
     method: "GET",
-    route: "/Logs/Topic/{topicId}",
+    route: "/Logs/Topic",
 )]
 pub struct SelectTopicAction {
     app: Arc<AppContext>,
