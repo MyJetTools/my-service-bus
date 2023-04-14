@@ -28,7 +28,6 @@ pub struct TopicData {
     pub metrics: TopicMetrics,
     pub pages: MessagesPageList,
     pub publishers: HashMap<SessionId, u8>,
-    pub process_taken: Arc<Mutex<Vec<&'static str>>>,
 }
 
 impl TopicData {
@@ -40,7 +39,6 @@ impl TopicData {
             metrics: TopicMetrics::new(),
             pages: MessagesPageList::new(),
             publishers: HashMap::new(),
-            process_taken: Arc::new(Mutex::new(Vec::new())),
         }
     }
 

@@ -1,4 +1,5 @@
 use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
 use std::time::Duration;
 
 use my_service_bus_abstractions::MessageId;
@@ -19,6 +20,7 @@ pub struct Topic {
     data: Mutex<TopicData>,
     pub restore_page_lock: Mutex<DateTimeAsMicroseconds>,
     pub immediately_persist_is_charged: AtomicBool,
+    pub process_taken: Arc<Mutex<Vec<&'static str>>>,
 }
 
 impl Topic {
@@ -28,6 +30,7 @@ impl Topic {
             data: Mutex::new(TopicData::new(topic_id, message_id)),
             restore_page_lock: Mutex::new(DateTimeAsMicroseconds::now()),
             immediately_persist_is_charged: AtomicBool::new(false),
+            process_taken: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -36,13 +39,12 @@ impl Topic {
             "{}. Getting access with process: {}",
             self.topic_id, process
         );
-        let access = self.data.lock().await;
-
         let process_taken = {
-            let mut process_taken = access.process_taken.lock().await;
+            let mut process_taken = self.process_taken.lock().await;
             process_taken.push(process);
-            access.process_taken.clone()
+            self.process_taken.clone()
         };
+        let access = self.data.lock().await;
 
         println!("{}. Got access with process: {}", self.topic_id, process);
         TopicDataAccess::new(access, process_taken, process)
