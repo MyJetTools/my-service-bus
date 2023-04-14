@@ -5,7 +5,7 @@ use rust_extensions::{events_loop::EventsLoop, AppStates, ApplicationStates};
 use tokio::sync::RwLock;
 
 use crate::{
-    persistence::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo},
+    grpc_client::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo},
     queue_subscribers::SubscriberIdGenerator,
     sessions::SessionsList,
     settings::SettingsModel,

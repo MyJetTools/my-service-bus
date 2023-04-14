@@ -49,4 +49,4 @@ uuid = { version = "*", features = ["serde", "v4"] }
 
 
 [build-dependencies]
-tonic-build = { version = "*", features = ["prost"] }
+ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.0" }

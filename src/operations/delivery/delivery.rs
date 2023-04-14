@@ -291,19 +291,19 @@ mod tests {
             .await;
 
         //Simulate that we have persisted messages
-        let msg1 = MessageProtobufModel {
-            headers: vec![],
-            data: vec![0u8, 1u8, 2u8],
-            message_id: 1,
-            created: DateTimeAsMicroseconds::now().unix_microseconds,
-        };
+        let msg1 = MessageProtobufModel::new(
+            1.into(),
+            DateTimeAsMicroseconds::now(),
+            vec![0u8, 1u8, 2u8],
+            vec![],
+        );
 
-        let msg2 = MessageProtobufModel {
-            headers: vec![],
-            data: vec![0u8, 1u8, 2u8],
-            message_id: 2,
-            created: DateTimeAsMicroseconds::now().unix_microseconds,
-        };
+        let msg2 = MessageProtobufModel::new(
+            2.into(),
+            DateTimeAsMicroseconds::now(),
+            vec![0u8, 1u8, 2u8],
+            vec![],
+        );
 
         let messages_to_persist = vec![msg1, msg2];
 

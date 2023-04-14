@@ -4,6 +4,7 @@ use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::{
     page_id::PageId, protobuf_models::MessageProtobufModel, MySbMessageContent,
 };
+use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::settings::SettingsModel;
 
@@ -83,6 +84,16 @@ impl MessagesPagesRepo {
         match result {
             Ok(result) => Some(result),
             Err(_) => None,
+        }
+    }
+
+    pub async fn delete_topic(&self, topic_id: &str, hard_delete_moment: DateTimeAsMicroseconds) {
+        match self {
+            MessagesPagesRepo::Grpc(repo) => repo.delete_topic(topic_id, hard_delete_moment).await,
+            #[cfg(test)]
+            MessagesPagesRepo::Mock(_) => {
+                println!("Delete topic {} is invoked", topic_id);
+            }
         }
     }
 }

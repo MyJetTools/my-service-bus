@@ -10,7 +10,11 @@ use my_service_bus_shared::{
     MySbMessageContent,
 };
 
-use crate::{app::logs::Logs, persistence::MessagesPagesRepo, topics::Topic};
+use crate::{
+    app::logs::Logs,
+    grpc_client::{MessagesPagesRepo, PersistenceError},
+    topics::Topic,
+};
 
 pub async fn load_page(
     topic: &Topic,
@@ -53,7 +57,7 @@ async fn load_page_from_repo(
 
         let err = result.err().unwrap();
         match err {
-            crate::persistence::PersistenceError::ZipOperationError(zip_error) => {
+            PersistenceError::ZipOperationError(zip_error) => {
                 let mut ctx = HashMap::new();
 
                 ctx.insert("pageId".to_string(), page_id.get_value().to_string());

@@ -14,12 +14,11 @@ use std::{net::SocketAddr, sync::Arc};
 
 mod app;
 mod errors;
-mod grpc;
+mod grpc_client;
 mod http;
 mod messages_page;
 mod metric_data;
 mod operations;
-mod persistence;
 mod queue_subscribers;
 mod queues;
 mod sessions;

@@ -164,6 +164,18 @@ impl MessagesPagesGrpcRepo {
 
         Ok(Some(messages))
     }
+
+    pub async fn delete_topic(&self, topic_id: &str, hard_delete_moment: DateTimeAsMicroseconds) {
+        let mut grpc_client = self.create_grpc_service();
+
+        grpc_client
+            .delete_topic(DeleteTopicGrpcRequest {
+                topic_id: topic_id.to_string(),
+                delete_after: hard_delete_moment.unix_microseconds,
+            })
+            .await
+            .unwrap();
+    }
 }
 
 fn split(src: &[u8], max_payload_size: usize) -> Vec<Vec<u8>> {

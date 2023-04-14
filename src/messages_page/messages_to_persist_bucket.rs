@@ -9,7 +9,7 @@ pub struct MessagesToPersistBucket {
 
 impl MessagesToPersistBucket {
     pub fn new(id: usize, messages_to_persist: Vec<MessageProtobufModel>) -> Self {
-        let first_message_id = messages_to_persist[0].message_id;
+        let first_message_id = messages_to_persist[0].get_message_id().get_value();
 
         Self {
             messages_to_persist: Some(messages_to_persist),

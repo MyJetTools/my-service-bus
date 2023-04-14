@@ -1,3 +1,4 @@
+mod delete_topic;
 pub mod delivery;
 mod fail_result;
 mod gc_http_connections;
@@ -18,6 +19,7 @@ pub mod queues;
 pub mod sessions;
 pub mod subscriber;
 
+pub use delete_topic::*;
 pub use fail_result::*;
 pub use gc_http_connections::gc_http_connections;
 pub use gc_message_pages::gc_message_pages;

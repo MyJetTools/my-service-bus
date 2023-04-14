@@ -14,6 +14,10 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         app.clone(),
     )));
 
+    controllers.register_delete_action(Arc::new(super::topics_controller::DeleteTopicAction::new(
+        app.clone(),
+    )));
+
     controllers.register_delete_action(Arc::new(super::sessions::DeleteSessionAction::new(
         app.clone(),
     )));

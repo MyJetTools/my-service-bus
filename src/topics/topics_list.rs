@@ -100,4 +100,9 @@ impl TopicsList {
             topic.one_second_tick().await;
         }
     }
+
+    pub async fn delete_topic(&self, topic_id: &str) -> Option<Arc<Topic>> {
+        let mut write_access = self.data.write().await;
+        write_access.topics.remove(topic_id)
+    }
 }

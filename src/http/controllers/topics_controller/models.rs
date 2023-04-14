@@ -1,6 +1,7 @@
 use crate::topics::Topic;
 
 use my_http_server_swagger::{MyHttpInput, MyHttpObjectStructure};
+use rust_extensions::date_time::DateTimeAsMicroseconds;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
@@ -29,4 +30,12 @@ impl JsonTopicResult {
 pub struct CreateTopicRequestContract {
     #[http_query(name = "topicId"; description = "Id of topic")]
     pub topic_id: String,
+}
+
+#[derive(Debug, MyHttpInput)]
+pub struct DeleteTopicRequestContract {
+    #[http_query(name = "topicId"; description = "Id of topic")]
+    pub topic_id: String,
+    #[http_query(name = "hardDeleteMoment"; description = "Moment when all data is going to be deleted forever")]
+    pub hard_delete_moment: DateTimeAsMicroseconds,
 }

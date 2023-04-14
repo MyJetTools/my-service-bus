@@ -3,7 +3,8 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use tokio::{fs::File, io::AsyncReadExt};
 
-use crate::persistence::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo};
+use crate::grpc_client::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo};
+
 #[cfg(test)]
 const TEST_GRPC_URL: &str = "test";
 
