@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use my_service_bus_abstractions::publisher::MessageToPublish;
 use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
@@ -9,6 +10,7 @@ use my_service_bus_shared::page_id::PageId;
 use my_service_bus_shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use rust_extensions::lazy::LazyVec;
+use tokio::sync::Mutex;
 
 use crate::messages_page::MessagesPageList;
 use crate::queue_subscribers::QueueSubscriber;
@@ -26,6 +28,7 @@ pub struct TopicData {
     pub metrics: TopicMetrics,
     pub pages: MessagesPageList,
     pub publishers: HashMap<SessionId, u8>,
+    pub process_taken: Arc<Mutex<Vec<&'static str>>>,
 }
 
 impl TopicData {
@@ -37,6 +40,7 @@ impl TopicData {
             metrics: TopicMetrics::new(),
             pages: MessagesPageList::new(),
             publishers: HashMap::new(),
+            process_taken: Arc::new(Mutex::new(Vec::new())),
         }
     }
 

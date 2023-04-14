@@ -31,13 +31,21 @@ impl Topic {
         }
     }
 
-    pub async fn get_access<'s>(&'s self, process: &str) -> TopicDataAccess<'s> {
+    pub async fn get_access<'s>(&'s self, process: &'static str) -> TopicDataAccess<'s> {
         println!(
-            "Getting access for topic :{} with process: {}",
+            "{}. Getting access with process: {}",
             self.topic_id, process
         );
         let access = self.data.lock().await;
-        TopicDataAccess::new(access)
+
+        let process_taken = {
+            let mut process_taken = access.process_taken.lock().await;
+            process_taken.push(process);
+            access.process_taken.clone()
+        };
+
+        println!("{}. Got access with process: {}", self.topic_id, process);
+        TopicDataAccess::new(access, process_taken, process)
     }
 
     pub async fn get_message_id(&self) -> MessageId {
