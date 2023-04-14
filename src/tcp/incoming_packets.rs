@@ -32,12 +32,12 @@ pub async fn handle(
                         .set_tcp_socket_name(splitted[0].to_string(), Some(splitted[1].to_string()))
                         .await;
                 } else {
-                    session.set_tcp_socket_name(name, None).await;
+                    session.set_tcp_socket_name(name.clone(), None).await;
                 }
 
                 session.update_tcp_protocol_version(protocol_version);
             }
-
+            println!("Greeting Done: {}. Protocol: {}", name, protocol_version);
             Ok(())
         }
         TcpContract::Publish {
@@ -74,6 +74,7 @@ pub async fn handle(
                 }
             }
 
+            println!("Publish done: {}.", topic_id);
             Ok(())
         }
 
@@ -89,10 +90,16 @@ pub async fn handle(
             println!("Subscribe: {}/{}.", topic_id, queue_id);
             if let Some(session) = app.sessions.get_by_tcp_connection_id(connection.id).await {
                 operations::subscriber::subscribe_to_queue(
-                    app, topic_id, queue_id, queue_type, &session,
+                    app,
+                    topic_id.clone(),
+                    queue_id.clone(),
+                    queue_type,
+                    &session,
                 )
                 .await?;
             }
+
+            println!("Subscribe done: {}/{}.", topic_id, queue_id);
 
             Ok(())
         }
@@ -120,6 +127,8 @@ pub async fn handle(
                 confirmation_id.into(),
             )
             .await?;
+
+            println!("Confirm done: {}/{}.", topic_id, queue_id);
             Ok(())
         }
         TcpContract::CreateTopicIfNotExists { topic_id } => {
