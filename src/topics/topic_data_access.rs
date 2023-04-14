@@ -48,8 +48,7 @@ impl<'s> Drop for TopicDataAccess<'s> {
         let process = self.process.clone();
 
         tokio::spawn(async move {
-            let write_access = self.process_taken.lock().await;
-
+            let mut write_access = process_taken.lock().await;
             write_access.retain(|p| p != &process);
         });
     }
