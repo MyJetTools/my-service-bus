@@ -23,38 +23,42 @@ impl MyTimerTick for MetricsTimer {
         let mut topics_without_queues = 0;
 
         for topic in self.app.topic_list.get_all().await {
-            let mut topic_data = topic.get_access("Metrics").await;
+            let metrics = {
+                let mut topic_data = topic.get_access("Metrics").await;
 
-            topic_data.one_second_tick();
+                topic_data.one_second_tick();
 
-            let mut queues_count = 0;
+                let mut queues_count = 0;
 
-            for queue in topic_data.queues.get_all_mut() {
-                queue.one_second_tick();
-                let queue_size = queue.get_queue_size();
-                queues_count += 1;
-                self.app.prometheus.update_topic_queue_size(
-                    topic.topic_id.as_str(),
-                    queue.queue_id.as_str(),
-                    queue_size,
-                );
+                for queue in topic_data.queues.get_all_mut() {
+                    queue.one_second_tick();
+                    let queue_size = queue.get_queue_size();
+                    queues_count += 1;
+                    self.app.prometheus.update_topic_queue_size(
+                        topic.topic_id.as_str(),
+                        queue.queue_id.as_str(),
+                        queue_size,
+                    );
 
-                if queue.is_permanent() && queue.subscribers.get_amount() == 0 {
-                    permanent_queues_without_subscribers += 1;
+                    if queue.is_permanent() && queue.subscribers.get_amount() == 0 {
+                        permanent_queues_without_subscribers += 1;
+                    }
                 }
-            }
 
-            if queues_count == 0 {
-                topics_without_queues += 1;
-            }
+                if queues_count == 0 {
+                    topics_without_queues += 1;
+                }
 
-            let metrics = topic_data.pages.get_page_size_metrics();
+                let metrics = topic_data.pages.get_page_size_metrics();
+
+                topic_data.metrics.one_second_tick(&metrics);
+
+                metrics
+            };
 
             self.app
                 .prometheus
                 .update_topic_size_metrics(topic.topic_id.as_str(), &metrics);
-
-            topic_data.metrics.one_second_tick(&metrics);
         }
 
         self.app

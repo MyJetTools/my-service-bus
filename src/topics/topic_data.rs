@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use my_service_bus_abstractions::publisher::MessageToPublish;
 use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
@@ -129,5 +130,99 @@ impl TopicData {
         }
 
         result.get_result()
+    }
+
+    pub fn get_active_sub_pages(&self) -> HashMap<i64, SubPageId> {
+        let mut result: HashMap<i64, SubPageId> = HashMap::new();
+
+        let sub_page_id: SubPageId = self.message_id.into();
+
+        result.insert(sub_page_id.get_value(), sub_page_id);
+
+        for queue in self.queues.get_all() {
+            if let Some(min_msg_id) = queue.get_min_msg_id() {
+                let sub_page_id = SubPageId::from_message_id(min_msg_id);
+
+                if !result.contains_key(&sub_page_id.get_value()) {
+                    result.insert(sub_page_id.get_value(), sub_page_id);
+                }
+            }
+        }
+
+        result
+    }
+
+    pub fn gc_message_pages(&mut self) {
+        let active_pages = self.get_active_sub_pages();
+
+        let sub_pages_to_gc = self.get_sub_pages_to_gc(&active_pages);
+
+        if let Some(sub_pages_to_gc) = sub_pages_to_gc {
+            for sub_page_to_gc in sub_pages_to_gc {
+                let (_sub_page, _page) = self.pages.gc_if_possible(sub_page_to_gc);
+
+                #[cfg(test)]
+                {
+                    if let Some(sub_page) = _sub_page {
+                        println!(
+                            "SubPage {} is GCed for topic: {}",
+                            sub_page.sub_page_id.get_value(),
+                            self.topic_id.as_str()
+                        );
+                    }
+
+                    if let Some(page) = _page {
+                        println!(
+                            "Page {} is GCed for topic: {}",
+                            page.page_id.get_value(),
+                            self.topic_id.as_str()
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn gc_queues_with_no_subscribers(
+        &mut self,
+        queue_gc_timeout: Duration,
+        now: DateTimeAsMicroseconds,
+    ) {
+        let queues_with_no_subscribers = self.queues.get_queues_with_no_subscribers();
+
+        if queues_with_no_subscribers.is_none() {
+            return;
+        }
+
+        let mut queues_to_delete = None;
+
+        for topic_queue in queues_with_no_subscribers.unwrap() {
+            if let my_service_bus_abstractions::subscriber::TopicQueueType::DeleteOnDisconnect =
+                topic_queue.queue_type
+            {
+                if now
+                    .duration_since(topic_queue.subscribers.last_unsubscribe)
+                    .as_positive_or_zero()
+                    > queue_gc_timeout
+                {
+                    println!("Detected DeleteOnDisconnect queue {}/{} with 0 subscribers. Last disconnect since {:?}", self.topic_id, topic_queue.queue_id, topic_queue.subscribers.last_unsubscribe);
+
+                    if queues_to_delete.is_none() {
+                        queues_to_delete = Some(Vec::new());
+                    }
+
+                    queues_to_delete
+                        .as_mut()
+                        .unwrap()
+                        .push(topic_queue.queue_id.to_string());
+                }
+            }
+        }
+
+        if let Some(queues_to_delete) = queues_to_delete {
+            for queue_id in queues_to_delete {
+                self.queues.remove(queue_id.as_str());
+            }
+        }
     }
 }

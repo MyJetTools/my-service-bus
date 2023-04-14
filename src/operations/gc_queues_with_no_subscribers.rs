@@ -1,9 +1,11 @@
+use std::time::Duration;
+
 use my_service_bus_abstractions::subscriber::TopicQueueType;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-use crate::{app::AppContext, topics::TopicData};
+use crate::topics::TopicData;
 
-pub fn gc_queues_with_no_subscribers(app: &AppContext, topic_data: &mut TopicData) {
+pub fn gc_queues_with_no_subscribers(topic_data: &mut TopicData, queue_gc_timeout: Duration) {
     let now = DateTimeAsMicroseconds::now();
 
     let queues_with_no_subscribers = topic_data.queues.get_queues_with_no_subscribers();
@@ -19,7 +21,7 @@ pub fn gc_queues_with_no_subscribers(app: &AppContext, topic_data: &mut TopicDat
             if now
                 .duration_since(topic_queue.subscribers.last_unsubscribe)
                 .as_positive_or_zero()
-                > app.settings.queue_gc_timeout
+                > queue_gc_timeout
             {
                 println!("Detected DeleteOnDisconnect queue {}/{} with 0 subscribers. Last disconnect since {:?}", topic_data.topic_id, topic_queue.queue_id, topic_queue.subscribers.last_unsubscribe);
 

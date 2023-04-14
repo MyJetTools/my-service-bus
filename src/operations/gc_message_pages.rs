@@ -1,8 +1,7 @@
-use crate::app::AppContext;
 use crate::topics::TopicData;
 
-pub fn gc_message_pages(_app: &AppContext, topic_data: &mut TopicData) {
-    let active_pages = super::get_active_sub_pages(topic_data);
+pub fn gc_message_pages(topic_data: &mut TopicData) {
+    let active_pages = topic_data.get_active_sub_pages();
 
     let sub_pages_to_gc = topic_data.get_sub_pages_to_gc(&active_pages);
 
