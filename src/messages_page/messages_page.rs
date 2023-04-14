@@ -118,6 +118,7 @@ impl MessagesPage {
     pub fn gc_messages(&mut self, min_message_id: MessageId) -> usize {
         let mut pages_to_gc = LazyVec::new();
         for page in self.sub_pages.values_mut() {
+            println!("GC: {:?} - {:?}", page.sub_page.sub_page_id, min_message_id);
             let whole_page_to_gc = page.sub_page.gc_messages(min_message_id);
 
             if whole_page_to_gc {

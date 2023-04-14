@@ -95,15 +95,14 @@ impl TopicData {
     pub fn get_min_message_id(&self) -> Option<MessageId> {
         let mut min_message_id = MinMessageIdCalculator::new();
 
-        if self.message_id.get_value() > 1 {
-            min_message_id.add(Some(self.message_id.get_value() - 1));
-        }
+        min_message_id.add(Some(self.message_id.get_value()));
+
+        min_message_id.add(self.pages.get_persisted_min_message_id());
 
         for topic_queue in self.queues.get_all() {
             let min_id = topic_queue.queue.get_min_id();
             min_message_id.add(min_id);
             min_message_id.add(topic_queue.subscribers.get_min_message_id());
-            min_message_id.add(self.pages.get_persisted_min_message_id());
         }
 
         min_message_id.get()
