@@ -156,8 +156,7 @@ impl TopicQueue {
             return Ok(());
         };
 
-        let mut messages_bucket = messages_bucket.unwrap();
-        messages_bucket.confirm_everything();
+        let messages_bucket = messages_bucket.unwrap();
 
         update_delivery_time(subscriber, messages_bucket.confirmed, true);
 
