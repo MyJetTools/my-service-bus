@@ -80,8 +80,6 @@ impl TopicData {
                 *value -= 1;
             }
         }
-
-        self.queues.one_second_tick();
     }
 
     pub fn disconnect(

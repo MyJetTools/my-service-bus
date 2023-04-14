@@ -126,12 +126,6 @@ impl TopicQueuesList {
         result
     }
 
-    pub fn one_second_tick(&mut self) {
-        for queue in self.queues.values_mut() {
-            queue.one_second_tick();
-        }
-    }
-
     pub fn remove_subscribers_by_session_id(
         &mut self,
         session_id: SessionId,

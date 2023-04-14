@@ -63,14 +63,17 @@ pub async fn init(app: Arc<AppContext>) {
 async fn restore_topic_pages(app: Arc<AppContext>, topic: Arc<Topic>) {
     let (page_id, sub_page_id) = topic.get_current_page().await;
 
-    crate::operations::page_loader::load_page_to_cache(
-        topic,
+    let sub_page = crate::operations::page_loader::load_page_to_cache(
+        &topic,
         app.messages_pages_repo.clone(),
         Some(app.logs.as_ref()),
         page_id,
         sub_page_id,
     )
-    .await
+    .await;
+
+    let mut topic_data = topic.get_access().await;
+    topic_data.pages.restore_sub_page(sub_page);
 }
 
 async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {

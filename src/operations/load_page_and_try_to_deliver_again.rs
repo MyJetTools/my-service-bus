@@ -13,8 +13,8 @@ pub fn load_page_and_try_to_deliver_again(
     let app = app.clone();
 
     tokio::spawn(async move {
-        crate::operations::page_loader::load_page_to_cache(
-            topic.clone(),
+        let sub_page = crate::operations::page_loader::load_page_to_cache(
+            &topic,
             app.messages_pages_repo.clone(),
             Some(app.logs.as_ref()),
             page_id,
@@ -23,6 +23,7 @@ pub fn load_page_and_try_to_deliver_again(
         .await;
 
         let mut topic_data = topic.get_access().await;
+        topic_data.pages.restore_sub_page(sub_page);
         crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
     });
 }

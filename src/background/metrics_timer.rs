@@ -29,7 +29,8 @@ impl MyTimerTick for MetricsTimer {
 
             let mut queues_count = 0;
 
-            for queue in topic_data.queues.get_all() {
+            for queue in topic_data.queues.get_all_mut() {
+                queue.one_second_tick();
                 let queue_size = queue.get_queue_size();
                 queues_count += 1;
                 self.app.prometheus.update_topic_queue_size(
