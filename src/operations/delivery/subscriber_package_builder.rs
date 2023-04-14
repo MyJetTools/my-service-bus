@@ -60,6 +60,7 @@ impl SubscriberPackageBuilder {
     pub fn add_message(&mut self, msg: &MySbMessageContent, attempt_no: i32) {
         self.data_size += msg.content.len();
         self.tcp_builder.append_packet(msg, attempt_no);
+        self.messages_on_delivery.enqueue(msg.id.get_value());
     }
 
     pub fn get_result(self) -> SendNewMessagesResult {
