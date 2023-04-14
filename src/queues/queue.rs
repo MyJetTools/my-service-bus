@@ -321,6 +321,12 @@ fn update_delivery_time(subscriber: &mut QueueSubscriber, amount: usize, positiv
         .duration_since(subscriber.metrics.start_delivery_time)
         .as_positive_or_zero();
 
+    if delivery_duration.is_zero() {
+        println!(
+            "Delivery duration is zero. This is a bug. Please report it. (update_delivery_time)"
+        )
+    }
+
     if positive {
         subscriber
             .metrics
