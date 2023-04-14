@@ -6,6 +6,7 @@ use my_service_bus_shared::{
     sub_page::{SubPage, SubPageId},
     MySbMessageContent,
 };
+use rust_extensions::lazy::LazyVec;
 
 use crate::utils::MinMessageIdCalculator;
 
@@ -114,9 +115,22 @@ impl MessagesPage {
         min_message_id_calculator.get()
     }
 
-    pub fn gc_messages(&mut self, min_message_id: MessageId) {
+    pub fn gc_messages(&mut self, min_message_id: MessageId) -> usize {
+        let mut pages_to_gc = LazyVec::new();
         for page in self.sub_pages.values_mut() {
-            page.sub_page.gc_messages(min_message_id);
+            let whole_page_to_gc = page.sub_page.gc_messages(min_message_id);
+
+            if whole_page_to_gc {
+                pages_to_gc.add(page.sub_page.sub_page_id.get_value());
+            }
         }
+
+        if let Some(pages_to_gc) = pages_to_gc.get_result() {
+            for page_id in pages_to_gc {
+                self.sub_pages.remove(&page_id);
+            }
+        }
+
+        self.sub_pages.len()
     }
 }

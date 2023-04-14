@@ -139,6 +139,11 @@ impl TopicData {
 
         result.insert(sub_page_id.get_value(), sub_page_id);
 
+        if let Some(message_id) = self.pages.get_persisted_min_message_id() {
+            let sub_page_id: SubPageId = message_id.into();
+            result.insert(sub_page_id.get_value(), sub_page_id);
+        }
+
         for queue in self.queues.get_all() {
             if let Some(min_msg_id) = queue.get_min_msg_id() {
                 let sub_page_id = SubPageId::from_message_id(min_msg_id);
