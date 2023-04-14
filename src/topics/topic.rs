@@ -41,7 +41,7 @@ impl Topic {
 
             println!(
                 "{}. Getting access with process: {}. Already Has: {:?}",
-                self.topic_id, process, &self.process_taken
+                self.topic_id, process, &process_taken
             );
 
             self.process_taken.clone()
