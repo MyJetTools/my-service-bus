@@ -7,6 +7,6 @@ mod select_process_action;
 mod select_topic_action;
 pub use logs_action::LogsAction;
 pub use logs_by_process_controller::*;
-pub use logs_by_topic_controller::LogsByTopicAction;
+pub use logs_by_topic_controller::*;
 pub use select_process_action::*;
 pub use select_topic_action::*;

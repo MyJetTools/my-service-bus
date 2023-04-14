@@ -53,9 +53,7 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
     let logs_controller = Arc::new(super::logs::LogsAction::new(app.clone()));
     controllers.register_get_action(logs_controller);
 
-    controllers.register_get_action(Arc::new(super::logs::LogsByTopicAction::new(app.clone())));
-
-    controllers.register_get_action(Arc::new(super::logs::GetLogsByProcessAction::new(
+    controllers.register_get_action(Arc::new(super::logs::GetLogsByTopicAction::new(
         app.clone(),
     )));
 

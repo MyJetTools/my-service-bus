@@ -11,18 +11,18 @@ use super::models::ReadLogsByTopicInputModel;
     route: "/Logs/Topic/{topicId}",
     input_data: "ReadLogsByTopicInputModel",
 )]
-pub struct LogsByTopicAction {
+pub struct GetLogsByTopicAction {
     app: Arc<AppContext>,
 }
 
-impl LogsByTopicAction {
+impl GetLogsByTopicAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
 async fn handle_request(
-    action: &LogsByTopicAction,
+    action: &GetLogsByTopicAction,
     input_data: ReadLogsByTopicInputModel,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
