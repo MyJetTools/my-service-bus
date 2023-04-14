@@ -39,7 +39,7 @@ impl SubscriberPackageBuilder {
         let tcp_builder = DeliverTcpPacketBuilder::new(
             topic.topic_id.as_str(),
             queue_id.as_str(),
-            subscriber_id,
+            subscriber_id.get_value(),
             session.get_message_to_delivery_protocol_version(),
         );
         Self {

@@ -60,7 +60,7 @@ async fn handle_request(
 
         let queue = queue.unwrap();
 
-        queue.get_messages_on_delivery(input_model.subscriber_id)
+        queue.get_messages_on_delivery(input_model.subscriber_id.into())
     };
 
     HttpOutput::as_text(format!("{:?}", ids))

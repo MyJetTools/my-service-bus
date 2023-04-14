@@ -16,17 +16,20 @@ pub async fn subscribe_to_queue(
     queue_type: TopicQueueType,
     session: &Arc<MyServiceBusSession>,
 ) -> Result<(), OperationFailResult> {
-    let mut topic = app.topic_list.get(topic_id.as_str()).await;
+    let topic = {
+        let topic = app.topic_list.get(topic_id.as_str()).await;
 
-    if topic.is_none() {
-        if app.settings.auto_create_topic_on_subscribe {
-            topic = Some(app.topic_list.add_if_not_exists(topic_id.as_str()).await?);
-        } else {
-            return Err(OperationFailResult::TopicNotFound { topic_id });
+        match topic {
+            Some(result) => result,
+            None => {
+                if app.settings.auto_create_topic_on_subscribe {
+                    app.topic_list.add_if_not_exists(topic_id.as_str()).await?
+                } else {
+                    return Err(OperationFailResult::TopicNotFound { topic_id });
+                }
+            }
         }
-    }
-
-    let topic = topic.unwrap();
+    };
 
     let mut topic_data = topic.get_access().await;
 
@@ -36,7 +39,7 @@ pub async fn subscribe_to_queue(
         queue_type.clone(),
     );
 
-    let subscriber_id = app.subscriber_id_generator.get_next_subsriber_id();
+    let subscriber_id = app.subscriber_id_generator.get_next_subscriber_id();
 
     topic_queue.update_queue_type(queue_type);
 
@@ -52,7 +55,8 @@ pub async fn subscribe_to_queue(
         crate::app::logs::SystemProcess::QueueOperation,
         format!(
             "Subscribed. SessionId: {}. SubscriberId: {}",
-            session.id, subscriber_id
+            session.id,
+            subscriber_id.get_value()
         ),
         format!(
             "Session {} is subscribing to the {}/{} ",

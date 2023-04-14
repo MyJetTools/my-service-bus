@@ -3,11 +3,16 @@ use my_service_bus_shared::{
     page_id::PageId,
     sub_page::{GetMessageResult, SubPageId},
 };
+use rust_extensions::lazy::LazyVec;
 
 use std::sync::Arc;
 
 use crate::{
     app::AppContext,
+    messages_page::MessagesPageList,
+    queue_subscribers::SubscriberId,
+    queues::TopicQueue,
+    sessions::MyServiceBusSession,
     topics::{Topic, TopicData},
 };
 
@@ -18,123 +23,120 @@ pub fn try_to_deliver_to_subscribers(
     topic: &Arc<Topic>,
     topic_data: &mut TopicData,
 ) {
-    while let Some(package_builder) = build_new_package_builder(topic, topic_data) {
-        compile_and_deliver(app, package_builder, topic, topic_data);
-    }
-}
+    let pages = &topic_data.pages;
 
-fn build_new_package_builder(
-    topic: &Arc<Topic>,
-    topic_data: &mut TopicData,
-) -> Option<SubscriberPackageBuilder> {
+    let mut to_send = LazyVec::new();
+
     for topic_queue in topic_data.queues.get_all_mut() {
-        if topic_queue.queue.len() == 0 {
-            continue;
-        }
+        while topic_queue.queue.len() > 0 {
+            let subscriber = topic_queue
+                .subscribers
+                .get_and_rent_next_subscriber_ready_to_deliver();
 
-        let subscriber = topic_queue
-            .subscribers
-            .get_and_rent_next_subscriber_ready_to_deliver();
-
-        if subscriber.is_none() {
-            continue;
-        }
-
-        let subscriber = subscriber.unwrap();
-
-        let result = SubscriberPackageBuilder::new(
-            topic.clone(),
-            topic_queue.queue_id.as_str().into(),
-            subscriber.id,
-            subscriber.session.clone(),
-        );
-
-        return Some(result);
-    }
-
-    None
-}
-
-fn compile_and_deliver(
-    app: &Arc<AppContext>,
-    mut package_builder: SubscriberPackageBuilder,
-    topic: &Arc<Topic>,
-    topic_data: &mut TopicData,
-) {
-    #[cfg(test)]
-    println!("compile_and_deliver");
-
-    if let Some(topic_queue) = topic_data.queues.get_mut(package_builder.queue_id.as_ref()) {
-        while package_builder.get_data_size() < app.get_max_delivery_size() {
-            let message_id = topic_queue.queue.peek();
-
-            if message_id.is_none() {
+            if subscriber.is_none() {
                 break;
             }
 
-            let message_id = message_id.unwrap().as_message_id();
+            let (subscriber_id, session) = subscriber.unwrap();
 
-            let page_id: PageId = message_id.into();
+            let package_builder =
+                compile_package(app, topic, topic_queue, pages, subscriber_id, session);
 
-            let sub_page_id: SubPageId = message_id.into();
+            to_send.add(package_builder);
+        }
+    }
 
-            let page = topic_data.pages.get_page(page_id);
+    if let Some(to_send) = to_send.get_result() {
+        for package_builder in to_send {
+            crate::operations::send_package::send_new_messages_to_deliver(
+                package_builder,
+                topic_data,
+            );
+        }
+    }
+}
 
-            if page.is_none() {
+fn compile_package(
+    app: &Arc<AppContext>,
+    topic: &Arc<Topic>,
+    topic_queue: &mut TopicQueue,
+    pages: &MessagesPageList,
+    subscriber_id: SubscriberId,
+    session: Arc<MyServiceBusSession>,
+) -> SubscriberPackageBuilder {
+    let mut package_builder = SubscriberPackageBuilder::new(
+        topic.clone(),
+        topic_queue.queue_id.as_str().into(),
+        subscriber_id,
+        session,
+    );
+    #[cfg(test)]
+    println!("compile_and_deliver");
+
+    while package_builder.get_data_size() < app.get_max_delivery_size() {
+        let message_id = topic_queue.queue.peek();
+
+        if message_id.is_none() {
+            break;
+        }
+
+        let message_id = message_id.unwrap().as_message_id();
+
+        let page_id: PageId = message_id.into();
+
+        let sub_page_id: SubPageId = message_id.into();
+
+        let page = pages.get_page(page_id);
+
+        if page.is_none() {
+            crate::operations::load_page_and_try_to_deliver_again(
+                app,
+                topic.clone(),
+                page_id,
+                sub_page_id,
+            );
+
+            return package_builder;
+        }
+
+        let page = page.unwrap();
+
+        let sub_page = page.get_sub_page(&sub_page_id);
+
+        if sub_page.is_none() {
+            crate::operations::load_page_and_try_to_deliver_again(
+                app,
+                topic.clone(),
+                page_id,
+                sub_page_id,
+            );
+
+            return package_builder;
+        }
+
+        let sub_page = sub_page.unwrap();
+
+        topic_queue.queue.dequeue();
+
+        match sub_page.sub_page.get_message(message_id.as_message_id()) {
+            GetMessageResult::Message(message_content) => {
+                let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
+                package_builder.add_message(message_content, attempt_no);
+            }
+            GetMessageResult::Missing => {}
+            GetMessageResult::GarbageCollected => {
                 crate::operations::load_page_and_try_to_deliver_again(
                     app,
                     topic.clone(),
                     page_id,
                     sub_page_id,
                 );
-
-                return;
-            }
-
-            let page = page.unwrap();
-
-            let sub_page = page.get_sub_page(&sub_page_id);
-
-            if sub_page.is_none() {
-                crate::operations::send_package::send_new_messages_to_deliver(
-                    package_builder,
-                    topic_data,
-                );
-
-                crate::operations::load_page_and_try_to_deliver_again(
-                    app,
-                    topic.clone(),
-                    page_id,
-                    sub_page_id,
-                );
-
-                return;
-            }
-
-            let sub_page = sub_page.unwrap();
-
-            topic_queue.queue.dequeue();
-
-            match sub_page.sub_page.get_message(message_id.as_message_id()) {
-                GetMessageResult::Message(message_content) => {
-                    let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
-                    package_builder.add_message(message_content, attempt_no);
-                }
-                GetMessageResult::Missing => {}
-                GetMessageResult::GarbageCollected => {
-                    crate::operations::load_page_and_try_to_deliver_again(
-                        app,
-                        topic.clone(),
-                        page_id,
-                        sub_page_id,
-                    );
-                    return;
-                }
+                return package_builder;
             }
         }
     }
 
-    crate::operations::send_package::send_new_messages_to_deliver(package_builder, topic_data);
+    package_builder
 }
 
 #[cfg(test)]

@@ -12,7 +12,7 @@ pub async fn disconnect(app: &AppContext, disconnected_session: &MyServiceBusSes
             for (topic_queue, removed_subscriber) in removed_subscribers {
                 println!(
                     "Subscriber {} with connection_id {} is removed during the session [{}]/{:?} disconnect process",
-                    removed_subscriber.id,
+                    removed_subscriber.id.get_value(),
                     removed_subscriber.session.id,
                     disconnected_session.id,
                     disconnected_session.get_name_and_client_version().await

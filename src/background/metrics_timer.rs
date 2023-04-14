@@ -18,7 +18,6 @@ impl MetricsTimer {
 #[async_trait::async_trait]
 impl MyTimerTick for MetricsTimer {
     async fn tick(&self) {
-        self.app.topic_list.one_second_tick().await;
         self.app.sessions.one_second_tick().await;
 
         let mut permanent_queues_without_subscribers = 0;
@@ -26,6 +25,7 @@ impl MyTimerTick for MetricsTimer {
 
         for topic in self.app.topic_list.get_all().await {
             let mut topic_data = topic.get_access().await;
+            topic_data.one_second_tick();
 
             let mut queues_count = 0;
 

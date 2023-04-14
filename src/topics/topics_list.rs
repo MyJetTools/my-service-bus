@@ -43,14 +43,6 @@ impl TopicsList {
         write_access.restore(topic_id, message_id)
     }
 
-    pub async fn one_second_tick(&self) {
-        let topics = self.get_all().await;
-
-        for topic in topics {
-            topic.one_second_tick().await;
-        }
-    }
-
     pub async fn delete_topic(&self, topic_id: &str) -> Option<Arc<Topic>> {
         let mut write_access = self.data.write().await;
         write_access.delete_topic(topic_id)

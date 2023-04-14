@@ -12,11 +12,11 @@ impl SubscriberIdGenerator {
             current_id: AtomicI64::new(0),
         }
     }
-    pub fn get_next_subsriber_id(&self) -> SubscriberId {
+    pub fn get_next_subscriber_id(&self) -> SubscriberId {
         let result = self
             .current_id
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
-        return result;
+        return result.into();
     }
 }

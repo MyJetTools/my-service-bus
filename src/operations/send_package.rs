@@ -17,7 +17,7 @@ pub fn send_package(
             crate::sessions::SessionConnection::Test(data) => {
                 data.send_packet(tcp_packet).await;
             }
-            crate::sessions::SessionConnection::Http(_) => todo!("Not suppored yet"),
+            crate::sessions::SessionConnection::Http(_) => todo!("Not supported yet"),
         }
     });
 }

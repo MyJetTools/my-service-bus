@@ -113,7 +113,7 @@ pub async fn handle(
                 app,
                 topic_id.as_str(),
                 queue_id.as_str(),
-                confirmation_id,
+                confirmation_id.into(),
             )
             .await?;
             Ok(())
@@ -141,7 +141,7 @@ pub async fn handle(
                 app,
                 topic_id.as_str(),
                 queue_id.as_str(),
-                confirmation_id,
+                confirmation_id.into(),
                 QueueWithIntervals::restore(delivered),
             )
             .await?;
@@ -172,7 +172,7 @@ pub async fn handle(
                 app,
                 topic_id.as_str(),
                 queue_id.as_str(),
-                confirmation_id,
+                confirmation_id.into(),
             )
             .await?;
             Ok(())
@@ -189,7 +189,7 @@ pub async fn handle(
                 app,
                 topic_id.as_str(),
                 queue_id.as_str(),
-                confirmation_id,
+                confirmation_id.into(),
                 QueueWithIntervals::restore(delivered),
             )
             .await?;

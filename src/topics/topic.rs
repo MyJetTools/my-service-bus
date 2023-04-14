@@ -50,11 +50,6 @@ impl Topic {
         (page_id, sub_page_id)
     }
 
-    pub async fn one_second_tick(&self) {
-        let mut write_access = self.data.lock().await;
-        write_access.one_second_tick();
-    }
-
     pub async fn get_topic_snapshot(&self) -> TopicSnapshot {
         let topic_data = self.data.lock().await;
 
@@ -87,7 +82,7 @@ impl Topic {
                     if result_mut
                         .iter()
                         .position(|itm: &DeadSubscriber| {
-                            itm.subscriber_id == dead_subscriber.subscriber_id
+                            itm.subscriber_id.equals_to(dead_subscriber.subscriber_id)
                         })
                         .is_none()
                     {

@@ -148,7 +148,9 @@ impl TopicQueue {
         if messages_bucket.is_none() {
             println!(
                 "{}/{} confirmed_delivered: No messages on delivery at subscriber {}",
-                self.topic_id, self.queue_id, subscriber_id
+                self.topic_id,
+                self.queue_id,
+                subscriber_id.get_value()
             );
 
             return Ok(());
@@ -187,7 +189,9 @@ impl TopicQueue {
         if messages_bucket.is_none() {
             println!(
                 "{}/{} confirmed_non_delivered: No messages on delivery at subscriber {}",
-                self.topic_id, self.queue_id, subscriber_id
+                self.topic_id,
+                self.queue_id,
+                subscriber_id.get_value()
             );
 
             return Ok(());
@@ -220,7 +224,9 @@ impl TopicQueue {
         if delivery_bucket.is_none() {
             println!(
                 "{}/{} confirmed_some_delivered: No messages on delivery at subscriber {}",
-                self.topic_id, self.queue_id, subscriber_id
+                self.topic_id,
+                self.queue_id,
+                subscriber_id.get_value()
             );
 
             return Ok(());

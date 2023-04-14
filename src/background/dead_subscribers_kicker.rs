@@ -31,7 +31,8 @@ impl MyTimerTick for DeadSubscribersKickerTimer {
                         "Dead subscribers detector".to_string(),
                         format!(
                             "Kicking Connection {} with dead subscriber {}",
-                            dead_subscriber.session.id, dead_subscriber.subscriber_id
+                            dead_subscriber.session.id,
+                            dead_subscriber.subscriber_id.get_value()
                         ),
                         None,
                     );

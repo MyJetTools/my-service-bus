@@ -11,7 +11,7 @@ use crate::{
 use super::{QueueSubscriber, SubscriberId};
 
 pub enum SubscribersData {
-    MultiSubscribers(HashMap<SubscriberId, QueueSubscriber>),
+    MultiSubscribers(HashMap<i64, QueueSubscriber>),
     SingleSubscriber(Option<QueueSubscriber>),
 }
 
@@ -115,19 +115,19 @@ impl SubscribersList {
 
     pub fn get_and_rent_next_subscriber_ready_to_deliver(
         &mut self,
-    ) -> Option<&mut QueueSubscriber> {
+    ) -> Option<(SubscriberId, Arc<MyServiceBusSession>)> {
         match &mut self.data {
             SubscribersData::MultiSubscribers(state) => {
                 for subscriber in state.values_mut() {
                     if subscriber.rent_me() {
-                        return Some(subscriber);
+                        return Some((subscriber.id, subscriber.session.clone()));
                     }
                 }
             }
             SubscribersData::SingleSubscriber(state) => {
                 if let Some(subscriber) = state {
                     if subscriber.rent_me() {
-                        return Some(subscriber);
+                        return Some((subscriber.id, subscriber.session.clone()));
                     }
                 }
             }
@@ -141,7 +141,7 @@ impl SubscribersList {
             SubscribersData::MultiSubscribers(hash_map) => return hash_map.get(&subscriber_id),
             SubscribersData::SingleSubscriber(single) => {
                 if let Some(subscriber) = single {
-                    if subscriber.id == subscriber_id {
+                    if subscriber.id.equals_to(subscriber_id) {
                         return Some(subscriber);
                     }
                 }
@@ -156,7 +156,7 @@ impl SubscribersList {
             SubscribersData::MultiSubscribers(hash_map) => return hash_map.get_mut(&subscriber_id),
             SubscribersData::SingleSubscriber(single) => {
                 if let Some(subscriber) = single {
-                    if subscriber.id == subscriber_id {
+                    if subscriber.id.equals_to(subscriber_id) {
                         return Some(subscriber);
                     }
                 }
@@ -198,7 +198,7 @@ impl SubscribersList {
         if !self.check_that_we_has_already_subscriber_for_that_session(session.id) {
             panic!(
                 "Somehow we subscribe second time to the same queue {}/{} the same session_id {} for the new subscriber. Most probably there is a bug on the client",
-                topic_id, queue_id, subscriber_id
+                topic_id, queue_id, subscriber_id.get_value()
             );
         }
         self.snapshot_id += 1;
@@ -214,13 +214,13 @@ impl SubscribersList {
 
                 let subscriber = QueueSubscriber::new(subscriber_id, topic_id, queue_id, session);
 
-                hash_map.insert(subscriber_id, subscriber);
+                hash_map.insert(subscriber_id.get_value(), subscriber);
 
                 return None;
             }
             SubscribersData::SingleSubscriber(single) => {
                 if let Some(subscriber) = single {
-                    if subscriber.id == subscriber_id {
+                    if subscriber.id.equals_to(subscriber_id) {
                         panic!(
                             "Somehow we generated the same ID {} for the new subscriber {}/{}",
                             subscriber_id, topic_id, queue_id
@@ -305,7 +305,7 @@ impl SubscribersList {
                 let mut result = None;
 
                 if let Some(sub) = single {
-                    if sub.id == subscriber_id {
+                    if sub.id.equals_to(subscriber_id) {
                         self.last_unsubscribe = DateTimeAsMicroseconds::now();
                         std::mem::swap(&mut result, single);
                     }
