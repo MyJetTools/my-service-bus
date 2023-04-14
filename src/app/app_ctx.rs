@@ -1,6 +1,5 @@
 use std::{sync::Arc, time::Duration};
 
-use futures_util::lock::Mutex;
 use rust_extensions::{events_loop::EventsLoop, AppStates, ApplicationStates};
 use tokio::sync::RwLock;
 
@@ -10,6 +9,7 @@ use crate::{
     sessions::SessionsList,
     settings::SettingsModel,
     topics::{Topic, TopicsList},
+    utils::MultiThreadedShortString,
 };
 
 use super::{logs::Logs, prometheus_metrics::PrometheusMetrics};
@@ -40,7 +40,7 @@ pub struct AppContext {
 
     pub immediately_persist_event_loop: EventsLoop<Arc<Topic>>,
 
-    pub persistence_version: Mutex<String>,
+    pub persistence_version: MultiThreadedShortString,
 
     pub settings: SettingsModel,
 }
@@ -70,7 +70,7 @@ impl AppContext {
             },
             debug_topic_and_queue: RwLock::new(None),
             immediately_persist_event_loop: EventsLoop::new("ImmediatelyPersist".to_string()),
-            persistence_version: Mutex::new(String::new()),
+            persistence_version: MultiThreadedShortString::new(),
             settings,
         }
     }

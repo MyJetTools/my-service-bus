@@ -3,6 +3,7 @@ use std::sync::Arc;
 use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus_shared::MySbMessageContent;
 use my_service_bus_tcp_shared::{delivery_package_builder::DeliverTcpPacketBuilder, TcpContract};
+use rust_extensions::ShortString;
 
 use crate::{queue_subscribers::SubscriberId, sessions::MyServiceBusSession, topics::Topic};
 
@@ -10,17 +11,17 @@ pub enum SendNewMessagesResult {
     Send {
         session: Arc<MyServiceBusSession>,
         tcp_contract: TcpContract,
-        queue_id: String,
+        queue_id: ShortString,
         messages_on_delivery: QueueWithIntervals,
     },
     NothingToSend {
-        queue_id: String,
+        queue_id: ShortString,
     },
 }
 
 pub struct SubscriberPackageBuilder {
     pub topic: Arc<Topic>,
-    pub queue_id: String,
+    pub queue_id: ShortString,
     pub subscriber_id: SubscriberId,
     tcp_builder: DeliverTcpPacketBuilder,
     data_size: usize,
@@ -31,7 +32,7 @@ pub struct SubscriberPackageBuilder {
 impl SubscriberPackageBuilder {
     pub fn new(
         topic: Arc<Topic>,
-        queue_id: String,
+        queue_id: ShortString,
         subscriber_id: SubscriberId,
         session: Arc<MyServiceBusSession>,
     ) -> Self {

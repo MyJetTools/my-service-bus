@@ -79,7 +79,7 @@ async fn main() {
 
     let mut dead_subscribers = MyTimer::new(Duration::from_secs(10));
     dead_subscribers.register_timer(
-        "DeadSubscrubers",
+        "DeadSubscribers",
         Arc::new(DeadSubscribersKickerTimer::new(app.clone())),
     );
 

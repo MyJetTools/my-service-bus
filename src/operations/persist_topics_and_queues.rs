@@ -4,8 +4,9 @@ use crate::app::AppContext;
 
 pub async fn persist_topics_and_queues(app: &Arc<AppContext>) {
     if let Some(get_persistence_version) = app.messages_pages_repo.get_persistence_version().await {
-        let mut write_access = app.persistence_version.lock().await;
-        *write_access = get_persistence_version;
+        app.persistence_version
+            .update(get_persistence_version.as_str())
+            .await;
     }
 
     let topics = app.topic_list.get_all().await;

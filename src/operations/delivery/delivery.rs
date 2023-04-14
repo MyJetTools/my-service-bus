@@ -44,7 +44,7 @@ fn build_new_package_builder(
 
         let result = SubscriberPackageBuilder::new(
             topic.clone(),
-            topic_queue.queue_id.to_string(),
+            topic_queue.queue_id.as_str().into(),
             subscriber.id,
             subscriber.session.clone(),
         );

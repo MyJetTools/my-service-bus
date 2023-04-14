@@ -43,9 +43,11 @@ impl StatusJsonResult {
         };
 
         let sessions = SessionsJsonResult::new(app).await;
-
+        println!("Got Sessions");
         for topic in all_topics {
+            println!("Getting topic data access for {}", topic.topic_id);
             let topic_data = topic.get_access().await;
+            println!("Got topic data access for {}", topic.topic_id);
             queues.insert(
                 topic_data.topic_id.to_string(),
                 QueuesJsonResult::new(&topic_data),
@@ -53,11 +55,6 @@ impl StatusJsonResult {
 
             topics.items.push(TopicJsonContract::new(&topic_data));
         }
-
-        let persistence_version = {
-            let read_access = app.persistence_version.lock().await;
-            read_access.to_string()
-        };
 
         Self {
             topics,
@@ -67,7 +64,7 @@ impl StatusJsonResult {
                 totalmem: sys_info.total_memory(),
                 usedmem: sys_info.used_memory(),
             },
-            persistence_version,
+            persistence_version: app.persistence_version.get().await,
         }
     }
 }
