@@ -1,27 +1,31 @@
-use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::protobuf_models::MessageProtobufModel;
+use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus_shared::{protobuf_models::MessageProtobufModel, sub_page::SubPageId};
 
 pub struct MessagesToPersistBucket {
     messages_to_persist: Option<Vec<MessageProtobufModel>>,
-    pub id: usize,
-    pub first_message_id: MessageId,
+    pub sub_page_id: SubPageId,
+    pub ids: QueueWithIntervals,
+    pub size: usize,
 }
 
 impl MessagesToPersistBucket {
-    pub fn new(id: usize, messages_to_persist: Vec<MessageProtobufModel>) -> Self {
-        let first_message_id = messages_to_persist[0].get_message_id().get_value();
-
+    pub fn new(sub_page_id: SubPageId) -> Self {
         Self {
-            messages_to_persist: Some(messages_to_persist),
-            first_message_id: first_message_id.into(),
-            id,
+            messages_to_persist: Some(Vec::new()),
+            sub_page_id,
+            ids: QueueWithIntervals::new(),
+            size: 0,
         }
     }
 
-    pub fn get(&mut self) -> Vec<MessageProtobufModel> {
-        let mut result = None;
+    pub fn add(&mut self, msg: MessageProtobufModel) {
+        let msg_id = msg.get_message_id();
+        self.size += msg.data.len();
+        self.messages_to_persist.as_mut().unwrap().push(msg);
+        self.ids.enqueue(msg_id.get_value());
+    }
 
-        std::mem::swap(&mut result, &mut self.messages_to_persist);
-        result.unwrap()
+    pub fn get(&mut self) -> Vec<MessageProtobufModel> {
+        self.messages_to_persist.take().unwrap()
     }
 }

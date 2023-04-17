@@ -1,15 +1,12 @@
 use my_service_bus_abstractions::AsMessageId;
-use my_service_bus_shared::{
-    page_id::PageId,
-    sub_page::{GetMessageResult, SubPageId},
-};
-use rust_extensions::lazy::LazyVec;
+use my_service_bus_shared::sub_page::SubPageId;
+use rust_extensions::{date_time::DateTimeAsMicroseconds, lazy::LazyVec};
 
 use std::sync::Arc;
 
 use crate::{
     app::AppContext,
-    messages_page::MessagesPageList,
+    messages_page::{GetMessageResult, MessagesPageList},
     queue_subscribers::SubscriberId,
     queues::TopicQueue,
     sessions::MyServiceBusSession,
@@ -90,43 +87,22 @@ fn compile_package(
 
         let message_id = message_id.unwrap().as_message_id();
 
-        let page_id: PageId = message_id.into();
-
         let sub_page_id: SubPageId = message_id.into();
 
-        let page = pages.get_page(page_id);
-
-        if page.is_none() {
-            crate::operations::load_page_and_try_to_deliver_again(
-                app,
-                topic.clone(),
-                page_id,
-                sub_page_id,
-            );
-
-            return package_builder;
-        }
-
-        let page = page.unwrap();
-
-        let sub_page = page.get_sub_page(&sub_page_id);
+        let sub_page = pages.get(sub_page_id);
 
         if sub_page.is_none() {
-            crate::operations::load_page_and_try_to_deliver_again(
-                app,
-                topic.clone(),
-                page_id,
-                sub_page_id,
-            );
+            crate::operations::load_page_and_try_to_deliver_again(app, topic.clone(), sub_page_id);
 
             return package_builder;
         }
 
         let sub_page = sub_page.unwrap();
+        sub_page.update_last_accessed(DateTimeAsMicroseconds::now());
 
         topic_queue.queue.dequeue();
 
-        match sub_page.sub_page.get_message(message_id.as_message_id()) {
+        match sub_page.get_message(message_id.as_message_id()) {
             GetMessageResult::Message(message_content) => {
                 let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
                 package_builder.add_message(message_content, attempt_no);
@@ -136,7 +112,6 @@ fn compile_package(
                 crate::operations::load_page_and_try_to_deliver_again(
                     app,
                     topic.clone(),
-                    page_id,
                     sub_page_id,
                 );
                 return package_builder;

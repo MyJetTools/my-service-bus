@@ -49,9 +49,9 @@ impl MyTimerTick for MetricsTimer {
                     topics_without_queues += 1;
                 }
 
-                let metrics = topic_data.pages.get_page_size_metrics();
+                let metrics = topic_data.get_topic_size_metrics();
 
-                topic_data.metrics.one_second_tick(&metrics);
+                topic_data.statistics.one_second_tick(&metrics);
 
                 metrics
             };

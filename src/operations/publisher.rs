@@ -56,7 +56,7 @@ pub async fn publish(
 
     topic_data.publish_messages(session_id, messages);
 
-    topic_data.metrics.update_topic_metrics(messages_count);
+    topic_data.statistics.update_messages_count(messages_count);
 
     if persist_immediately {
         let prev = topic

@@ -1,30 +1,28 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 use my_service_bus_abstractions::publisher::MessageToPublish;
 use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::MySbMessageContent;
 
-use my_service_bus_shared::page_id::PageId;
 use my_service_bus_shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
-use rust_extensions::lazy::LazyVec;
 
-use crate::messages_page::MessagesPageList;
+use crate::messages_page::{MessagesPageList, MySbMessageContent, SizeMetrics};
 use crate::queue_subscribers::QueueSubscriber;
 use crate::queues::{TopicQueue, TopicQueuesList};
 use crate::sessions::SessionId;
 use crate::utils::MinMessageIdCalculator;
 
-use super::TopicMetrics;
+use super::TopicStatistics;
+
 const BADGE_HIGHLIGHT_TIME_OUT: u8 = 2;
 
 pub struct TopicData {
     pub topic_id: String,
     pub message_id: MessageId,
     pub queues: TopicQueuesList,
-    pub metrics: TopicMetrics,
+    pub statistics: TopicStatistics,
     pub pages: MessagesPageList,
     pub publishers: HashMap<SessionId, u8>,
 }
@@ -35,7 +33,7 @@ impl TopicData {
             topic_id,
             message_id: message_id.into(),
             queues: TopicQueuesList::new(),
-            metrics: TopicMetrics::new(),
+            statistics: TopicStatistics::new(),
             pages: MessagesPageList::new(),
             publishers: HashMap::new(),
         }
@@ -61,11 +59,11 @@ impl TopicData {
 
             ids.enqueue(message.id.into());
 
-            let page_id = PageId::from_message_id(message.id);
+            let page_id: SubPageId = message.id.into();
 
-            self.pages
-                .get_or_create_page_mut(page_id)
-                .publish_message(message);
+            let page = self.pages.get_or_create_mut(page_id);
+            page.update_last_accessed(message.time);
+            page.add_message(message);
 
             self.message_id.increment();
         }
@@ -108,47 +106,24 @@ impl TopicData {
         min_message_id.get()
     }
 
-    pub fn gc_messages(&mut self, min_message_id: MessageId) {
-        self.pages.gc_messages(min_message_id);
-    }
-
-    pub fn get_sub_pages_to_gc(
-        &self,
-        active_pages: &HashMap<i64, SubPageId>,
-    ) -> Option<Vec<SubPageId>> {
-        let mut result = LazyVec::new();
-
-        for page in self.pages.get_pages() {
-            for sub_page in page.sub_pages.values() {
-                if !active_pages.contains_key(&sub_page.sub_page.sub_page_id.get_value()) {
-                    if sub_page.messages_to_persist.len() == 0 {
-                        result.add(sub_page.sub_page.sub_page_id);
-                    }
-                }
-            }
-        }
-
-        result.get_result()
-    }
-
-    pub fn get_active_sub_pages(&self) -> HashMap<i64, SubPageId> {
-        let mut result: HashMap<i64, SubPageId> = HashMap::new();
+    pub fn get_active_sub_pages(&self) -> HashSet<i64> {
+        let mut result: HashSet<i64> = HashSet::new();
 
         let sub_page_id: SubPageId = self.message_id.into();
 
-        result.insert(sub_page_id.get_value(), sub_page_id);
+        result.insert(sub_page_id.get_value());
 
         if let Some(message_id) = self.pages.get_persisted_min_message_id() {
             let sub_page_id: SubPageId = message_id.into();
-            result.insert(sub_page_id.get_value(), sub_page_id);
+            result.insert(sub_page_id.get_value());
         }
 
         for queue in self.queues.get_all() {
             if let Some(min_msg_id) = queue.get_min_msg_id() {
                 let sub_page_id = SubPageId::from_message_id(min_msg_id);
 
-                if !result.contains_key(&sub_page_id.get_value()) {
-                    result.insert(sub_page_id.get_value(), sub_page_id);
+                if !result.contains(&sub_page_id.get_value()) {
+                    result.insert(sub_page_id.get_value());
                 }
             }
         }
@@ -156,35 +131,9 @@ impl TopicData {
         result
     }
 
-    pub fn gc_message_pages(&mut self) {
+    pub fn gc_pages(&mut self, now: DateTimeAsMicroseconds, gc_delay: Duration) {
         let active_pages = self.get_active_sub_pages();
-
-        let sub_pages_to_gc = self.get_sub_pages_to_gc(&active_pages);
-
-        if let Some(sub_pages_to_gc) = sub_pages_to_gc {
-            for sub_page_to_gc in sub_pages_to_gc {
-                let (_sub_page, _page) = self.pages.gc_if_possible(sub_page_to_gc);
-
-                #[cfg(test)]
-                {
-                    if let Some(sub_page) = _sub_page {
-                        println!(
-                            "SubPage {} is GCed for topic: {}",
-                            sub_page.sub_page_id.get_value(),
-                            self.topic_id.as_str()
-                        );
-                    }
-
-                    if let Some(page) = _page {
-                        println!(
-                            "Page {} is GCed for topic: {}",
-                            page.page_id.get_value(),
-                            self.topic_id.as_str()
-                        );
-                    }
-                }
-            }
-        }
+        self.pages.gc_pages(&active_pages, now, gc_delay);
     }
 
     pub fn gc_queues_with_no_subscribers(
@@ -228,5 +177,17 @@ impl TopicData {
                 self.queues.remove(queue_id.as_str());
             }
         }
+    }
+
+    pub fn get_topic_size_metrics(&self) -> SizeMetrics {
+        let mut result = SizeMetrics::new();
+
+        for sub_page in self.pages.sub_pages.values() {
+            let metrics = sub_page.get_size_metrics();
+
+            result.append(&metrics);
+        }
+
+        result
     }
 }

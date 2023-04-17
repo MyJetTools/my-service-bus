@@ -1,12 +1,10 @@
 use std::collections::BTreeMap;
 
 use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::{
-    page_id::PageId, protobuf_models::MessageProtobufModel, MySbMessageContent,
-};
+use my_service_bus_shared::{page_id::PageId, protobuf_models::MessageProtobufModel};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-use crate::settings::SettingsModel;
+use crate::{messages_page::MySbMessageContent, settings::SettingsModel};
 
 #[cfg(test)]
 use super::MessagesPagesMockRepo;

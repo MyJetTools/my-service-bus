@@ -1,11 +1,37 @@
 use std::sync::Arc;
 
-use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
-use my_service_bus_shared::MySbMessageContent;
+use my_service_bus_abstractions::{queue_with_intervals::QueueWithIntervals, MyServiceBusMessage};
+
 use my_service_bus_tcp_shared::{delivery_package_builder::DeliverTcpPacketBuilder, TcpContract};
 use rust_extensions::ShortString;
 
-use crate::{queue_subscribers::SubscriberId, sessions::MyServiceBusSession, topics::Topic};
+use crate::{
+    messages_page::MySbMessageContent, queue_subscribers::SubscriberId,
+    sessions::MyServiceBusSession, topics::Topic,
+};
+
+pub struct PacketToSendWrapper<'s> {
+    pub attempt: i32,
+    pub inner: &'s MySbMessageContent,
+}
+
+impl<'s> MyServiceBusMessage for PacketToSendWrapper<'s> {
+    fn get_id(&self) -> my_service_bus_abstractions::MessageId {
+        self.inner.id
+    }
+
+    fn get_attempt_no(&self) -> i32 {
+        self.attempt
+    }
+
+    fn get_headers(&self) -> Option<&std::collections::HashMap<String, String>> {
+        self.inner.headers.as_ref()
+    }
+
+    fn get_content(&self) -> &[u8] {
+        self.inner.content.as_slice()
+    }
+}
 
 pub enum SendNewMessagesResult {
     Send {
@@ -59,8 +85,15 @@ impl SubscriberPackageBuilder {
 
     pub fn add_message(&mut self, msg: &MySbMessageContent, attempt_no: i32) {
         self.data_size += msg.content.len();
-        self.tcp_builder.append_packet(msg, attempt_no);
-        self.messages_on_delivery.enqueue(msg.id.get_value());
+
+        let message_id = msg.id.get_value();
+
+        let msg = PacketToSendWrapper {
+            attempt: attempt_no,
+            inner: msg,
+        };
+        self.tcp_builder.append_packet(&msg);
+        self.messages_on_delivery.enqueue(message_id);
     }
 
     pub fn get_result(self) -> SendNewMessagesResult {

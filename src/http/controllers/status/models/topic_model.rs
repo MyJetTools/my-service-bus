@@ -1,4 +1,4 @@
-use crate::topics::TopicData;
+use crate::{messages_page::MessagesPageList, topics::TopicData};
 
 use my_http_server_swagger::MyHttpObjectStructure;
 use serde::{Deserialize, Serialize};
@@ -56,26 +56,12 @@ impl TopicJsonContract {
         Self {
             id: topic_data.topic_id.to_string(),
             message_id: topic_data.message_id.into(),
-            packets_per_second: topic_data.metrics.packets_per_second,
-            messages_per_second: topic_data.metrics.messages_per_second,
-            publish_history: topic_data.metrics.publish_history.get(),
-            persist_size: topic_data.metrics.size_metrics.persist_size,
+            packets_per_second: topic_data.statistics.packets_per_second,
+            messages_per_second: topic_data.statistics.messages_per_second,
+            publish_history: topic_data.statistics.publish_history.get(),
+            persist_size: topic_data.statistics.size_metrics.persist_size,
             publishers,
-            pages: topic_data
-                .pages
-                .pages
-                .iter()
-                .map(|(page_id, page)| {
-                    let metrics = page.get_page_size_metrics();
-                    TopicPageJsonContract {
-                        id: page_id.into(),
-                        amount: metrics.messages_amount,
-                        size: metrics.data_size,
-                        persist_size: metrics.persist_size,
-                        sub_pages: page.get_sub_pages(),
-                    }
-                })
-                .collect(),
+            pages: TopicPageJsonContract::as_vec(&topic_data.pages),
             subscribers,
         }
     }
@@ -89,4 +75,24 @@ pub struct TopicPageJsonContract {
     pub persist_size: usize,
     #[serde(rename = "subPages")]
     pub sub_pages: Vec<i64>,
+}
+
+impl TopicPageJsonContract {
+    pub fn as_vec(pages: &MessagesPageList) -> Vec<Self> {
+        let mut result = Vec::new();
+
+        for (page_id, page_metrics) in pages.get_page_size_metrics() {
+            let size_metrics = page_metrics.get_size_metrics();
+
+            result.push(TopicPageJsonContract {
+                id: page_id,
+                amount: size_metrics.messages_amount,
+                size: size_metrics.data_size,
+                persist_size: size_metrics.persist_size,
+                sub_pages: page_metrics.get_sub_pages(),
+            });
+        }
+
+        result
+    }
 }

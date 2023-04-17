@@ -1,6 +1,6 @@
 use prometheus::{Encoder, IntGauge, IntGaugeVec, Opts, Registry, TextEncoder};
 
-use crate::messages_page::PageSizeMetrics;
+use crate::messages_page::SizeMetrics;
 
 pub struct PrometheusMetrics {
     registry: Registry,
@@ -77,7 +77,7 @@ impl PrometheusMetrics {
         self.topics_without_queues.set(value);
     }
 
-    pub fn update_topic_size_metrics(&self, topic_id: &str, metrics: &PageSizeMetrics) {
+    pub fn update_topic_size_metrics(&self, topic_id: &str, metrics: &SizeMetrics) {
         self.topic_data_size
             .with_label_values(&[topic_id])
             .set(metrics.data_size as i64);
@@ -115,9 +115,9 @@ impl PrometheusMetrics {
 fn create_topic_persist_queue_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_persist_queue_size", "Topic queue to persist size");
 
-    let lables = &["topic"];
+    let labels = &["topic"];
 
-    IntGaugeVec::new(gauge_opts, lables).unwrap()
+    IntGaugeVec::new(gauge_opts, labels).unwrap()
 }
 
 fn create_topic_queue_size() -> IntGaugeVec {

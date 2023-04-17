@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
-use my_service_bus_shared::page_id::PageId;
+use my_service_bus_shared::sub_page::SubPageId;
 
 use crate::app::AppContext;
 
 pub fn load_page_and_try_to_deliver_again(
     app: &Arc<AppContext>,
     topic: Arc<crate::topics::Topic>,
-    page_id: PageId,
-    sub_page_id: my_service_bus_shared::sub_page::SubPageId,
+
+    sub_page_id: SubPageId,
 ) {
     let app = app.clone();
 
@@ -17,7 +17,6 @@ pub fn load_page_and_try_to_deliver_again(
             &topic,
             app.messages_pages_repo.clone(),
             Some(app.logs.as_ref()),
-            page_id,
             sub_page_id,
         )
         .await;

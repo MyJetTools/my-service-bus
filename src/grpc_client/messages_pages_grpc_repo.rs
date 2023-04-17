@@ -6,11 +6,11 @@ use futures_util::stream;
 use my_service_bus_abstractions::MessageId;
 use my_service_bus_shared::page_id::PageId;
 use my_service_bus_shared::protobuf_models::MessageProtobufModel;
-use my_service_bus_shared::MySbMessageContent;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use tokio_stream::StreamExt;
 use tonic::transport::Channel;
 
+use crate::messages_page::MySbMessageContent;
 use crate::persistence_grpc::my_service_bus_messages_persistence_grpc_service_client::MyServiceBusMessagesPersistenceGrpcServiceClient;
 use crate::persistence_grpc::*;
 

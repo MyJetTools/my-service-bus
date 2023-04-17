@@ -2,12 +2,12 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::page_id::PageId;
 use my_service_bus_shared::sub_page::SubPageId;
 
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use tokio::sync::Mutex;
 
+use crate::messages_page::{MessagesToPersistBucket, SizeMetrics};
 use crate::queue_subscribers::DeadSubscriber;
 
 use super::topic_data::TopicData;
@@ -42,13 +42,12 @@ impl Topic {
         read_access.message_id.into()
     }
 
-    pub async fn get_current_page(&self) -> (PageId, SubPageId) {
+    pub async fn get_current_sub_page(&self) -> SubPageId {
         let read_access = self.data.lock().await;
 
-        let page_id = PageId::from_message_id(read_access.message_id.into());
         let sub_page_id = SubPageId::from_message_id(read_access.message_id.into());
 
-        (page_id, sub_page_id)
+        sub_page_id
     }
 
     pub async fn get_topic_snapshot(&self) -> TopicSnapshot {
@@ -94,5 +93,24 @@ impl Topic {
         }
 
         result
+    }
+
+    pub async fn get_messages_to_persist(
+        &self,
+        max_payload_size: usize,
+    ) -> Option<MessagesToPersistBucket> {
+        let read_access = self.get_access().await;
+
+        read_access.pages.get_messages_to_persist(max_payload_size)
+    }
+
+    pub async fn mark_messages_as_persisted(&self, bucket: &MessagesToPersistBucket) {
+        let mut write_access = self.get_access().await;
+        write_access.pages.mark_messages_as_persisted(bucket);
+    }
+
+    pub async fn get_topic_size_metrics(&self) -> SizeMetrics {
+        let read_access = self.get_access().await;
+        read_access.get_topic_size_metrics()
     }
 }

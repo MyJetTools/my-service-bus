@@ -1,9 +1,9 @@
 use crate::{
-    messages_page::PageSizeMetrics,
+    messages_page::SizeMetrics,
     metric_data::{MetricOneSecond, MetricsHistory},
 };
 
-pub struct TopicMetrics {
+pub struct TopicStatistics {
     messages_per_second_going: MetricOneSecond,
     packets_per_second_going: MetricOneSecond,
 
@@ -12,10 +12,10 @@ pub struct TopicMetrics {
 
     pub publish_history: MetricsHistory,
 
-    pub size_metrics: PageSizeMetrics,
+    pub size_metrics: SizeMetrics,
 }
 
-impl TopicMetrics {
+impl TopicStatistics {
     pub fn new() -> Self {
         Self {
             messages_per_second_going: MetricOneSecond::new(),
@@ -24,17 +24,17 @@ impl TopicMetrics {
             packets_per_second: 0,
             publish_history: MetricsHistory::new(),
 
-            size_metrics: PageSizeMetrics::new(),
+            size_metrics: SizeMetrics::new(),
         }
     }
 
-    pub fn update_topic_metrics(&mut self, new_messages_count: usize) {
+    pub fn update_messages_count(&mut self, new_messages_count: usize) {
         self.messages_per_second_going.increase(new_messages_count);
 
         self.packets_per_second_going.increase(1);
     }
 
-    pub fn one_second_tick(&mut self, metrics: &PageSizeMetrics) {
+    pub fn one_second_tick(&mut self, metrics: &SizeMetrics) {
         self.size_metrics.update(metrics);
 
         let messages_per_second = self.messages_per_second_going.get_and_reset();

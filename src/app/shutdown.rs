@@ -9,10 +9,7 @@ pub async fn execute(app: Arc<AppContext>) {
 
 async fn empty_persistence_queues(app: Arc<AppContext>) {
     for topic in app.topic_list.get_all().await {
-        let metrics = {
-            let topic_data = topic.get_access().await;
-            topic_data.pages.get_page_size_metrics()
-        };
+        let metrics = topic.get_topic_size_metrics().await;
 
         while metrics.persist_size > 0 {
             println!(
