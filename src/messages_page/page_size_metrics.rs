@@ -14,8 +14,8 @@ impl PageSizeMetrics {
         Self { sub_page_metrics }
     }
 
-    pub fn get_sub_pages(&self) -> Vec<i64> {
-        self.sub_page_metrics.keys().cloned().collect()
+    pub fn get_sub_pages(&self) -> impl Iterator<Item = &i64> {
+        self.sub_page_metrics.keys()
     }
 
     pub fn get_size_metrics(&self) -> SizeMetrics {

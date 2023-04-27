@@ -1,6 +1,7 @@
 use crate::{messages_page::MessagesPageList, topics::TopicData};
 
 use my_http_server_swagger::MyHttpObjectStructure;
+use my_service_bus_shared::{page_id::PageId, sub_page::SubPageId};
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -84,15 +85,33 @@ impl TopicPageJsonContract {
         for (page_id, page_metrics) in pages.get_page_size_metrics() {
             let size_metrics = page_metrics.get_size_metrics();
 
+            let page_id = PageId::new(page_id);
+
             result.push(TopicPageJsonContract {
-                id: page_id,
+                id: page_id.get_value(),
                 amount: size_metrics.messages_amount,
                 size: size_metrics.data_size,
                 persist_size: size_metrics.persist_size,
-                sub_pages: page_metrics.get_sub_pages(),
+                sub_pages: get_sub_pages(page_id, page_metrics.get_sub_pages()),
             });
         }
 
         result
     }
+}
+
+fn get_sub_pages<'s>(page_id: PageId, sub_pages: impl Iterator<Item = &'s i64>) -> Vec<i64> {
+    let first_message_id = page_id.get_first_message_id();
+
+    let first_sub_page_id: SubPageId = first_message_id.into();
+
+    let mut result = Vec::new();
+
+    for sub_page in sub_pages {
+        let sub_page_id = SubPageId::new(*sub_page);
+        let id_within_page = sub_page_id.get_value() - first_sub_page_id.get_value();
+        result.push(id_within_page);
+    }
+
+    result
 }
