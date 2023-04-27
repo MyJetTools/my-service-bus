@@ -106,7 +106,7 @@ impl MessagesPageList {
         for sub_page in self.sub_pages.values() {
             let sub_page_id = sub_page.get_id();
             if !active_pages.contains(sub_page_id.as_ref()) {
-                if !sub_page.ready_to_be_gc(now, gc_delay) {
+                if sub_page.ready_to_be_gc(now, gc_delay) {
                     result.add(sub_page_id);
                 }
             }
