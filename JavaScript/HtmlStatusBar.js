@@ -4,19 +4,20 @@ var HtmlStatusBar = /** @class */ (function () {
     HtmlStatusBar.layout = function () {
         return '<div id="status-bar">' +
             '<table><tr>' +
-            '<td style="padding-left: 5px; font-size:12px;">Connected: <b id="connected" style="text-shadow: 0 0 2px white;"></b></td>' +
+            '<td style="padding-left: 5px;min-width: 110px; font-size:12px;">Connected: <b id="connected" style="text-shadow: 0 0 2px white;"></b></td>' +
             '<td><div class="statusbar-separator"></div></td>' +
-            '<td style="min-width:120px; font-size:12px;">Sessions: <b id="sessions" style="text-shadow: 0 0 2px white"></b></td>' +
+            '<td style="min-width:100px; font-size:12px;">Sessions: <b id="sessions" style="text-shadow: 0 0 2px white"></b></td>' +
             '<td><div class="statusbar-separator"></div></td>' +
-            '<td style="min-width:170px; font-size:12px;">Persist Queue: <b id="persist-queue" style="text-shadow: 0 0 2px white"></b></td>' +
+            '<td style="min-width:130px; font-size:12px;">Persist Queue: <b id="persist-queue" style="text-shadow: 0 0 2px white"></b></td>' +
             '<td><div class="statusbar-separator"></div></td>' +
-            '<td style="min-width:130px; font-size:12px;">Msgs/sec: <span id="msg-per-sec" style="text-shadow: 0 0 2px white"></span></td>' +
+            '<td style="min-width:100px; font-size:12px;">Msgs/sec: <span id="msg-per-sec" style="text-shadow: 0 0 2px white"></span></td>' +
             '<td><div class="statusbar-separator"></div></td>' +
-            '<td style="min-width:220px; font-size:12px;">RW/sec: <span id="bytes-rw-per-sec" style="text-shadow: 0 0 2px white"></span></td>' +
+            '<td style="min-width:170px; font-size:12px;">RW/sec: <span id="bytes-rw-per-sec" style="text-shadow: 0 0 2px white"></span></td>' +
             '<td><div class="statusbar-separator"></div></td>' +
-            '<td style="padding-left: 5px; min-width:270px; font-size:12px;"><span id="cpu-mem" style="text-shadow: 0 0 2px white;"></span></td>' +
+            '<td style="padding-left: 5px; min-width:220px; font-size:12px;"><span id="cpu-mem" style="text-shadow: 0 0 2px white;"></span></td>' +
             '<td><div class="statusbar-separator"></div></td>' +
-            '<td style="padding-left: 5px; min-width:270px; font-size:12px;">Total pages size:<span id="total-pages-size" style="text-shadow: 0 0 2px white;"></span></td>' +
+            '<td style="padding-left: 5px; min-width:200px; font-size:12px;">Total pages size:<span id="total-pages-size" style="text-shadow: 0 0 2px white;"></span></td>' +
+            '<td><div class="statusbar-separator"></div></td>' +
             '<td style="padding-left: 5px; min-width:270px; font-size:12px;">Persistence ver: <span id="persistence-ver" style="text-shadow: 0 0 2px white;"></span></td>' +
             '</tr></table></div>';
     };
