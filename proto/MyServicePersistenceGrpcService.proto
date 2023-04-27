@@ -96,7 +96,6 @@ message DeleteTopicGrpcRequest {
 message GetSubPageRequest{
   string TopicId = 1;
   int64 SubPageNo = 2;
-
 }
 
 service MyServiceBusMessagesPersistenceGrpcService {
