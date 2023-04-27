@@ -9,7 +9,7 @@ class HtmlStatusBar {
     private static sessions: HTMLElement;
     private static persistenceVersion: HTMLElement;
 
-    private static currentSessionsAmout: number = -1;
+    private static currentSessionsAmount: number = -1;
     private static currentPersistenceVersion: string = "";
 
 
@@ -50,9 +50,9 @@ class HtmlStatusBar {
             this.sessions = document.getElementById('sessions');
         }
 
-        if (this.currentSessionsAmout != amount) {
+        if (this.currentSessionsAmount != amount) {
             this.sessions.innerHTML = amount.toFixed(0);
-            this.currentSessionsAmout = amount;
+            this.currentSessionsAmount = amount;
         }
 
     }

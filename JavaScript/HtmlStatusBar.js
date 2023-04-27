@@ -25,9 +25,9 @@ var HtmlStatusBar = /** @class */ (function () {
         if (!this.sessions) {
             this.sessions = document.getElementById('sessions');
         }
-        if (this.currentSessionsAmout != amount) {
+        if (this.currentSessionsAmount != amount) {
             this.sessions.innerHTML = amount.toFixed(0);
-            this.currentSessionsAmout = amount;
+            this.currentSessionsAmount = amount;
         }
     };
     HtmlStatusBar.updateStatusbar = function (data) {
@@ -94,7 +94,7 @@ var HtmlStatusBar = /** @class */ (function () {
             document.getElementById('connected').innerHTML = '<span style="color: red">offline</span>';
         }
     };
-    HtmlStatusBar.currentSessionsAmout = -1;
+    HtmlStatusBar.currentSessionsAmount = -1;
     HtmlStatusBar.currentPersistenceVersion = "";
     return HtmlStatusBar;
 }());
