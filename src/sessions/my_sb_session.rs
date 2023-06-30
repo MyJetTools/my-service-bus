@@ -23,7 +23,7 @@ pub struct SessionMetrics {
     pub ip: String,
     pub id: SessionId,
     pub connection_metrics: ConnectionMetricsSnapshot,
-    pub protocol_version: String,
+    pub protocol_version: Option<i32>,
 
     pub session_type: SessionType,
 }
@@ -91,12 +91,12 @@ impl MyServiceBusSession {
         }
     }
 
-    fn protocol_version_as_string(&self) -> String {
+    fn protocol_version_as_string(&self) -> Option<i32> {
         match &self.connection {
-            SessionConnection::Tcp(data) => format!("Tcp: {}", data.get_protocol_version()),
-            SessionConnection::Http(_) => "Http".to_string(),
+            SessionConnection::Tcp(data) => data.get_protocol_version().into(),
+            SessionConnection::Http(_) => None,
             #[cfg(test)]
-            SessionConnection::Test(_) => "Test".to_string(),
+            SessionConnection::Test(_) => None,
         }
     }
 

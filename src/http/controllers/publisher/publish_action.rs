@@ -17,6 +17,7 @@ use super::contracts::PublishMessageHttpInput;
     description: "Publish messages to topic",
     summary: "Publishes messages to topic",
     input_data: "PublishMessageHttpInput",
+    authorized: "Yes",
     result: [
         {status_code: 202, description: "Message is published"},
     ]

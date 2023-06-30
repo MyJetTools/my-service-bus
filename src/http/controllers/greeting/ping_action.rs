@@ -12,6 +12,7 @@ use crate::{app::AppContext, http::auth::GetSessionToken};
     description: "Ping Http Session",
     summary: "Pings Http Session",
     ok_result_description: "Session is alive",
+    authorized: "Yes",
     result: [
         {status_code: 202, description: "Session description"},
         {status_code: 400, description: "Bad request"}, 
