@@ -24,7 +24,7 @@ pub struct TopicData {
     pub queues: TopicQueuesList,
     pub statistics: TopicStatistics,
     pub pages: MessagesPageList,
-    pub publishers: HashMap<SessionId, u8>,
+    pub publishers: HashMap<i64, u8>,
 }
 
 impl TopicData {
@@ -41,7 +41,8 @@ impl TopicData {
 
     #[inline]
     pub fn set_publisher_as_active(&mut self, session_id: SessionId) {
-        self.publishers.insert(session_id, BADGE_HIGHLIGHT_TIME_OUT);
+        self.publishers
+            .insert(session_id.get_value(), BADGE_HIGHLIGHT_TIME_OUT);
     }
 
     pub fn publish_messages(&mut self, session_id: SessionId, messages: Vec<MessageToPublish>) {
@@ -85,7 +86,7 @@ impl TopicData {
         &mut self,
         session_id: SessionId,
     ) -> Option<Vec<(&mut TopicQueue, QueueSubscriber)>> {
-        self.publishers.remove(&session_id);
+        self.publishers.remove(&session_id.get_value());
 
         self.queues.remove_subscribers_by_session_id(session_id)
     }

@@ -170,14 +170,14 @@ impl SubscribersList {
         match &self.data {
             SubscribersData::MultiSubscribers(hash_map) => {
                 for subscriber in hash_map.values() {
-                    if subscriber.session.id == session_id {
+                    if subscriber.session.id.is_eq_to(session_id) {
                         return false;
                     }
                 }
             }
             SubscribersData::SingleSubscriber(single_subscriber) => {
                 if let Some(subscriber) = single_subscriber {
-                    if subscriber.session.id == session_id {
+                    if subscriber.session.id.is_eq_to(session_id) {
                         return false;
                     }
                 }
@@ -274,14 +274,14 @@ impl SubscribersList {
         match &self.data {
             SubscribersData::MultiSubscribers(hash_map) => {
                 for sub in hash_map.values() {
-                    if sub.session.id == session_id {
+                    if sub.session.id.is_eq_to(session_id) {
                         return Some(sub.id);
                     }
                 }
             }
             SubscribersData::SingleSubscriber(single) => {
                 if let Some(sub) = single {
-                    if sub.session.id == session_id {
+                    if sub.session.id.is_eq_to(session_id) {
                         return Some(sub.id);
                     }
                 }

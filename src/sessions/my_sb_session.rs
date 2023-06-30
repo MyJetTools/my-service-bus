@@ -2,6 +2,21 @@ use my_service_bus_tcp_shared::PacketProtVer;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use super::{ConnectionMetricsSnapshot, SessionConnection, SessionId};
+
+pub enum SessionType {
+    Tcp,
+    Http,
+}
+
+impl SessionType {
+    pub fn as_string(&self) -> &str {
+        match self {
+            SessionType::Tcp => "tcp",
+            SessionType::Http => "http",
+        }
+    }
+}
+
 pub struct SessionMetrics {
     pub name: Option<String>,
     pub version: Option<String>,
@@ -9,6 +24,8 @@ pub struct SessionMetrics {
     pub id: SessionId,
     pub connection_metrics: ConnectionMetricsSnapshot,
     pub protocol_version: String,
+
+    pub session_type: SessionType,
 }
 
 pub struct MyServiceBusSession {
@@ -98,9 +115,9 @@ impl MyServiceBusSession {
     }
 
     pub async fn get_metrics(&self) -> SessionMetrics {
-        let connection_metrics = match &self.connection {
-            SessionConnection::Tcp(data) => data.get_connection_metrics(),
-            SessionConnection::Http(data) => data.get_connection_metrics(),
+        let (connection_metrics, session_type) = match &self.connection {
+            SessionConnection::Tcp(data) => (data.get_connection_metrics(), SessionType::Tcp),
+            SessionConnection::Http(data) => (data.get_connection_metrics(), SessionType::Http),
             #[cfg(test)]
             SessionConnection::Test(_) => {
                 panic!("We do not have metrics in test environment");
@@ -118,6 +135,7 @@ impl MyServiceBusSession {
             ip: self.connection.get_ip().to_string(),
             protocol_version,
             connection_metrics,
+            session_type,
         }
     }
 

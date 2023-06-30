@@ -6,7 +6,15 @@ class HtmlSessions {
 
 
         for (let session of status.sessions.items.sort((a, b) => a.name > b.name ? 1 : -1)) {
-            result += '<tr class="filter-line"><td>' + session.id + '</td>' +
+            let tp = "";
+
+            if (session.type == "tcp") {
+                tp = `<span class="badge badge-success">tcp</span>`
+            } else {
+                tp = `<span class="badge badge-warning">` + session.type + `</span>`
+            }
+
+            result += '<tr class="filter-line"><td>' + session.id + '<div>' + tp + '</div></td>' +
                 '<td><b>' + session.name + '</b><div>' + session.version + '</div>' +
                 '<div><b>Ip:</b>' + session.ip + '</div>' +
 

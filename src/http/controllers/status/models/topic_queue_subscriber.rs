@@ -21,7 +21,7 @@ impl TopicQueueSubscriberJsonModel {
     pub fn new(subscriber: &QueueSubscriber) -> Self {
         Self {
             subscriber_id: subscriber.id.get_value(),
-            session_id: subscriber.session.id,
+            session_id: subscriber.session.id.get_value(),
             queue_id: subscriber.queue_id.to_string(),
             active: subscriber.metrics.active,
             delivery_state: subscriber.delivery_state.to_u8(),

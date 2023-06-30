@@ -55,12 +55,14 @@ pub async fn subscribe_to_queue(
         crate::app::logs::SystemProcess::QueueOperation,
         format!(
             "Subscribed. SessionId: {}. SubscriberId: {}",
-            session.id,
+            session.id.get_value(),
             subscriber_id.get_value()
         ),
         format!(
             "Session {} is subscribing to the {}/{} ",
-            session.id, topic.topic_id, topic_queue.queue_id
+            session.id.get_value(),
+            topic.topic_id,
+            topic_queue.queue_id
         ),
         None,
     );

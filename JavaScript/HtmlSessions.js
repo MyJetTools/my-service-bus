@@ -6,7 +6,14 @@ var HtmlSessions = /** @class */ (function () {
             '<tr><th style="width:50px">Id</th><th style="width:120px">Info</th><th>Publisher</th><th>Subscriber</th></tr>';
         for (var _i = 0, _a = status.sessions.items.sort(function (a, b) { return a.name > b.name ? 1 : -1; }); _i < _a.length; _i++) {
             var session = _a[_i];
-            result += '<tr class="filter-line"><td>' + session.id + '</td>' +
+            var tp = "";
+            if (session.type == "tcp") {
+                tp = "<span class=\"badge badge-success\">tcp</span>";
+            }
+            else {
+                tp = "<span class=\"badge badge-warning\">" + session.type + "</span>";
+            }
+            result += '<tr class="filter-line"><td>' + session.id + '<div>' + tp + '</div></td>' +
                 '<td><b>' + session.name + '</b><div>' + session.version + '</div>' +
                 '<div><b>Ip:</b>' + session.ip + '</div>' +
                 '<div id="session-info-' + session.id + '">' + this.renderSessionData(session) + '</div>' +

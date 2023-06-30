@@ -10,6 +10,7 @@ interface IStatusApiContract {
 interface ISession {
     id: number,
     ip: string,
+    type: string,
     version: string,
     name: string,
     connected: string,

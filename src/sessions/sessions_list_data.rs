@@ -7,12 +7,12 @@ use super::{MyServiceBusSession, SessionConnection, SessionId};
 
 pub struct SessionsListData {
     snapshot_id: usize,
-    sessions: HashMap<SessionId, Arc<MyServiceBusSession>>,
+    sessions: HashMap<i64, Arc<MyServiceBusSession>>,
     tcp_sessions: HashMap<ConnectionId, Arc<MyServiceBusSession>>,
     http_sessions: HashMap<String, Arc<MyServiceBusSession>>,
     #[cfg(test)]
-    test_sessions: HashMap<SessionId, Arc<MyServiceBusSession>>,
-    current_session_id: SessionId,
+    test_sessions: HashMap<i64, Arc<MyServiceBusSession>>,
+    current_session_id: i64,
 }
 
 impl SessionsListData {
@@ -30,11 +30,12 @@ impl SessionsListData {
     pub fn get_next_session_id(&mut self) -> SessionId {
         let result = self.current_session_id;
         self.current_session_id += 1;
-        result
+        SessionId::new(result)
     }
 
     pub fn add(&mut self, session: Arc<MyServiceBusSession>) {
-        self.sessions.insert(session.id, session.clone());
+        self.sessions
+            .insert(session.id.get_value(), session.clone());
         self.snapshot_id += 1;
 
         match &session.connection {
@@ -46,13 +47,14 @@ impl SessionsListData {
             }
             #[cfg(test)]
             super::SessionConnection::Test(connection) => {
-                self.test_sessions.insert(connection.id, session);
+                self.test_sessions
+                    .insert(connection.id.get_value(), session);
             }
         }
     }
 
     pub fn get(&self, session_id: SessionId) -> Option<Arc<MyServiceBusSession>> {
-        let result = self.sessions.get(&session_id)?;
+        let result = self.sessions.get(&session_id.get_value())?;
         Some(result.clone())
     }
 
@@ -78,7 +80,7 @@ impl SessionsListData {
     }
 
     fn remove(&mut self, session_id: SessionId) -> Option<Arc<MyServiceBusSession>> {
-        let removed_session = self.sessions.remove(&session_id);
+        let removed_session = self.sessions.remove(&session_id.get_value());
 
         if let Some(session) = removed_session {
             self.snapshot_id += 1;
@@ -91,7 +93,7 @@ impl SessionsListData {
                 }
                 #[cfg(test)]
                 super::SessionConnection::Test(connection) => {
-                    self.test_sessions.remove(&connection.id);
+                    self.test_sessions.remove(&connection.id.get_value());
                 }
             }
             Some(session)

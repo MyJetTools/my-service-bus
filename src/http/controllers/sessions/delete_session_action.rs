@@ -32,7 +32,12 @@ async fn handle_request(
     input_data: DeleteSessionInputContract,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    match action.app.sessions.get(input_data.connection_id).await {
+    match action
+        .app
+        .sessions
+        .get(input_data.connection_id.into())
+        .await
+    {
         Some(session) => {
             session.disconnect().await;
             HttpOutput::Empty.into_ok_result(true).into()

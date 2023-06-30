@@ -144,7 +144,7 @@ mod tests {
     async fn test_publish_subscribe_case() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
-        const SESSION_ID: SessionId = 13;
+        let session_id: SessionId = SessionId::new(13);
         const DELIVERY_SIZE: usize = 16;
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
@@ -153,7 +153,7 @@ mod tests {
 
         let session = app
             .sessions
-            .add_test(TestConnectionData::new(SESSION_ID, "127.0.0.1"))
+            .add_test(TestConnectionData::new(session_id, "127.0.0.1"))
             .await;
 
         crate::operations::publisher::create_topic_if_not_exists(
@@ -209,7 +209,7 @@ mod tests {
     async fn test_we_subscriber_and_deliver_persisted_messages() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
-        const SESSION_ID: SessionId = 13;
+        let session_id: SessionId = SessionId::new(13);
         const DELIVERY_SIZE: usize = 16;
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
@@ -218,7 +218,7 @@ mod tests {
 
         let session = app
             .sessions
-            .add_test(TestConnectionData::new(SESSION_ID, "127.0.0.1"))
+            .add_test(TestConnectionData::new(session_id, "127.0.0.1"))
             .await;
 
         app.topic_list.restore(TOPIC_NAME, 3.into()).await;
