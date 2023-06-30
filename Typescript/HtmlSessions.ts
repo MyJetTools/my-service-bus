@@ -5,7 +5,7 @@ class HtmlSessions {
             '<tr><th style="width:50px">Id</th><th style="width:120px">Info</th><th>Publisher</th><th>Subscriber</th></tr>';
 
 
-        for (let session of status.sessions.items.sort((a, b) => a.name > b.name ? 1 : -1)) {
+        for (let session of status.sessions.items.sort((a, b) => a.id > b.id ? 1 : -1)) {
             let tp = "";
 
             if (session.type == "tcp") {

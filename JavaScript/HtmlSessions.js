@@ -4,7 +4,7 @@ var HtmlSessions = /** @class */ (function () {
     HtmlSessions.renderSessions = function (status) {
         var result = '<table style="font-size:12px" class="table table-striped table-dark">' +
             '<tr><th style="width:50px">Id</th><th style="width:120px">Info</th><th>Publisher</th><th>Subscriber</th></tr>';
-        for (var _i = 0, _a = status.sessions.items.sort(function (a, b) { return a.name > b.name ? 1 : -1; }); _i < _a.length; _i++) {
+        for (var _i = 0, _a = status.sessions.items.sort(function (a, b) { return a.id > b.id ? 1 : -1; }); _i < _a.length; _i++) {
             var session = _a[_i];
             var tp = "";
             if (session.type == "tcp") {

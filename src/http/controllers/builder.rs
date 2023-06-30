@@ -8,7 +8,7 @@ use crate::app::AppContext;
 
 pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
     let mut controllers = ControllersMiddleware::new(
-        ControllersAuthorization::ApiKeys {
+        ControllersAuthorization::BearerAuthentication {
             global: false,
             global_claims: RequiredClaims::no_claims(),
         }

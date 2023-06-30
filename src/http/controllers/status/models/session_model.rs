@@ -36,17 +36,21 @@ impl SessionJsonResult {
             "???".to_string()
         };
 
-        let protocol_version = if let Some(prot_ver) = session_metrics_data.protocol_version {
-            format!("[{}]", prot_ver)
+        let session_type = if let Some(prot_ver) = session_metrics_data.protocol_version {
+            format!(
+                "{}[{}]",
+                session_metrics_data.session_type.as_string(),
+                prot_ver
+            )
         } else {
-            String::new()
+            session_metrics_data.session_type.as_string().to_string()
         };
 
         Self {
             id: session_metrics_data.id.get_value(),
             ip: session_metrics_data.ip,
-            session_type: session_metrics_data.session_type.as_string().to_string(),
-            name: format!("{}{}", name, protocol_version),
+            session_type,
+            name,
             version: session_metrics_data.version,
             connected: rust_extensions::duration_utils::duration_to_string(
                 now.duration_since(session.connected).as_positive_or_zero(),
