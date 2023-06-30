@@ -7,7 +7,7 @@ var HtmlSessions = /** @class */ (function () {
         for (var _i = 0, _a = status.sessions.items.sort(function (a, b) { return a.id > b.id ? 1 : -1; }); _i < _a.length; _i++) {
             var session = _a[_i];
             var tp = "";
-            if (session.type == "tcp") {
+            if (session.type.indexOf("tcp") >= 0) {
                 tp = "<span class=\"badge badge-success\">tcp</span>";
             }
             else {

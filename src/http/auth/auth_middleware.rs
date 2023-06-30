@@ -26,10 +26,12 @@ impl HttpServerMiddleware for AuthMiddleware {
         get_next: &mut HttpServerRequestFlow,
     ) -> Result<HttpOkResult, HttpFailResult> {
         if let Some(header) = ctx.request.get_header(AUTH_HEADER) {
-            let token = SessionToken {
-                session: header.to_string(),
-            };
-            ctx.credentials = Some(Box::new(token));
+            if let Some(last) = header.split(' ').last() {
+                let token = SessionToken {
+                    session: last.to_string(),
+                };
+                ctx.credentials = Some(Box::new(token));
+            }
         }
 
         get_next.next(ctx).await

@@ -8,7 +8,7 @@ class HtmlSessions {
         for (let session of status.sessions.items.sort((a, b) => a.id > b.id ? 1 : -1)) {
             let tp = "";
 
-            if (session.type == "tcp") {
+            if (session.type.indexOf("tcp") >= 0) {
                 tp = `<span class="badge badge-success">tcp</span>`
             } else {
                 tp = `<span class="badge badge-warning">` + session.type + `</span>`
