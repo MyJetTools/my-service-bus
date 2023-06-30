@@ -21,16 +21,30 @@ impl MyTimerTick for GcTimer {
     async fn tick(&self) {
         for topic in self.app.topic_list.get_all().await {
             let now = DateTimeAsMicroseconds::now();
-            let mut topic_data = topic.get_access().await;
 
-            topic_data.gc_pages(now, PAGE_GC_DELAY);
+            let removed_queues = {
+                let mut topic_data = topic.get_access().await;
 
-            topic_data.gc_queues_with_no_subscribers(self.app.settings.queue_gc_timeout, now);
+                topic_data.gc_pages(now, PAGE_GC_DELAY);
 
-            if let Some(min_message_id) = topic_data.get_min_message_id() {
-                topic_data
-                    .pages
-                    .gc_messages(min_message_id, now, PAGE_GC_DELAY);
+                let removed_queues = topic_data
+                    .gc_queues_with_no_subscribers(self.app.settings.queue_gc_timeout, now);
+
+                if let Some(min_message_id) = topic_data.get_min_message_id() {
+                    topic_data
+                        .pages
+                        .gc_messages(min_message_id, now, PAGE_GC_DELAY);
+                }
+
+                removed_queues
+            };
+
+            if let Some(removed_queues) = &removed_queues {
+                for queue_id in removed_queues {
+                    self.app
+                        .prometheus
+                        .queue_is_deleted(&topic.topic_id, queue_id);
+                }
             }
         }
         crate::operations::gc_http_connections(self.app.as_ref()).await;

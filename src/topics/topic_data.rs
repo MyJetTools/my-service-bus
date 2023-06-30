@@ -141,11 +141,11 @@ impl TopicData {
         &mut self,
         queue_gc_timeout: Duration,
         now: DateTimeAsMicroseconds,
-    ) {
+    ) -> Option<Vec<String>> {
         let queues_with_no_subscribers = self.queues.get_queues_with_no_subscribers();
 
         if queues_with_no_subscribers.is_none() {
-            return;
+            return None;
         }
 
         let mut queues_to_delete = None;
@@ -173,11 +173,13 @@ impl TopicData {
             }
         }
 
-        if let Some(queues_to_delete) = queues_to_delete {
+        if let Some(queues_to_delete) = &queues_to_delete {
             for queue_id in queues_to_delete {
                 self.queues.remove(queue_id.as_str());
             }
         }
+
+        queues_to_delete
     }
 
     pub fn get_topic_size_metrics(&self) -> SizeMetrics {
