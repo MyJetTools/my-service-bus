@@ -9,9 +9,6 @@ use crate::utils::FromBase64;
 
 #[derive(MyHttpInput)]
 pub struct PublishMessageHttpInput {
-    #[http_header(description = "Http session")]
-    pub authorization: String,
-
     #[http_query(name="topicId"; description = "Id of topic")]
     pub topic_id: String,
 

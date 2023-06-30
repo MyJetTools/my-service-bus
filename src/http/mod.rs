@@ -1,3 +1,4 @@
+mod auth;
 pub mod controllers;
 mod errors;
 mod html;

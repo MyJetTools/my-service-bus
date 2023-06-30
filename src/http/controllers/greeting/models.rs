@@ -14,9 +14,3 @@ pub struct GreetingInputModel {
 pub struct GreetingJsonResult {
     pub session: String,
 }
-
-#[derive(Debug, MyHttpInput)]
-pub struct PingInputModel {
-    #[http_header(description = "Http session")]
-    pub authorization: String,
-}

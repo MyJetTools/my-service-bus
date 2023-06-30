@@ -3,9 +3,7 @@ use std::sync::Arc;
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput};
 use my_http_server_swagger::http_route;
 
-use crate::{app::AppContext, http::controllers::extensions::HttpContextExtensions};
-
-use super::models::PingInputModel;
+use crate::{app::AppContext, http::auth::GetSessionToken};
 
 #[http_route(
     method: "POST",
@@ -13,7 +11,6 @@ use super::models::PingInputModel;
     controller: "Greeting",
     description: "Ping Http Session",
     summary: "Pings Http Session",
-    input_data: "PingInputModel",
     ok_result_description: "Session is alive",
     result: [
         {status_code: 202, description: "Session description"},
@@ -33,15 +30,9 @@ impl PingAction {
 
 async fn handle_request(
     action: &PingAction,
-    input_data: PingInputModel,
-    _ctx: &HttpContext,
+    ctx: &HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let http_session = action
-        .app
-        .get_http_session(input_data.authorization.as_str())
-        .await?;
-
-    http_session.as_ref().connection.unwrap_as_http().ping();
-
+    let connection_data = ctx.get_http_session(&action.app).await?;
+    connection_data.connection.unwrap_as_http().ping();
     HttpOutput::Empty.into_ok_result(true).into()
 }

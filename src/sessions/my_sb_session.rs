@@ -103,7 +103,7 @@ impl MyServiceBusSession {
             SessionConnection::Http(data) => data.get_connection_metrics(),
             #[cfg(test)]
             SessionConnection::Test(_) => {
-                panic!("We do not have metrics in test enviroment");
+                panic!("We do not have metrics in test environment");
             }
         };
 

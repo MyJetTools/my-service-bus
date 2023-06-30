@@ -1,6 +1,6 @@
 pub mod builder;
 pub mod debug_controller;
-pub mod extensions;
+//pub mod extensions;
 pub mod greeting;
 mod home_controller;
 pub mod logs;

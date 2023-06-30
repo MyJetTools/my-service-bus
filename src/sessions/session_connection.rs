@@ -35,13 +35,6 @@ impl SessionConnection {
         );
     }
 
-    pub fn is_http(&self) -> bool {
-        match self {
-            SessionConnection::Http(_) => true,
-            _ => false,
-        }
-    }
-
     pub fn get_ip(&self) -> String {
         match self {
             SessionConnection::Tcp(data) => match &data.connection.addr {

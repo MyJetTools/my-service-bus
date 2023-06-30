@@ -1,4 +1,4 @@
-use crate::http::controllers::extensions::HttpContextExtensions;
+use crate::http::auth::GetSessionToken;
 
 use my_http_server_swagger::http_route;
 use my_service_bus_abstractions::publisher::MessageToPublish;
@@ -21,25 +21,22 @@ use super::contracts::PublishMessageHttpInput;
         {status_code: 202, description: "Message is published"},
     ]
 )]
-pub struct PublisherController {
+pub struct PublishAction {
     app: Arc<AppContext>,
 }
 
-impl PublisherController {
+impl PublishAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
 async fn handle_request(
-    action: &PublisherController,
+    action: &PublishAction,
     http_input: PublishMessageHttpInput,
-    _ctx: &HttpContext,
+    ctx: &HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let session = action
-        .app
-        .get_http_session(http_input.authorization.as_str())
-        .await?;
+    let session = ctx.get_http_session(&action.app).await?;
 
     let mut messages_to_publish = Vec::with_capacity(http_input.messages.len());
 
