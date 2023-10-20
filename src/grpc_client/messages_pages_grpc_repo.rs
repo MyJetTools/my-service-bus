@@ -17,7 +17,7 @@ use crate::persistence_grpc::*;
 use super::protobuf_models::NewMessagesProtobufContract;
 use super::PersistenceError;
 
-const PAYLOAD_SIZE: usize = 1024 * 1024 * 4;
+const PAYLOAD_SIZE: usize = 1024 * 1024 * 2;
 pub struct MessagesPagesGrpcRepo {
     channel: Channel,
     time_out: Duration,
