@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
-use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::{page_id::PageId, protobuf_models::MessageProtobufModel};
+use my_service_bus::abstractions::MessageId;
+use my_service_bus::shared::{page_id::PageId, protobuf_models::MessageProtobufModel};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{messages_page::MySbMessageContent, settings::SettingsModel};
@@ -91,6 +91,17 @@ impl MessagesPagesRepo {
             #[cfg(test)]
             MessagesPagesRepo::Mock(_) => {
                 println!("Delete topic {} is invoked", topic_id);
+            }
+        }
+    }
+
+    pub async fn restore_topic(&self, topic_id: &str) -> bool {
+        match self {
+            MessagesPagesRepo::Grpc(repo) => repo.restore_topic(topic_id).await,
+            #[cfg(test)]
+            MessagesPagesRepo::Mock(_) => {
+                println!("Restore topic topic {} is invoked", topic_id);
+                return true;
             }
         }
     }

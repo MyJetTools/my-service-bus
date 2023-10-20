@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
-use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::validators::InvalidTopicName;
+use my_service_bus::abstractions::MessageId;
+use my_service_bus::shared::validators::InvalidTopicName;
 
 use super::Topic;
 
@@ -37,7 +37,7 @@ impl TopicListInner {
 
     pub fn add_if_not_exists(&mut self, topic_id: &str) -> Result<Arc<Topic>, InvalidTopicName> {
         if !self.topics.contains_key(topic_id) {
-            my_service_bus_shared::validators::validate_topic_name(topic_id)?;
+            my_service_bus::shared::validators::validate_topic_name(topic_id)?;
 
             let topic = Topic::new(topic_id.to_string(), 0);
             let topic = Arc::new(topic);

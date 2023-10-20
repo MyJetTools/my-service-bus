@@ -6,7 +6,7 @@ use crate::app::AppContext;
 
 use super::models::ReadLogsByTopicInputModel;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "GET",
     route: "/Logs/Topic/{topicId}",
     input_data: "ReadLogsByTopicInputModel",

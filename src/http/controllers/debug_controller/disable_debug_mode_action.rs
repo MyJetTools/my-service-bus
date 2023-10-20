@@ -4,7 +4,7 @@ use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput};
 
 use std::sync::Arc;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "DELETE",
     route: "/Debug/Disable",
     description: "Disable debug mode",

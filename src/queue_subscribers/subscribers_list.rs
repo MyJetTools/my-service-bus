@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
-use my_service_bus_abstractions::{subscriber::TopicQueueType, MessageId};
+use my_service_bus::abstractions::{subscriber::TopicQueueType, MessageId};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{

@@ -6,7 +6,7 @@ use crate::app::AppContext;
 
 use super::models::GetOnDeliveryInputModel;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "GET",
     route: "/Debug/OnDelivery",
     input_data: "GetOnDeliveryInputModel",

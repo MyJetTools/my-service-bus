@@ -3,9 +3,9 @@ use std::time::Duration;
 
 use futures_util::stream;
 
-use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::page_id::PageId;
-use my_service_bus_shared::protobuf_models::MessageProtobufModel;
+use my_service_bus::abstractions::MessageId;
+use my_service_bus::shared::page_id::PageId;
+use my_service_bus::shared::protobuf_models::MessageProtobufModel;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use tokio_stream::StreamExt;
 use tonic::transport::Channel;
@@ -53,7 +53,7 @@ impl MessagesPagesGrpcRepo {
         let grpc_protobuf = grpc_messages.into_protobuf_vec();
 
         let grpc_protobuf_compressed =
-            my_service_bus_shared::page_compressor::zip::compress_payload(
+            my_service_bus::shared::page_compressor::zip::compress_payload(
                 grpc_protobuf.as_slice(),
             )?;
 
@@ -175,6 +175,24 @@ impl MessagesPagesGrpcRepo {
             })
             .await
             .unwrap();
+    }
+
+    pub async fn restore_topic(&self, topic_id: &str) -> bool {
+        let mut grpc_client = self.create_grpc_service();
+
+        let result = grpc_client
+            .restore_topic(RestoreTopicRequest {
+                topic_id: topic_id.to_string(),
+            })
+            .await
+            .unwrap();
+
+        let result = result.into_inner();
+        if !result.result {
+            return false;
+        }
+
+        todo!("Something is removed here")
     }
 }
 

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::validators::InvalidTopicName;
+use my_service_bus::abstractions::MessageId;
+use my_service_bus::shared::validators::InvalidTopicName;
 use tokio::sync::RwLock;
 
 use super::{topic::Topic, TopicListInner};

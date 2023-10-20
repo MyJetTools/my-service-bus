@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_service_bus_abstractions::subscriber::TopicQueueType;
+use my_service_bus::abstractions::subscriber::TopicQueueType;
 
 use crate::{
     app::AppContext, queue_subscribers::QueueSubscriber, queues::TopicQueue,

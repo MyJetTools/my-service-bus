@@ -3,7 +3,7 @@ use std::collections::{
     HashMap,
 };
 
-use my_service_bus_abstractions::{
+use my_service_bus::abstractions::{
     queue_with_intervals::QueueWithIntervals, subscriber::TopicQueueType,
 };
 

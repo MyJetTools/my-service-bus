@@ -6,7 +6,7 @@ use super::delivery::{SendNewMessagesResult, SubscriberPackageBuilder};
 
 pub fn send_package(
     session: Arc<MyServiceBusSession>,
-    tcp_packet: my_service_bus_tcp_shared::TcpContract,
+    tcp_packet: my_service_bus::tcp_contracts::TcpContract,
 ) {
     let _handle = tokio::spawn(async move {
         match &session.connection {

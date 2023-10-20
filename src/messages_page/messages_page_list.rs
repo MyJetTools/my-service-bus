@@ -3,8 +3,8 @@ use std::{
     time::Duration,
 };
 
-use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::{page_id::PageId, sub_page::SubPageId};
+use my_service_bus::abstractions::MessageId;
+use my_service_bus::shared::{page_id::PageId, sub_page::SubPageId};
 use rust_extensions::{date_time::DateTimeAsMicroseconds, lazy::LazyVec};
 
 use crate::utils::MinMessageIdCalculator;

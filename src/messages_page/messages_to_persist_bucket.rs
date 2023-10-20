@@ -1,5 +1,5 @@
-use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
-use my_service_bus_shared::{protobuf_models::MessageProtobufModel, sub_page::SubPageId};
+use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus::shared::{protobuf_models::MessageProtobufModel, sub_page::SubPageId};
 
 pub struct MessagesToPersistBucket {
     messages_to_persist: Option<Vec<MessageProtobufModel>>,

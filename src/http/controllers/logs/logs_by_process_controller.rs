@@ -7,7 +7,7 @@ use crate::app::{logs::SystemProcess, AppContext};
 
 use super::models::*;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "GET",
     route: "/Logs/Process/{processId}",
     input_data: "ReadLogsByProcessInputModel"

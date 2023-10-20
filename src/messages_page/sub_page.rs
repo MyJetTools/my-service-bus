@@ -4,8 +4,8 @@ use super::{
     GetMessageResult, MessagesToPersistBucket, MissingSubPageInner, MySbMessageContent,
     SizeMetrics, SubPageInner,
 };
-use my_service_bus_abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
-use my_service_bus_shared::sub_page::SubPageId;
+use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
+use my_service_bus::shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 pub enum SubPage {

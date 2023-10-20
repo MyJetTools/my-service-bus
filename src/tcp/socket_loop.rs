@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use my_tcp_sockets::{ConnectionEvent, SocketEventCallback};
 use std::{collections::HashMap, sync::Arc};
 
-use my_service_bus_tcp_shared::{MySbTcpSerializer, TcpContract};
+use my_service_bus::tcp_contracts::{MySbTcpSerializer, TcpContract};
 
 use crate::{
     app::{logs::SystemProcess, AppContext},

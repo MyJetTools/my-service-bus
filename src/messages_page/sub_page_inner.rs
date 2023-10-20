@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
-use my_service_bus_abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
-use my_service_bus_shared::sub_page::{SizeAndAmount, SubPageId};
+use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
+use my_service_bus::shared::sub_page::{SizeAndAmount, SubPageId};
 use rust_extensions::date_time::{AtomicDateTimeAsMicroseconds, DateTimeAsMicroseconds};
 
 use super::{MessagesToPersistBucket, MySbCachedMessage, MySbMessageContent, SizeMetrics};

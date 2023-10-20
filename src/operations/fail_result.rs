@@ -1,4 +1,4 @@
-use my_service_bus_shared::validators::InvalidTopicName;
+use my_service_bus::shared::validators::InvalidTopicName;
 
 use crate::queue_subscribers::SubscriberId;
 

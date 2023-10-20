@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use my_service_bus_abstractions::subscriber::TopicQueueType;
+use my_service_bus::abstractions::subscriber::TopicQueueType;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::topics::TopicData;

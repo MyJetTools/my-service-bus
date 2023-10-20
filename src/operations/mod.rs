@@ -24,3 +24,5 @@ pub use load_page_and_try_to_deliver_again::load_page_and_try_to_deliver_again;
 pub use persist_topics_and_queues::persist_topics_and_queues;
 pub use save_messages_for_topic::save_messages_for_topic;
 pub use send_package::send_package;
+mod restore_topic;
+pub use restore_topic::*;

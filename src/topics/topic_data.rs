@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
-use my_service_bus_abstractions::publisher::MessageToPublish;
-use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
-use my_service_bus_abstractions::MessageId;
+use my_service_bus::abstractions::publisher::MessageToPublish;
+use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus::abstractions::MessageId;
 
-use my_service_bus_shared::sub_page::SubPageId;
+use my_service_bus::shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::messages_page::{MessagesPageList, MySbMessageContent, SizeMetrics};
@@ -151,7 +151,7 @@ impl TopicData {
         let mut queues_to_delete = None;
 
         for topic_queue in queues_with_no_subscribers.unwrap() {
-            if let my_service_bus_abstractions::subscriber::TopicQueueType::DeleteOnDisconnect =
+            if let my_service_bus::abstractions::subscriber::TopicQueueType::DeleteOnDisconnect =
                 topic_queue.queue_type
             {
                 if now

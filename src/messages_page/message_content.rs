@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use my_service_bus_abstractions::MessageId;
-use my_service_bus_shared::protobuf_models::MessageProtobufModel;
+use my_service_bus::abstractions::MessageId;
+use my_service_bus::shared::protobuf_models::MessageProtobufModel;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 #[derive(Debug, Clone)]
@@ -60,7 +60,7 @@ impl From<MessageProtobufModel> for MySbMessageContent {
 }
 
 fn convert_headers_to_hash_map(
-    src: Vec<my_service_bus_shared::protobuf_models::MessageMetaDataProtobufModel>,
+    src: Vec<my_service_bus::shared::protobuf_models::MessageMetaDataProtobufModel>,
 ) -> Option<HashMap<String, String>> {
     if src.len() == 0 {
         return None;
@@ -77,12 +77,12 @@ fn convert_headers_to_hash_map(
 
 fn convert_headers_from_hash_map(
     src: &Option<HashMap<String, String>>,
-) -> Vec<my_service_bus_shared::protobuf_models::MessageMetaDataProtobufModel> {
+) -> Vec<my_service_bus::shared::protobuf_models::MessageMetaDataProtobufModel> {
     if let Some(src) = src {
         let mut result = Vec::with_capacity(src.len());
         for (key, value) in src {
             result.push(
-                my_service_bus_shared::protobuf_models::MessageMetaDataProtobufModel {
+                my_service_bus::shared::protobuf_models::MessageMetaDataProtobufModel {
                     key: key.clone(),
                     value: value.clone(),
                 },

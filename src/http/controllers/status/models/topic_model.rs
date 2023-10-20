@@ -1,7 +1,7 @@
 use crate::{messages_page::MessagesPageList, topics::TopicData};
 
-use my_http_server_swagger::MyHttpObjectStructure;
-use my_service_bus_shared::{page_id::PageId, sub_page::SubPageId};
+use my_http_server::macros::MyHttpObjectStructure;
+use my_service_bus::shared::{page_id::PageId, sub_page::SubPageId};
 use serde::{Deserialize, Serialize};
 
 use super::{

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use my_http_server::macros::http_route;
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput};
-use my_http_server_swagger::http_route;
 
 use crate::{app::AppContext, sessions::HttpConnectionData};
 

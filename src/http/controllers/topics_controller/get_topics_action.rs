@@ -6,9 +6,9 @@ use crate::app::AppContext;
 
 use super::models::{JsonTopicResult, JsonTopicsResult};
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "GET",
-    route: "/Topics/Create",
+    route: "/api/Topics/Create",
     description: "Returns list of topics",
     summary: "Get list of topics",
     controller: "Topics",

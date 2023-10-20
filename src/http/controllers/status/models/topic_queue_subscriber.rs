@@ -1,4 +1,4 @@
-use my_http_server_swagger::MyHttpObjectStructure;
+use my_http_server::macros::MyHttpObjectStructure;
 use serde::{Deserialize, Serialize};
 
 use crate::queue_subscribers::QueueSubscriber;

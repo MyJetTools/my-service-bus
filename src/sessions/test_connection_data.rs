@@ -1,4 +1,4 @@
-use my_service_bus_tcp_shared::TcpContract;
+use my_service_bus::tcp_contracts::TcpContract;
 use tokio::sync::Mutex;
 
 use super::SessionId;

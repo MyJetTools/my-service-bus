@@ -1,6 +1,6 @@
 use crate::topics::Topic;
 
-use my_http_server_swagger::{MyHttpInput, MyHttpObjectStructure};
+use my_http_server::macros::{MyHttpInput, MyHttpObjectStructure};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 use serde::{Deserialize, Serialize};
 
@@ -38,4 +38,15 @@ pub struct DeleteTopicRequestContract {
     pub topic_id: String,
     #[http_query(name = "hardDeleteMoment"; description = "Moment when all data is going to be deleted forever")]
     pub hard_delete_moment: DateTimeAsMicroseconds,
+}
+
+#[derive(Debug, MyHttpInput)]
+pub struct RestoreTopicRequestContract {
+    #[http_query(name = "topicId"; description = "Id of topic")]
+    pub topic_id: String,
+}
+
+#[derive(Debug, MyHttpObjectStructure, Serialize)]
+pub struct RestoreTopicResponseContract {
+    pub restored: bool,
 }

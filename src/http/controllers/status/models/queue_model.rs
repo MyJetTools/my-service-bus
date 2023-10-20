@@ -1,6 +1,6 @@
 use crate::{queues::TopicQueue, topics::TopicData};
 
-use my_http_server_swagger::MyHttpObjectStructure;
+use my_http_server::macros::MyHttpObjectStructure;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]

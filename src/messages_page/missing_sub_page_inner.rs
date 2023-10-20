@@ -1,4 +1,4 @@
-use my_service_bus_shared::sub_page::SubPageId;
+use my_service_bus::shared::sub_page::SubPageId;
 use rust_extensions::date_time::{AtomicDateTimeAsMicroseconds, DateTimeAsMicroseconds};
 
 pub struct MissingSubPageInner {

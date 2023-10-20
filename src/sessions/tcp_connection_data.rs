@@ -3,7 +3,7 @@ use std::sync::{
     Arc,
 };
 
-use my_service_bus_tcp_shared::{MySbTcpSerializer, PacketProtVer, TcpContract};
+use my_service_bus::tcp_contracts::{MySbTcpSerializer, PacketProtVer, TcpContract};
 use my_tcp_sockets::tcp_connection::SocketConnection;
 use tokio::sync::RwLock;
 

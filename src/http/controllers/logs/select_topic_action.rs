@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::app::AppContext;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "GET",
     route: "/Logs/Topic",
 )]

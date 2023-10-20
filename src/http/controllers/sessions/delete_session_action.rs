@@ -5,7 +5,7 @@ use std::sync::Arc;
 use super::*;
 use crate::app::AppContext;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "DELETE",
     route: "/Sessions",
     input_data: "DeleteSessionInputContract",

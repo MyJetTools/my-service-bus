@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use my_http_server::{HttpFailResult, WebContentType};
 
-use my_http_server_swagger::{MyHttpInput, MyHttpObjectStructure};
+use my_http_server::macros::{MyHttpInput, MyHttpObjectStructure};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::FromBase64;

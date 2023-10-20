@@ -4,7 +4,7 @@ use background::{
     DeadSubscribersKickerTimer, GcTimer, ImmediatelyPersistEventLoop, MetricsTimer,
     PersistTopicsAndQueuesTimer,
 };
-use my_service_bus_tcp_shared::{ConnectionAttributes, MySbTcpSerializer};
+use my_service_bus::tcp_contracts::{ConnectionAttributes, MySbTcpSerializer};
 use my_tcp_sockets::TcpServer;
 use rust_extensions::MyTimer;
 use tcp::socket_loop::TcpServerEvents;

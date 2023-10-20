@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
-use my_service_bus_tcp_shared::{MySbTcpSerializer, TcpContract};
+use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus::tcp_contracts::{MySbTcpSerializer, TcpContract};
 use my_tcp_sockets::tcp_connection::SocketConnection;
 
 use crate::{app::AppContext, operations};
@@ -151,7 +151,7 @@ pub async fn handle(
         }
         TcpContract::PacketVersions { packet_versions } => {
             if let Some(version) =
-                packet_versions.get(&my_service_bus_tcp_shared::tcp_message_id::NEW_MESSAGES)
+                packet_versions.get(&my_service_bus::tcp_contracts::tcp_message_id::NEW_MESSAGES)
             {
                 if let Some(session) = app.sessions.get_by_tcp_connection_id(connection.id).await {
                     session.update_tcp_delivery_packet_version(*version)

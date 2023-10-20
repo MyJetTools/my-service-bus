@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_http_server_controllers::controllers::{
+use my_http_server::controllers::{
     ControllersAuthorization, ControllersMiddleware, RequiredClaims,
 };
 
@@ -19,6 +19,11 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
     controllers.register_post_action(Arc::new(super::topics_controller::CreateTopicAction::new(
         app.clone(),
     )));
+
+    controllers.register_put_action(Arc::new(super::topics_controller::RestoreTopicAction::new(
+        app.clone(),
+    )));
+
     controllers.register_get_action(Arc::new(super::topics_controller::GetTopicsAction::new(
         app.clone(),
     )));

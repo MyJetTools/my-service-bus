@@ -1,4 +1,4 @@
-use my_service_bus_abstractions::{
+use my_service_bus::abstractions::{
     queue_with_intervals::QueueIndexRange, subscriber::TopicQueueType,
 };
 use rust_extensions::ShortString;

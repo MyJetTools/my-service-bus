@@ -1,5 +1,5 @@
-use my_service_bus_abstractions::queue_with_intervals::QueueIndexRange;
-use my_service_bus_abstractions::subscriber::TopicQueueType;
+use my_service_bus::abstractions::queue_with_intervals::QueueIndexRange;
+use my_service_bus::abstractions::subscriber::TopicQueueType;
 
 use crate::topics::{TopicQueueSnapshot, TopicSnapshot};
 

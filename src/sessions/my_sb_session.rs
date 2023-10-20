@@ -1,4 +1,4 @@
-use my_service_bus_tcp_shared::PacketProtVer;
+use my_service_bus::tcp_contracts::PacketProtVer;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use super::{ConnectionMetricsSnapshot, SessionConnection, SessionId};

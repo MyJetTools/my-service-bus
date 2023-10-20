@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use my_service_bus_shared::sub_page::SubPageId;
+use my_service_bus::shared::sub_page::SubPageId;
 
 use crate::{
     app::logs::Logs,

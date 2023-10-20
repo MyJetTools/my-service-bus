@@ -6,9 +6,9 @@ use crate::app::AppContext;
 
 use super::models::*;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "DELETE",
-    route: "/Topics/Delete",
+    route: "/api/Topics/Delete",
     description: "Soft deletes topic",
     summary: "Delete topic",
     input_data: "DeleteTopicRequestContract",

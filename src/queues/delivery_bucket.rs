@@ -1,4 +1,4 @@
-use my_service_bus_abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 
 pub struct DeliveryBucket {
     pub ids: QueueWithIntervals,

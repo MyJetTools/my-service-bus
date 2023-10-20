@@ -1,5 +1,5 @@
-use my_service_bus_abstractions::AsMessageId;
-use my_service_bus_shared::sub_page::SubPageId;
+use my_service_bus::abstractions::AsMessageId;
+use my_service_bus::shared::sub_page::SubPageId;
 use rust_extensions::{date_time::DateTimeAsMicroseconds, lazy::LazyVec};
 
 use std::sync::Arc;
@@ -125,12 +125,12 @@ fn compile_package(
 #[cfg(test)]
 mod tests {
 
-    use my_service_bus_abstractions::{
+    use my_service_bus::abstractions::{
         publisher::MessageToPublish, queue_with_intervals::QueueWithIntervals,
         subscriber::TopicQueueType,
     };
-    use my_service_bus_shared::protobuf_models::MessageProtobufModel;
-    use my_service_bus_tcp_shared::TcpContract;
+    use my_service_bus::shared::protobuf_models::MessageProtobufModel;
+    use my_service_bus::tcp_contracts::TcpContract;
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
     use crate::{
@@ -284,7 +284,8 @@ mod tests {
         let packet = result_packets.remove(0);
 
         let packet =
-            my_service_bus_tcp_shared::tcp_serializers::convert_from_raw(packet, &version).await;
+            my_service_bus::tcp_contracts::tcp_serializers::convert_from_raw(packet, &version)
+                .await;
 
         if let TcpContract::NewMessages {
             topic_id,

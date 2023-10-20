@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_service_bus_abstractions::publisher::MessageToPublish;
+use my_service_bus::abstractions::publisher::MessageToPublish;
 
 use crate::{app::AppContext, sessions::SessionId, topics::Topic};
 

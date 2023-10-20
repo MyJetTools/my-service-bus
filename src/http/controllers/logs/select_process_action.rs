@@ -3,7 +3,7 @@ use rust_extensions::StringBuilder;
 
 use crate::app::logs::SystemProcess;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "GET",
     route: "/Logs/Process",
 )]

@@ -6,9 +6,9 @@ use crate::app::AppContext;
 
 use super::models::CreateTopicRequestContract;
 
-#[my_http_server_swagger::http_route(
+#[my_http_server::macros::http_route(
     method: "POST",
-    route: "/Topics/Create",
+    route: "/api/Topics/Create",
     input_data: "CreateTopicRequestContract",
     description: "Create topic",
     summary: "Create topic",

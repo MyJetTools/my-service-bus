@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
-use my_service_bus_abstractions::{queue_with_intervals::QueueWithIntervals, MyServiceBusMessage};
+use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MyServiceBusMessage};
 
-use my_service_bus_tcp_shared::{delivery_package_builder::DeliverTcpPacketBuilder, TcpContract};
+use my_service_bus::tcp_contracts::{
+    delivery_package_builder::DeliverTcpPacketBuilder, TcpContract,
+};
 use rust_extensions::ShortString;
 
 use crate::{
@@ -16,7 +18,7 @@ pub struct PacketToSendWrapper<'s> {
 }
 
 impl<'s> MyServiceBusMessage for PacketToSendWrapper<'s> {
-    fn get_id(&self) -> my_service_bus_abstractions::MessageId {
+    fn get_id(&self) -> my_service_bus::abstractions::MessageId {
         self.inner.id
     }
 
