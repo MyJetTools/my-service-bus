@@ -26,6 +26,12 @@ jobs:
         uses: arduino/setup-protoc@v1            
       - run: cargo build --release
 
+      - name: ls
+        continue-on-error: true
+        run: |
+          ls -la
+          ls -la ./target/release/
+
       - name: Docker login
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
