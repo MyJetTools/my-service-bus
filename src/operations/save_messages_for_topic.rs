@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{app::AppContext, topics::Topic};
 
-pub const PERSIST_PAYLOAD_MAX_SIZE: usize = 1024 * 1024 * 3;
+pub const PERSIST_PAYLOAD_MAX_SIZE: usize = 1024 * 1024 * 4;
 
 pub async fn save_messages_for_topic(app: &Arc<AppContext>, topic: &Arc<Topic>) {
     while let Some(mut messages_to_persist) = topic
