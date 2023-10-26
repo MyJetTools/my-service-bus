@@ -10,8 +10,8 @@ use tokio::sync::Mutex;
 use crate::messages_page::{MessagesToPersistBucket, SizeMetrics};
 use crate::queue_subscribers::DeadSubscriber;
 
-use super::topic_data::TopicInner;
 use super::topic_data_access::TopicDataAccess;
+use super::TopicInner;
 use super::TopicSnapshot;
 
 pub struct Topic {
