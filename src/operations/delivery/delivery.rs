@@ -108,6 +108,9 @@ fn compile_package(
         let sub_page = pages.get(sub_page_id);
 
         if sub_page.is_none() {
+            if topic.topic_id == "account-balance-update" {
+                println!("Restoring SubPageId {}", sub_page_id.get_value());
+            }
             crate::operations::load_page_and_try_to_deliver_again(app, topic.clone(), sub_page_id);
 
             return package_builder;

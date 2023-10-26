@@ -12,13 +12,20 @@ pub async fn load_page_to_cache(
     messages_pages_repo: Arc<MessagesPagesRepo>,
     logs: Option<&Logs>,
     sub_page_id: SubPageId,
-) -> SubPage {
+) -> Option<SubPage> {
     let mut dt = topic.restore_page_lock.lock().await;
+
+    {
+        let topic_data = topic.get_access().await;
+        if topic_data.pages.get(sub_page_id).is_some() {
+            return None;
+        }
+    }
 
     let sub_page =
         super::operations::load_page(topic.as_ref(), &messages_pages_repo, logs, sub_page_id).await;
 
     *dt = DateTimeAsMicroseconds::now();
 
-    sub_page
+    Some(sub_page)
 }

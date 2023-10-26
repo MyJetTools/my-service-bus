@@ -71,8 +71,10 @@ async fn restore_topic_pages(app: Arc<AppContext>, topic: Arc<Topic>) {
     )
     .await;
 
-    let mut topic_data = topic.get_access().await;
-    topic_data.pages.restore_sub_page(sub_page);
+    if let Some(sub_page) = sub_page {
+        let mut topic_data = topic.get_access().await;
+        topic_data.pages.restore_sub_page(sub_page);
+    }
 }
 
 async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
