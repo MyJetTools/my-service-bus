@@ -16,7 +16,7 @@ use super::TopicSnapshot;
 
 pub struct Topic {
     pub topic_id: String,
-    data: Mutex<TopicInner>,
+    inner: Mutex<TopicInner>,
     pub restore_page_lock: Mutex<DateTimeAsMicroseconds>,
     pub immediately_persist_is_charged: AtomicBool,
 }
@@ -25,25 +25,25 @@ impl Topic {
     pub fn new(topic_id: String, message_id: i64) -> Self {
         Self {
             topic_id: topic_id.to_string(),
-            data: Mutex::new(TopicInner::new(topic_id, message_id)),
+            inner: Mutex::new(TopicInner::new(topic_id, message_id)),
             restore_page_lock: Mutex::new(DateTimeAsMicroseconds::now()),
             immediately_persist_is_charged: AtomicBool::new(false),
         }
     }
 
     pub async fn get_access<'s>(&'s self) -> TopicDataAccess<'s> {
-        let access = self.data.lock().await;
+        let access = self.inner.lock().await;
 
         TopicDataAccess::new(access)
     }
 
     pub async fn get_message_id(&self) -> MessageId {
-        let read_access = self.data.lock().await;
+        let read_access = self.inner.lock().await;
         read_access.message_id.into()
     }
 
     pub async fn get_current_sub_page(&self) -> SubPageId {
-        let read_access = self.data.lock().await;
+        let read_access = self.inner.lock().await;
 
         let sub_page_id = SubPageId::from_message_id(read_access.message_id.into());
 
@@ -51,7 +51,7 @@ impl Topic {
     }
 
     pub async fn get_topic_snapshot(&self) -> TopicSnapshot {
-        let topic_data = self.data.lock().await;
+        let topic_data = self.inner.lock().await;
 
         TopicSnapshot {
             message_id: topic_data.message_id.into(),
@@ -65,7 +65,7 @@ impl Topic {
         delivery_timeout_duration: Duration,
     ) -> Option<Vec<DeadSubscriber>> {
         let mut result = None;
-        let mut topic_data = self.data.lock().await;
+        let mut topic_data = self.inner.lock().await;
 
         for queue in topic_data.queues.get_all_mut() {
             if let Some(dead_subscribers) = queue
