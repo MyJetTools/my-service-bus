@@ -105,6 +105,13 @@ impl SubPage {
 
         now.duration_since(last_access_time).as_positive_or_zero() > gc_delay
     }
+
+    pub fn is_all_messages_missing(&self) -> bool {
+        match self {
+            SubPage::SubPage(_) => false,
+            SubPage::AllMessagesMissing(_) => true,
+        }
+    }
 }
 
 impl Into<SubPage> for SubPageInner {

@@ -59,10 +59,11 @@ fn compile_packages(
 
         let (subscriber_id, session) = subscriber.unwrap();
 
-        let package_builder =
-            compile_package(app, topic, topic_queue, pages, subscriber_id, session);
-
-        to_send.add(package_builder);
+        if let Some(package_builder) =
+            compile_package(app, topic, topic_queue, pages, subscriber_id, &session)
+        {
+            to_send.add(package_builder);
+        }
     }
 }
 
@@ -72,22 +73,32 @@ fn compile_package(
     topic_queue: &mut TopicQueue,
     pages: &MessagesPageList,
     subscriber_id: SubscriberId,
-    session: Arc<MyServiceBusSession>,
-) -> SubscriberPackageBuilder {
-    let mut package_builder = SubscriberPackageBuilder::new(
-        topic.clone(),
-        topic_queue.queue_id.as_str().into(),
-        subscriber_id,
-        session,
-    );
+    session: &Arc<MyServiceBusSession>,
+) -> Option<SubscriberPackageBuilder> {
+    let mut package_builder = None;
+    /*
+
+    */
     #[cfg(test)]
     println!("compile_and_deliver");
 
-    while package_builder.get_data_size() < app.get_max_delivery_size() {
+    let mut payload_size = 0;
+
+    while payload_size < app.get_max_delivery_size() {
         let message_id = topic_queue.queue.peek();
 
         if message_id.is_none() {
             break;
+        }
+
+        if package_builder.is_none() {
+            package_builder = SubscriberPackageBuilder::new(
+                topic.clone(),
+                topic_queue.queue_id.as_str().into(),
+                subscriber_id,
+                session.clone(),
+            )
+            .into();
         }
 
         let message_id = message_id.unwrap().as_message_id();
@@ -110,10 +121,26 @@ fn compile_package(
         match sub_page.get_message(message_id.as_message_id()) {
             GetMessageResult::Message(message_content) => {
                 let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
-                package_builder.add_message(message_content, attempt_no);
+                package_builder
+                    .as_mut()
+                    .unwrap()
+                    .add_message(message_content, attempt_no);
             }
-            GetMessageResult::Missing => {}
+            GetMessageResult::Missing => {
+                if topic.topic_id == "account-balance-update" {
+                    println!(
+                        "Has Missing MessageId: {}. All Messages are missing in SubPage {} is {}",
+                        message_id,
+                        sub_page.get_id().get_value(),
+                        sub_page.is_all_messages_missing()
+                    )
+                }
+            }
             GetMessageResult::GarbageCollected => {
+                if topic.topic_id == "account-balance-update" {
+                    println!("crate::operations::load_page_and_try_to_deliver_again. HasPackageBuilder:{} ", package_builder.is_some())
+                }
+
                 crate::operations::load_page_and_try_to_deliver_again(
                     app,
                     topic.clone(),
@@ -122,6 +149,11 @@ fn compile_package(
                 return package_builder;
             }
         }
+
+        payload_size = match package_builder {
+            Some(ref package_builder) => package_builder.get_data_size(),
+            None => 0,
+        };
     }
 
     package_builder
