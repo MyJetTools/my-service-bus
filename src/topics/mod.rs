@@ -7,7 +7,7 @@ mod topics_list;
 mod topics_list_inner;
 
 pub use topic::Topic;
-pub use topic_data::TopicData;
+pub use topic_data::TopicInner;
 pub use topic_snapshot::TopicQueueSnapshot;
 pub use topic_snapshot::TopicSnapshot;
 pub use topic_statistics::*;

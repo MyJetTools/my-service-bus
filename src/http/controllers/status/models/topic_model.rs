@@ -1,4 +1,4 @@
-use crate::{messages_page::MessagesPageList, topics::TopicData};
+use crate::{messages_page::MessagesPageList, topics::TopicInner};
 
 use my_http_server::macros::MyHttpObjectStructure;
 use my_service_bus::shared::{page_id::PageId, sub_page::SubPageId};
@@ -34,7 +34,7 @@ pub struct TopicJsonContract {
 }
 
 impl TopicJsonContract {
-    pub fn new(topic_data: &TopicData) -> Self {
+    pub fn new(topic_data: &TopicInner) -> Self {
         let mut publishers = Vec::with_capacity(topic_data.publishers.len());
 
         let mut subscribers = Vec::new();

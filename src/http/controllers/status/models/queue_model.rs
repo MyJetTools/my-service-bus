@@ -1,4 +1,4 @@
-use crate::{queues::TopicQueue, topics::TopicData};
+use crate::{queues::TopicQueue, topics::TopicInner};
 
 use my_http_server::macros::MyHttpObjectStructure;
 use serde::{Deserialize, Serialize};
@@ -11,7 +11,7 @@ pub struct QueuesJsonResult {
 }
 
 impl QueuesJsonResult {
-    pub fn new(topic_data: &TopicData) -> Self {
+    pub fn new(topic_data: &TopicInner) -> Self {
         let mut result = QueuesJsonResult {
             snapshot_id: topic_data.queues.get_snapshot_id(),
             queues: Vec::new(),

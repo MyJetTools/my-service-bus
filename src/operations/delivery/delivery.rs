@@ -10,7 +10,7 @@ use crate::{
     queue_subscribers::SubscriberId,
     queues::TopicQueue,
     sessions::MyServiceBusSession,
-    topics::{Topic, TopicData},
+    topics::{Topic, TopicInner},
 };
 
 use super::SubscriberPackageBuilder;
@@ -18,7 +18,7 @@ use super::SubscriberPackageBuilder;
 pub fn try_to_deliver_to_subscribers(
     app: &Arc<AppContext>,
     topic: &Arc<Topic>,
-    topic_data: &mut TopicData,
+    topic_data: &mut TopicInner,
 ) {
     let mut to_send = LazyVec::new();
 

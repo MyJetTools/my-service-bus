@@ -18,7 +18,7 @@ use super::TopicStatistics;
 
 const BADGE_HIGHLIGHT_TIME_OUT: u8 = 2;
 
-pub struct TopicData {
+pub struct TopicInner {
     pub topic_id: String,
     pub message_id: MessageId,
     pub queues: TopicQueuesList,
@@ -27,7 +27,7 @@ pub struct TopicData {
     pub publishers: HashMap<i64, u8>,
 }
 
-impl TopicData {
+impl TopicInner {
     pub fn new(topic_id: String, message_id: i64) -> Self {
         Self {
             topic_id,

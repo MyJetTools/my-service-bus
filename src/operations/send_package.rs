@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{sessions::MyServiceBusSession, topics::TopicData};
+use crate::{sessions::MyServiceBusSession, topics::TopicInner};
 
 use super::delivery::{SendNewMessagesResult, SubscriberPackageBuilder};
 
@@ -22,7 +22,10 @@ pub fn send_package(
     });
 }
 
-pub fn send_new_messages_to_deliver(builder: SubscriberPackageBuilder, topic_data: &mut TopicData) {
+pub fn send_new_messages_to_deliver(
+    builder: SubscriberPackageBuilder,
+    topic_data: &mut TopicInner,
+) {
     let subscriber_id = builder.subscriber_id;
 
     match builder.get_result() {

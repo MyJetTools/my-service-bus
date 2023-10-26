@@ -10,13 +10,13 @@ use tokio::sync::Mutex;
 use crate::messages_page::{MessagesToPersistBucket, SizeMetrics};
 use crate::queue_subscribers::DeadSubscriber;
 
-use super::topic_data::TopicData;
+use super::topic_data::TopicInner;
 use super::topic_data_access::TopicDataAccess;
 use super::TopicSnapshot;
 
 pub struct Topic {
     pub topic_id: String,
-    data: Mutex<TopicData>,
+    data: Mutex<TopicInner>,
     pub restore_page_lock: Mutex<DateTimeAsMicroseconds>,
     pub immediately_persist_is_charged: AtomicBool,
 }
@@ -25,7 +25,7 @@ impl Topic {
     pub fn new(topic_id: String, message_id: i64) -> Self {
         Self {
             topic_id: topic_id.to_string(),
-            data: Mutex::new(TopicData::new(topic_id, message_id)),
+            data: Mutex::new(TopicInner::new(topic_id, message_id)),
             restore_page_lock: Mutex::new(DateTimeAsMicroseconds::now()),
             immediately_persist_is_charged: AtomicBool::new(false),
         }
