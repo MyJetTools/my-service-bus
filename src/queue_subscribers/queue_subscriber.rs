@@ -44,6 +44,8 @@ pub struct QueueSubscriber {
     pub metrics: SubscriberMetrics,
     pub delivery_state: QueueSubscriberDeliveryState,
 
+    pub last_delivered: DateTimeAsMicroseconds,
+
     pub id: SubscriberId,
     pub session: Arc<MyServiceBusSession>,
 }
@@ -61,6 +63,7 @@ impl QueueSubscriber {
             subscribed: DateTimeAsMicroseconds::now(),
             metrics: SubscriberMetrics::new(id, session.id, topic_id, queue_id),
             delivery_state: QueueSubscriberDeliveryState::ReadyToDeliver,
+            last_delivered: DateTimeAsMicroseconds::now(),
             session,
             id,
         }
@@ -105,6 +108,8 @@ impl QueueSubscriber {
         if let QueueSubscriberDeliveryState::OnDelivery(state) = prev_delivery_state {
             return Some(state.bucket);
         }
+
+        self.last_delivered = DateTimeAsMicroseconds::now();
 
         return None;
     }

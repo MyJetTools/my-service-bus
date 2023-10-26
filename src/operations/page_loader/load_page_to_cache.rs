@@ -15,23 +15,6 @@ pub async fn load_page_to_cache(
 ) -> SubPage {
     let mut dt = topic.restore_page_lock.lock().await;
 
-    /*
-    let from_message_id = sub_page_id.get_first_message_id();
-    let to_message_id = sub_page_id
-        .get_first_message_id_of_next_sub_page()
-        .get_value()
-        - 1;
-
-
-       println!(
-           "Loading messages {}-{} for sub_page {} for topic:{}",
-           from_message_id,
-           to_message_id,
-           sub_page_id.get_value(),
-           topic.topic_id
-       );
-    */
-
     let sub_page =
         super::operations::load_page(topic.as_ref(), &messages_pages_repo, logs, sub_page_id).await;
 
