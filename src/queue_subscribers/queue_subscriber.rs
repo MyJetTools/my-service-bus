@@ -47,6 +47,8 @@ pub struct QueueSubscriber {
     pub last_delivered: DateTimeAsMicroseconds,
     pub last_delivered_amount: i64,
 
+    pub delivery_compilation_duration: Duration,
+
     pub id: SubscriberId,
     pub session: Arc<MyServiceBusSession>,
 }
@@ -68,6 +70,7 @@ impl QueueSubscriber {
             session,
             id,
             last_delivered_amount: 0,
+            delivery_compilation_duration: Duration::from_secs(0),
         }
     }
 
@@ -123,7 +126,12 @@ impl QueueSubscriber {
         }
     }
 
-    pub fn set_messages_on_delivery(&mut self, messages: QueueWithIntervals) {
+    pub fn set_messages_on_delivery(
+        &mut self,
+        messages: QueueWithIntervals,
+        compilation_duration: Duration,
+    ) {
+        self.delivery_compilation_duration = compilation_duration;
         if let QueueSubscriberDeliveryState::Rented = &self.delivery_state {
             self.delivery_state = QueueSubscriberDeliveryState::OnDelivery(OnDeliveryStateData {
                 bucket: DeliveryBucket::new(messages),

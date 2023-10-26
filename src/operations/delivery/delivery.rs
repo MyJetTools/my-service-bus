@@ -1,6 +1,6 @@
 use my_service_bus::abstractions::AsMessageId;
 use my_service_bus::shared::sub_page::SubPageId;
-use rust_extensions::{date_time::DateTimeAsMicroseconds, lazy::LazyVec};
+use rust_extensions::{date_time::DateTimeAsMicroseconds, lazy::LazyVec, StopWatch};
 
 use std::sync::Arc;
 
@@ -20,17 +20,22 @@ pub fn try_to_deliver_to_subscribers(
     topic: &Arc<Topic>,
     topic_data: &mut TopicInner,
 ) {
+    let mut sw = StopWatch::new();
+    sw.start();
     let mut to_send = LazyVec::new();
 
     for topic_queue in topic_data.queues.get_all_mut() {
         compile_packages(app, topic, &mut to_send, topic_queue, &topic_data.pages);
     }
 
+    sw.pause();
+
     if let Some(to_send) = to_send.get_result() {
         for package_builder in to_send {
             crate::operations::send_package::send_new_messages_to_deliver(
                 package_builder,
                 topic_data,
+                sw.duration(),
             );
         }
     }

@@ -25,6 +25,7 @@ pub fn send_package(
 pub fn send_new_messages_to_deliver(
     builder: SubscriberPackageBuilder,
     topic_data: &mut TopicInner,
+    compilation_duration: std::time::Duration,
 ) {
     let subscriber_id = builder.subscriber_id;
 
@@ -37,7 +38,7 @@ pub fn send_new_messages_to_deliver(
         } => {
             if let Some(queue) = topic_data.queues.get_mut(queue_id.as_str()) {
                 if let Some(subscriber) = queue.subscribers.get_by_id_mut(subscriber_id) {
-                    subscriber.set_messages_on_delivery(messages_on_delivery);
+                    subscriber.set_messages_on_delivery(messages_on_delivery, compilation_duration);
                     send_package(session, tcp_contract);
                     subscriber.metrics.set_started_delivery();
                 }
