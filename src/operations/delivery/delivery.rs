@@ -11,6 +11,7 @@ use crate::{
     queues::TopicQueue,
     sessions::MyServiceBusSession,
     topics::{Topic, TopicInner},
+    DELIVERY_TOPIC_DEBUG,
 };
 
 use super::SubscriberPackageBuilder;
@@ -108,7 +109,7 @@ fn compile_package(
         let sub_page = pages.get(sub_page_id);
 
         if sub_page.is_none() {
-            if topic.topic_id == "account-balance-update" {
+            if topic.topic_id == DELIVERY_TOPIC_DEBUG {
                 println!("Restoring SubPageId {}", sub_page_id.get_value());
             }
             crate::operations::load_page_and_try_to_deliver_again(app, topic.clone(), sub_page_id);
@@ -130,7 +131,7 @@ fn compile_package(
                     .add_message(message_content, attempt_no);
             }
             GetMessageResult::Missing => {
-                if topic.topic_id == "account-balance-update" {
+                if topic.topic_id == DELIVERY_TOPIC_DEBUG {
                     println!(
                         "Has Missing MessageId: {}. All Messages are missing in SubPage {} is {}",
                         message_id,
@@ -140,7 +141,7 @@ fn compile_package(
                 }
             }
             GetMessageResult::GarbageCollected => {
-                if topic.topic_id == "account-balance-update" {
+                if topic.topic_id == DELIVERY_TOPIC_DEBUG {
                     println!("crate::operations::load_page_and_try_to_deliver_again. HasPackageBuilder:{} ", package_builder.is_some())
                 }
 
