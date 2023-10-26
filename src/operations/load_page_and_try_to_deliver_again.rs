@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use my_service_bus::shared::sub_page::SubPageId;
 
-use crate::{app::AppContext, DELIVERY_TOPIC_DEBUG};
+use crate::app::AppContext;
 
 pub fn load_page_and_try_to_deliver_again(
     app: &Arc<AppContext>,
@@ -24,9 +24,6 @@ pub fn load_page_and_try_to_deliver_again(
         let mut topic_data = topic.get_access().await;
 
         if let Some(sub_page) = sub_page {
-            if topic.topic_id == DELIVERY_TOPIC_DEBUG {
-                println!("Restored SubPageId {}", sub_page_id.get_value());
-            }
             topic_data.pages.restore_sub_page(sub_page);
         }
 

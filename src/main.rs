@@ -1,7 +1,5 @@
 use app::AppContext;
 
-pub const DELIVERY_TOPIC_DEBUG: &str = "account-balance-update";
-
 use background::{
     DeadSubscribersKickerTimer, GcTimer, ImmediatelyPersistEventLoop, MetricsTimer,
     PersistTopicsAndQueuesTimer,

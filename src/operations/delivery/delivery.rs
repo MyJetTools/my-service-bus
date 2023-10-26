@@ -11,7 +11,6 @@ use crate::{
     queues::TopicQueue,
     sessions::MyServiceBusSession,
     topics::{Topic, TopicInner},
-    DELIVERY_TOPIC_DEBUG,
 };
 
 use super::SubscriberPackageBuilder;
@@ -92,16 +91,6 @@ fn compile_package(
             break;
         }
 
-        if package_builder.is_none() {
-            package_builder = SubscriberPackageBuilder::new(
-                topic.clone(),
-                topic_queue.queue_id.as_str().into(),
-                subscriber_id,
-                session.clone(),
-            )
-            .into();
-        }
-
         let message_id = message_id.unwrap().as_message_id();
 
         let sub_page_id: SubPageId = message_id.into();
@@ -109,9 +98,6 @@ fn compile_package(
         let sub_page = pages.get(sub_page_id);
 
         if sub_page.is_none() {
-            if topic.topic_id == DELIVERY_TOPIC_DEBUG {
-                println!("Restoring SubPageId {}", sub_page_id.get_value());
-            }
             crate::operations::load_page_and_try_to_deliver_again(app, topic.clone(), sub_page_id);
 
             return package_builder;
@@ -125,26 +111,24 @@ fn compile_package(
         match sub_page.get_message(message_id.as_message_id()) {
             GetMessageResult::Message(message_content) => {
                 let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
+
+                if package_builder.is_none() {
+                    package_builder = SubscriberPackageBuilder::new(
+                        topic.clone(),
+                        topic_queue.queue_id.as_str().into(),
+                        subscriber_id,
+                        session.clone(),
+                    )
+                    .into();
+                }
+
                 package_builder
                     .as_mut()
                     .unwrap()
                     .add_message(message_content, attempt_no);
             }
-            GetMessageResult::Missing => {
-                if topic.topic_id == DELIVERY_TOPIC_DEBUG {
-                    println!(
-                        "Has Missing MessageId: {}. All Messages are missing in SubPage {} is {}",
-                        message_id,
-                        sub_page.get_id().get_value(),
-                        sub_page.is_all_messages_missing()
-                    )
-                }
-            }
+            GetMessageResult::Missing => {}
             GetMessageResult::GarbageCollected => {
-                if topic.topic_id == DELIVERY_TOPIC_DEBUG {
-                    println!("crate::operations::load_page_and_try_to_deliver_again. HasPackageBuilder:{} ", package_builder.is_some())
-                }
-
                 crate::operations::load_page_and_try_to_deliver_again(
                     app,
                     topic.clone(),
