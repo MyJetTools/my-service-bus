@@ -33,7 +33,6 @@ impl Topic {
 
     pub async fn get_access<'s>(&'s self) -> TopicDataAccess<'s> {
         let access = self.inner.lock().await;
-
         TopicDataAccess::new(access)
     }
 

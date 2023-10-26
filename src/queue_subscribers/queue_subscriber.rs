@@ -6,11 +6,13 @@ use rust_extensions::date_time::DateTimeAsMicroseconds;
 use crate::{queues::DeliveryBucket, sessions::MyServiceBusSession};
 
 use super::{SubscriberId, SubscriberMetrics};
-
+#[derive(Debug)]
 pub struct OnDeliveryStateData {
     pub bucket: DeliveryBucket,
     inserted: DateTimeAsMicroseconds,
 }
+
+#[derive(Debug)]
 pub enum QueueSubscriberDeliveryState {
     ReadyToDeliver,
     Rented,

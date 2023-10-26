@@ -5,3 +5,5 @@ mod on_delivery_controller;
 pub use disable_debug_mode_action::*;
 pub use enable_debug_mode_action::*;
 pub use on_delivery_controller::OnDeliveryAction;
+mod get_queues_action;
+pub use get_queues_action::*;

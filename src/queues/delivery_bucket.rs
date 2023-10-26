@@ -1,5 +1,6 @@
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 
+#[derive(Debug)]
 pub struct DeliveryBucket {
     pub ids: QueueWithIntervals,
     pub confirmed: usize,

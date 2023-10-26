@@ -60,6 +60,10 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         super::debug_controller::DisableDebugModeAction::new(app.clone()),
     ));
 
+    controllers.register_get_action(Arc::new(
+        super::debug_controller::GetQueuesAwaitingToDeliverAction::new(app.clone()),
+    ));
+
     let on_delivery_controller =
         Arc::new(super::debug_controller::OnDeliveryAction::new(app.clone()));
     controllers.register_get_action(on_delivery_controller);
