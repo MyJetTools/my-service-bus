@@ -57,6 +57,10 @@ async fn handle_request(
                         delivery_status: format!("{:?}", subscriber.delivery_state),
                         last_delivered: subscriber.last_delivered.to_rfc3339(),
                         last_delivered_amount: subscriber.last_delivered_amount,
+                        delivery_compilation: format!(
+                            "{:?}",
+                            subscriber.delivery_compilation_duration
+                        ),
                     });
                 }
             }
