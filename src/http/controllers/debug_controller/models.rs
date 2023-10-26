@@ -39,4 +39,5 @@ pub struct QueueSubscriberDebugModel {
     pub subscribed: String,
     pub delivery_status: String,
     pub last_delivered: String,
+    pub last_delivered_amount: i64,
 }
