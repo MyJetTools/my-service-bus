@@ -101,15 +101,15 @@ impl QueueSubscriber {
     }
 
     pub fn reset_delivery(&mut self) -> Option<DeliveryBucket> {
+        self.last_delivered = DateTimeAsMicroseconds::now();
         let mut prev_delivery_state = QueueSubscriberDeliveryState::ReadyToDeliver;
+
         std::mem::swap(&mut prev_delivery_state, &mut self.delivery_state);
 
         self.metrics.set_delivery_mode_as_ready_to_deliver();
         if let QueueSubscriberDeliveryState::OnDelivery(state) = prev_delivery_state {
             return Some(state.bucket);
         }
-
-        self.last_delivered = DateTimeAsMicroseconds::now();
 
         return None;
     }
