@@ -41,14 +41,4 @@ jobs:
       - name: Docker Build and Publish
         run: |          
           docker build -t ${IMAGE_NAME}:${{ steps.get_version.outputs.VERSION }} .
-          docker push ${IMAGE_NAME}:${{ steps.get_version.outputs.VERSION }}
-        
-      - name: Docker to GitHub
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          path: ./
-          registry: docker.pkg.github.com
-          repository: ${{ secrets.ORG_NAME }}/service-bus
-          tag_with_ref: true        
+          docker push ${IMAGE_NAME}:${{ steps.get_version.outputs.VERSION }}    
