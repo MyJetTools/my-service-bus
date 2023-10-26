@@ -7,8 +7,8 @@ use std::sync::Arc;
 #[my_http_server::macros::http_route(
     method: "GET",
     route: "/Debug/GetQueues",
-    input_data: "EnableDebugInputModel",
-    description: "Get queues awaiting to deliver",
+    input_data: "GetQueuesAwaitingToDeliver",
+    description: "Get queues  to deliver",
     summary: "Returns queues awaiting to deliver",
     controller: "Debug",
     result:[
@@ -27,7 +27,7 @@ impl GetQueuesAwaitingToDeliverAction {
 
 async fn handle_request(
     action: &GetQueuesAwaitingToDeliverAction,
-    input_data: EnableDebugInputModel,
+    input_data: GetQueuesAwaitingToDeliver,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
     let topic = action.app.topic_list.get(&input_data.topic_id).await;

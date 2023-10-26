@@ -156,11 +156,13 @@ impl MessagesPagesGrpcRepo {
             );
         }
 
-        println!(
-            "Read Page {} with messages amount: {}",
-            page_id.get_value(),
-            messages.len()
-        );
+        /*
+               println!(
+                   "Read Page {} with messages amount: {}",
+                   page_id.get_value(),
+                   messages.len()
+               );
+        */
 
         Ok(Some(messages))
     }
