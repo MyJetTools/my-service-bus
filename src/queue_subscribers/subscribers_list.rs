@@ -136,6 +136,23 @@ impl SubscribersList {
         None
     }
 
+    pub fn cancel_rent(&mut self, subscriber_id: SubscriberId) {
+        match &mut self.data {
+            SubscribersData::MultiSubscribers(state) => {
+                if let Some(subscriber) = state.get_mut(&subscriber_id.get_value()) {
+                    subscriber.cancel_the_rent();
+                }
+            }
+            SubscribersData::SingleSubscriber(state) => {
+                if let Some(subscriber) = state {
+                    if subscriber.id.equals_to(subscriber_id) {
+                        subscriber.cancel_the_rent();
+                    }
+                }
+            }
+        }
+    }
+
     pub fn get_by_id(&self, subscriber_id: SubscriberId) -> Option<&QueueSubscriber> {
         match &self.data {
             SubscribersData::MultiSubscribers(hash_map) => return hash_map.get(&subscriber_id),

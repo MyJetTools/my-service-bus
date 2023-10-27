@@ -63,6 +63,8 @@ fn compile_packages(
             compile_package(app, topic, topic_queue, pages, subscriber_id, &session)
         {
             to_send.add(package_builder);
+        } else {
+            topic_queue.subscribers.cancel_rent(subscriber_id);
         }
     }
 }
