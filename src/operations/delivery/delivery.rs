@@ -48,6 +48,8 @@ fn compile_packages(
     topic_queue: &mut TopicQueue,
     pages: &MessagesPageList,
 ) {
+    let mut not_engaged_topics = LazyVec::new();
+
     while topic_queue.queue.len() > 0 {
         let subscriber = topic_queue
             .subscribers
@@ -64,6 +66,12 @@ fn compile_packages(
         {
             to_send.add(package_builder);
         } else {
+            not_engaged_topics.add(subscriber_id);
+        }
+    }
+
+    if let Some(not_engaged_topics) = not_engaged_topics.get_result() {
+        for subscriber_id in not_engaged_topics {
             topic_queue.subscribers.cancel_rent(subscriber_id);
         }
     }
