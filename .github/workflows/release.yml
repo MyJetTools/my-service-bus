@@ -41,6 +41,4 @@ jobs:
       - name: Docker Build and Publish
         run: |          
           docker build -t ${IMAGE_NAME}:${{ steps.get_version.outputs.VERSION }} .
-          docker push ${IMAGE_NAME}:${{ steps.get_version.outputs.VERSION }}
-        
-
+          docker push ${IMAGE_NAME}:${{ steps.get_version.outputs.VERSION }}    
