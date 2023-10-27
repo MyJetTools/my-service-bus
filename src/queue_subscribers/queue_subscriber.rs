@@ -93,16 +93,8 @@ impl QueueSubscriber {
     }
 
     pub fn cancel_the_rent(&mut self) {
-        if let QueueSubscriberDeliveryState::Rented = &self.delivery_state {
-            self.metrics.set_delivery_mode_as_ready_to_deliver();
-            self.delivery_state = QueueSubscriberDeliveryState::ReadyToDeliver;
-            return;
-        }
-
-        panic!(
-            "Can not cancel the rented state. Subscriber is in the {} state",
-            self.delivery_state.to_string()
-        );
+        self.metrics.set_delivery_mode_as_ready_to_deliver();
+        self.delivery_state = QueueSubscriberDeliveryState::ReadyToDeliver;
     }
 
     pub fn reset_delivery(&mut self) -> Option<DeliveryBucket> {
