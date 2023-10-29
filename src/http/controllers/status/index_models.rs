@@ -25,6 +25,7 @@ pub struct StatusJsonResult {
     pub system: SystemStatusModel,
     #[serde(rename = "persistenceVersion")]
     pub persistence_version: String,
+    pub version: String,
 }
 
 impl StatusJsonResult {
@@ -63,6 +64,7 @@ impl StatusJsonResult {
                 usedmem: sys_info.used_memory(),
             },
             persistence_version: app.persistence_version.get().await,
+            version: crate::app::APP_VERSION.to_string(),
         }
     }
 }
