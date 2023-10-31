@@ -41,6 +41,10 @@ impl MessagesPageList {
             .insert(sub_page.get_id().get_value(), sub_page);
     }
 
+    pub fn delete_sub_page(&mut self, sub_page_id: SubPageId) {
+        self.sub_pages.remove(sub_page_id.as_ref());
+    }
+
     pub fn mark_messages_as_persisted(&mut self, bucket: &MessagesToPersistBucket) {
         if let Some(sub_page) = self.sub_pages.get_mut(bucket.sub_page_id.as_ref()) {
             sub_page.mark_messages_as_persisted(&bucket.ids);

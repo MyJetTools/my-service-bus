@@ -108,7 +108,12 @@ fn compile_package(
         let sub_page = pages.get(sub_page_id);
 
         if sub_page.is_none() {
-            crate::operations::load_page_and_try_to_deliver_again(app, topic.clone(), sub_page_id);
+            crate::operations::load_page_and_try_to_deliver_again(
+                app,
+                topic.clone(),
+                sub_page_id,
+                false,
+            );
 
             return package_builder;
         }
@@ -143,6 +148,7 @@ fn compile_package(
                     app,
                     topic.clone(),
                     sub_page_id,
+                    true,
                 );
                 return package_builder;
             }

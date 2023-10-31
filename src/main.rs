@@ -90,11 +90,7 @@ async fn main() {
         .start(app.clone(), app.logs.clone())
         .await;
 
-    signal_hook::flag::register(
-        signal_hook::consts::SIGTERM,
-        app.states.shutting_down.clone(),
-    )
-    .unwrap();
+    app.states.wait_until_shutdown().await;
 
     shut_down_task(app).await;
 
