@@ -9,7 +9,7 @@ use super::models::{GreetingInputModel, GreetingJsonResult};
 
 #[http_route(
     method: "POST",
-    route: "/Greeting",
+    route: "/api/Greeting",
     controller: "Greeting",
     description: "Issue new Http Session",
     summary: "Issues new Http Session",
