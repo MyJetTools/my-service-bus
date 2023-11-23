@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 #[my_http_server::macros::http_route(
     method: "DELETE",
-    route: "/Debug/Disable",
+    route: "/api/Debug/Disable",
     description: "Disable debug mode",
     summary: "Disables debug mode",
     controller: "Debug",

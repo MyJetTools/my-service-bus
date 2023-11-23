@@ -7,7 +7,7 @@ use crate::app::AppContext;
 
 #[my_http_server::macros::http_route(
     method: "GET",
-    route: "/Logs",
+    route: "/api/Logs",
 )]
 pub struct LogsAction {
     app: Arc<AppContext>,

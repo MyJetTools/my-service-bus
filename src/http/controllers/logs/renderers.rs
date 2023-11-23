@@ -13,15 +13,15 @@ pub fn compile_result(
     let mut sb = StringBuilder::new();
 
     sb.append_line(
-        "<a class='btn btn-outline-secondary btn-sm' href='/logs'>Show All Log records</a>",
+        "<a class='btn btn-outline-secondary btn-sm' href='/api/logs'>Show All Log records</a>",
     );
 
     sb.append_line(
-        "<a class='btn btn-outline-secondary btn-sm' href='/logs/topic'>Show Log records by topic</a>",
+        "<a class='btn btn-outline-secondary btn-sm' href='/api/logs/topic'>Show Log records by topic</a>",
     );
 
     sb.append_line(
-        "<a class='btn btn-outline-secondary btn-sm' href='/logs/process'>Show Log records by process</a>",
+        "<a class='btn btn-outline-secondary btn-sm' href='/api/logs/process'>Show Log records by process</a>",
     );
 
     sb.append_line("<hr/>");
@@ -37,14 +37,14 @@ pub fn compile_result(
 
         if let Some(topic_name) = &log_item.topic {
             let line = format!(
-                "<b>Topic:</b> <a href='/logs/topic/{topic_name}'>{topic_name}</a></br>",
+                "<b>Topic:</b> <a href='/api/logs/topic/{topic_name}'>{topic_name}</a></br>",
                 topic_name = topic_name
             );
             sb.append_line(line.as_str());
         }
 
         let line = format!(
-            "<b>Process:</b> <a href='/logs/process/{process:?}'>{process:?}</a></br>",
+            "<b>Process:</b> <a href='/api/logs/process/{process:?}'>{process:?}</a></br>",
             process = log_item.process
         );
         sb.append_line(line.as_str());

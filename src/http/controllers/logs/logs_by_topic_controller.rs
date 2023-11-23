@@ -8,7 +8,7 @@ use super::models::ReadLogsByTopicInputModel;
 
 #[my_http_server::macros::http_route(
     method: "GET",
-    route: "/Logs/Topic/{topicId}",
+    route: "/api/Logs/Topic/{topicId}",
     input_data: "ReadLogsByTopicInputModel",
 )]
 pub struct GetLogsByTopicAction {

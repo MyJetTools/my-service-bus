@@ -37,6 +37,9 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
     )));
 
     controllers.register_post_action(Arc::new(super::greeting::GreetingAction::new(app.clone())));
+    controllers.register_post_action(Arc::new(super::greeting::GreetingLegacyAction::new(
+        app.clone(),
+    )));
     //controllers.register_http_objects(greeting_controller);
 
     controllers.register_post_action(Arc::new(super::greeting::PingAction::new(app.clone())));
@@ -84,6 +87,9 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
     controllers.register_get_action(Arc::new(super::logs::SelectProcessAction::new()));
 
     let publisher_controller = super::publisher::PublishAction::new(app.clone());
+    controllers.register_post_action(Arc::new(publisher_controller));
+
+    let publisher_controller = super::publisher::PublishLegacyAction::new(app.clone());
     controllers.register_post_action(Arc::new(publisher_controller));
 
     controllers.register_get_action(Arc::new(super::home_controller::IndexAction::new(

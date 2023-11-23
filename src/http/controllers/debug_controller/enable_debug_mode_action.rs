@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 #[my_http_server::macros::http_route(
     method: "POST",
-    route: "/Debug/Enable",
+    route: "/api/Debug/Enable",
     input_data: "EnableDebugInputModel",
     description: "Enable debug mode for specific queue",
     summary: "Enables debug mode for specific queue",

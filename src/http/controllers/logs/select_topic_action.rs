@@ -6,7 +6,7 @@ use crate::app::AppContext;
 
 #[my_http_server::macros::http_route(
     method: "GET",
-    route: "/Logs/Topic",
+    route: "/api/Logs/Topic",
 )]
 pub struct SelectTopicAction {
     app: Arc<AppContext>,
@@ -28,7 +28,7 @@ async fn handle_request(
 
     for topic in action.app.topic_list.get_all().await {
         let line = format!(
-            "<a class='btn btn-sm btn-outline-primary' href='/logs/topic/{topic_id}'>{topic_id}</a>",
+            "<a class='btn btn-sm btn-outline-primary' href='/api/logs/topic/{topic_id}'>{topic_id}</a>",
             topic_id = topic.topic_id
         );
         sb.append_line(line.as_str())

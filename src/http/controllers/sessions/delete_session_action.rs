@@ -7,7 +7,7 @@ use crate::app::AppContext;
 
 #[my_http_server::macros::http_route(
     method: "DELETE",
-    route: "/Sessions",
+    route: "/api/Sessions",
     input_data: "DeleteSessionInputContract",
     summary: "Deletes session",
     description: "Deletes session",

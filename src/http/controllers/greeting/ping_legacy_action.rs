@@ -7,12 +7,13 @@ use crate::{app::AppContext, http::auth::GetSessionToken};
 
 #[http_route(
     method: "POST",
-    route: "/api/Greeting/Ping",
+    route: "/Greeting/Ping",
     controller: "Greeting",
-    description: "Ping Http Session",
-    summary: "Pings Http Session",
+    description: "Ping Http Session (Legacy: please use /api/Greeting/Ping)",
+    summary: "Pings Http Session  (Legacy: please use /api/Greeting/Ping)",
     ok_result_description: "Session is alive",
     authorized: "Yes",
+    deprecated: true,
     result: [
         {status_code: 202, description: "Session description"},
         {status_code: 400, description: "Bad request"}, 

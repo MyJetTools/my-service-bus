@@ -8,7 +8,7 @@ use super::models::GetOnDeliveryInputModel;
 
 #[my_http_server::macros::http_route(
     method: "GET",
-    route: "/Debug/OnDelivery",
+    route: "/api/Debug/OnDelivery",
     input_data: "GetOnDeliveryInputModel",
     description: "Show messages on delivery",
     summary: "Shows messages on delivery",

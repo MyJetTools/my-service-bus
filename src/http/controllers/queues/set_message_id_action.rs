@@ -10,7 +10,7 @@ use crate::app::AppContext;
 
 #[http_route(
     method: "POST",
-    route: "/Queues/SetMessageId",
+    route: "/api/Queues/SetMessageId",
     controller: "Queues",
     description: "Set current queue messageId",
     summary: "Sets current queue messageId",

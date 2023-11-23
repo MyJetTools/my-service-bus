@@ -10,7 +10,7 @@ use crate::app::AppContext;
 
 #[http_route(
     method: "DELETE",
-    route: "/Queues",
+    route: "/api/Queues",
     controller: "Queues",
     description: "Delete queue",
     summary: "Deletes queue",

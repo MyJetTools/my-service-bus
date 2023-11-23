@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 #[my_http_server::macros::http_route(
     method: "GET",
-    route: "/Debug/GetQueues",
+    route: "/api/Debug/GetQueues",
     input_data: "GetQueuesAwaitingToDeliver",
     description: "Get queues  to deliver",
     summary: "Returns queues awaiting to deliver",

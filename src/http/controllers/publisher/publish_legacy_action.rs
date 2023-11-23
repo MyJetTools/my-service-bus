@@ -12,28 +12,29 @@ use super::contracts::PublishMessageHttpInput;
 
 #[http_route(
     method: "POST",
-    route: "/api/Publish",
+    route: "/Publish",
     controller: "Publish",
-    description: "Publish messages to topic",
-    summary: "Publishes messages to topic",
+    description: "Publish messages to topic (legacy: Please use /api/Publish)",
+    summary: "Publishes messages to topic (legacy: Please use /api/Publish)",
     input_data: "PublishMessageHttpInput",
     authorized: "Yes",
+    deprecated: true,
     result: [
         {status_code: 202, description: "Message is published"},
     ]
 )]
-pub struct PublishAction {
+pub struct PublishLegacyAction {
     app: Arc<AppContext>,
 }
 
-impl PublishAction {
+impl PublishLegacyAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
 async fn handle_request(
-    action: &PublishAction,
+    action: &PublishLegacyAction,
     http_input: PublishMessageHttpInput,
     ctx: &HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {

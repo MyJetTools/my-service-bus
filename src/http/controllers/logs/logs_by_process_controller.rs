@@ -9,7 +9,7 @@ use super::models::*;
 
 #[my_http_server::macros::http_route(
     method: "GET",
-    route: "/Logs/Process/{processId}",
+    route: "/api/Logs/Process/{processId}",
     input_data: "ReadLogsByProcessInputModel"
 )]
 

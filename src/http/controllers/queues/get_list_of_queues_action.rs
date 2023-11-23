@@ -10,7 +10,7 @@ use crate::app::AppContext;
 
 #[http_route(
     method: "GET",
-    route: "/Queues",
+    route: "/api/Queues",
     controller: "Queues",
     description: "Get list of queues",
     summary: "Returns list of queues",

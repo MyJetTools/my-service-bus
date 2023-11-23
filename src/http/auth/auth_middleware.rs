@@ -25,8 +25,12 @@ impl HttpServerMiddleware for AuthMiddleware {
         ctx: &mut HttpContext,
         get_next: &mut HttpServerRequestFlow,
     ) -> Result<HttpOkResult, HttpFailResult> {
-        if let Some(header) = ctx.request.get_header(AUTH_HEADER) {
-            if let Some(last) = header.split(' ').last() {
+        if let Some(header) = ctx
+            .request
+            .get_headers()
+            .try_get_case_insensitive(AUTH_HEADER)
+        {
+            if let Some(last) = header.as_str()?.split(' ').last() {
                 let token = SessionToken {
                     session: last.to_string(),
                 };

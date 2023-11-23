@@ -5,7 +5,7 @@ use crate::app::logs::SystemProcess;
 
 #[my_http_server::macros::http_route(
     method: "GET",
-    route: "/Logs/Process",
+    route: "/api/Logs/Process",
 )]
 
 pub struct SelectProcessAction;
@@ -27,7 +27,7 @@ async fn handle_request(
 
     for process in &SystemProcess::iterate() {
         let line = format!(
-            "<a class='btn btn-sm btn-outline-primary' href='/logs/process/{process:?}'>{process:?}</a>",
+            "<a class='btn btn-sm btn-outline-primary' href='/api/logs/process/{process:?}'>{process:?}</a>",
             process = process
         );
         sb.append_line(line.as_str())
