@@ -11,8 +11,8 @@ use super::models::{GreetingInputModel, GreetingJsonResult};
     method: "POST",
     route: "/Greeting",
     controller: "Greeting",
-    description: "Issue new Http Session (Legacy. Please use /api/Greeting)",
-    summary: "Issues new Http Session (Legacy. Please use /api/Greeting)",
+    description: "Issue new Http Session",
+    summary: "Issues new Http Session",
     input_data: "GreetingInputModel",
     deprecated: true,
     result: [
