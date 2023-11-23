@@ -32,9 +32,9 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         app.clone(),
     )));
 
-    controllers.register_delete_action(Arc::new(super::sessions::DeleteSessionAction::new(
-        app.clone(),
-    )));
+    controllers.register_delete_action(Arc::new(
+        super::sessions_controller::DeleteSessionAction::new(app.clone()),
+    ));
 
     controllers.register_post_action(Arc::new(super::greeting::GreetingAction::new(app.clone())));
     controllers.register_post_action(Arc::new(super::greeting::GreetingLegacyAction::new(
@@ -43,9 +43,16 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
     //controllers.register_http_objects(greeting_controller);
 
     controllers.register_post_action(Arc::new(super::greeting::PingAction::new(app.clone())));
+    controllers.register_post_action(Arc::new(super::greeting::PingLegacyAction::new(
+        app.clone(),
+    )));
+
+    controllers.register_get_action(Arc::new(super::status_controller::GetStatusAction::new(
+        app.clone(),
+    )));
 
     controllers.register_get_action(Arc::new(
-        super::status::status_controller::GetStatusAction::new(app.clone()),
+        super::status_controller::GetStatusLegacyAction::new(app.clone()),
     ));
 
     controllers.register_get_action(Arc::new(super::queues::GetQueuesAction::new(app.clone())));

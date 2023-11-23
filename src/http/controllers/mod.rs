@@ -7,6 +7,6 @@ pub mod logs;
 pub mod prometheus_controller;
 pub mod publisher;
 pub mod queues;
-pub mod sessions;
-pub mod status;
+pub mod sessions_controller;
+pub mod status_controller;
 pub mod topics_controller;

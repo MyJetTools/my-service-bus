@@ -20,18 +20,18 @@ use crate::{app::AppContext, http::auth::GetSessionToken};
         {status_code: 401, description: "Unauthorized"},
     ]
 )]
-pub struct PingAction {
+pub struct PingLegacyAction {
     app: Arc<AppContext>,
 }
 
-impl PingAction {
+impl PingLegacyAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
 async fn handle_request(
-    action: &PingAction,
+    action: &PingLegacyAction,
     ctx: &HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
     let connection_data = ctx.get_http_session(&action.app).await?;

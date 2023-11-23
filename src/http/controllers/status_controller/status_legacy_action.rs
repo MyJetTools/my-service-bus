@@ -8,18 +8,18 @@ use crate::app::AppContext;
     method: "GET",
     route: "/Status",
 )]
-pub struct GetStatusAction {
+pub struct GetStatusLegacyAction {
     app: Arc<AppContext>,
 }
 
-impl GetStatusAction {
+impl GetStatusLegacyAction {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
     }
 }
 
 async fn handle_request(
-    action: &GetStatusAction,
+    action: &GetStatusLegacyAction,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
     let result = super::index_models::StatusJsonResult::new(action.app.as_ref()).await;
