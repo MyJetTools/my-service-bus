@@ -10,6 +10,7 @@ use super::models::{GreetingInputModel, GreetingJsonResult};
 #[http_route(
     method: "POST",
     route: "/api/Greeting",
+    deprecated_routes: ["/Greeting"],
     controller: "Greeting",
     description: "Issue new Http Session",
     summary: "Issues new Http Session",

@@ -8,10 +8,11 @@ use crate::{app::AppContext, http::auth::GetSessionToken};
 #[http_route(
     method: "POST",
     route: "/api/Greeting/Ping",
+    deprecated_routes: ["/Greeting/Ping"],
     controller: "Greeting",
     description: "Ping Http Session",
     summary: "Pings Http Session",
-    ok_result_description: "Session is alive",
+
     authorized: "Yes",
     result: [
         {status_code: 202, description: "Session description"},

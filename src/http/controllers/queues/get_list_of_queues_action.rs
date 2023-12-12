@@ -16,7 +16,7 @@ use crate::app::AppContext;
     summary: "Returns list of queues",
     input_data: "GetListOfQueuesInputContract",
     result: [
-        {status_code: 200, description: "Session description", model_as_array: "String"},
+        {status_code: 200, description: "Session description", model: "Vec<String>"},
         {status_code: 400, description: "Bad request"}, 
         {status_code: 401, description: "Unauthorized"},
     ]

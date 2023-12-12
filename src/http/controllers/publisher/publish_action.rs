@@ -13,6 +13,7 @@ use super::contracts::PublishMessageHttpInput;
 #[http_route(
     method: "POST",
     route: "/api/Publish",
+    deprecated_routes: ["/Publish"],
     controller: "Publish",
     description: "Publish messages to topic",
     summary: "Publishes messages to topic",
