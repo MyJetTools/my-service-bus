@@ -65,10 +65,13 @@ async fn main() {
         )
         .await;
 
-    crate::http::start_up::setup_server(&app);
+    let http_connections_counter = crate::http::start_up::setup_server(&app);
 
     let mut metrics_timer = MyTimer::new(Duration::from_secs(1));
-    metrics_timer.register_timer("Metrics", Arc::new(MetricsTimer::new(app.clone())));
+    metrics_timer.register_timer(
+        "Metrics",
+        Arc::new(MetricsTimer::new(app.clone(), http_connections_counter)),
+    );
 
     let mut persist_and_gc_timer = MyTimer::new(app.settings.persist_timer_interval);
     persist_and_gc_timer.register_timer(

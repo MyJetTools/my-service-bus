@@ -10,6 +10,7 @@ pub struct PrometheusMetrics {
     topics_without_queues: IntGauge,
     topic_data_size: IntGaugeVec,
     topic_messages_amount: IntGaugeVec,
+    http_connections_amount: IntGauge,
 }
 
 impl PrometheusMetrics {
@@ -27,6 +28,12 @@ impl PrometheusMetrics {
         let topic_data_size = create_topic_data_size();
 
         let topic_messages_amount = create_topic_messages_amount();
+
+        let http_connections_amount = create_http_connections_amount();
+
+        registry
+            .register(Box::new(http_connections_amount.clone()))
+            .unwrap();
 
         registry
             .register(Box::new(topic_queue_size.clone()))
@@ -60,6 +67,7 @@ impl PrometheusMetrics {
             topics_without_queues,
             topic_data_size,
             topic_messages_amount,
+            http_connections_amount,
         };
     }
 
@@ -110,6 +118,10 @@ impl PrometheusMetrics {
             topic_id, queue_id, result
         );
     }
+
+    pub fn update_http_connections_amount(&self, amount: i64) {
+        self.http_connections_amount.set(amount);
+    }
 }
 
 fn create_topic_persist_queue_size() -> IntGaugeVec {
@@ -155,4 +167,8 @@ fn create_topic_messages_amount() -> IntGaugeVec {
 
 fn create_topics_without_queues() -> IntGauge {
     IntGauge::new("topics_without_queues", "Topics without queues").unwrap()
+}
+
+fn create_http_connections_amount() -> IntGauge {
+    IntGauge::new("http_connections_amount", "Amount of Http Connections").unwrap()
 }

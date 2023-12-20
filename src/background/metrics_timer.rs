@@ -1,16 +1,21 @@
 use std::sync::Arc;
 
+use my_http_server::HttpConnectionsCounter;
 use rust_extensions::MyTimerTick;
 
 use crate::app::AppContext;
 
 pub struct MetricsTimer {
     app: Arc<AppContext>,
+    http_connections_counter: HttpConnectionsCounter,
 }
 
 impl MetricsTimer {
-    pub fn new(app: Arc<AppContext>) -> Self {
-        Self { app }
+    pub fn new(app: Arc<AppContext>, http_connections_counter: HttpConnectionsCounter) -> Self {
+        Self {
+            app,
+            http_connections_counter,
+        }
     }
 }
 
@@ -59,6 +64,12 @@ impl MyTimerTick for MetricsTimer {
             self.app
                 .prometheus
                 .update_topic_size_metrics(topic.topic_id.as_str(), &metrics);
+
+            let http_connections_amount = self.http_connections_counter.get_connections_amount();
+
+            self.app
+                .prometheus
+                .update_http_connections_amount(http_connections_amount);
         }
 
         self.app
