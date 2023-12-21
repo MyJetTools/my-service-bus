@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use crate::app::AppContext;
 
 use serde::{Deserialize, Serialize};
-use sysinfo::SystemExt;
 
 use super::models::{
     queue_model::QueuesJsonResult,
