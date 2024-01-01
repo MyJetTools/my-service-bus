@@ -4,10 +4,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use my_service_bus::tcp_contracts::{MySbTcpSerializer, TcpContract};
 
-use crate::{
-    app::{logs::SystemProcess, AppContext},
-    sessions::TcpConnectionData,
-};
+use crate::app::{logs::SystemProcess, AppContext};
 
 pub struct TcpServerEvents {
     app: Arc<AppContext>,
@@ -23,14 +20,7 @@ impl TcpServerEvents {
 impl SocketEventCallback<TcpContract, MySbTcpSerializer> for TcpServerEvents {
     async fn handle(&self, connection_event: ConnectionEvent<TcpContract, MySbTcpSerializer>) {
         match connection_event {
-            ConnectionEvent::Connected(connection) => {
-                println!("New tcp connection: {}", connection.id);
-
-                self.app
-                    .sessions
-                    .add_tcp(TcpConnectionData::new(connection))
-                    .await;
-            }
+            ConnectionEvent::Connected(_) => {}
             ConnectionEvent::Disconnected(connection) => {
                 println!("Connection {} is disconnected", connection.id);
                 if let Some(session) = self.app.sessions.remove_tcp(connection.id).await {

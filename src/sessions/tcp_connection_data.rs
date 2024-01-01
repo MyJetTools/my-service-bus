@@ -5,54 +5,33 @@ use std::sync::{
 
 use my_service_bus::tcp_contracts::{MySbTcpSerializer, PacketProtVer, TcpContract};
 use my_tcp_sockets::tcp_connection::SocketConnection;
-use tokio::sync::RwLock;
 
 use crate::sessions::ConnectionMetricsSnapshot;
 
-#[derive(Debug, Clone)]
-pub struct TcpConnectionAttributes {
-    pub name: Option<String>,
-    pub version: Option<String>,
-}
-
 pub struct TcpConnectionData {
     pub connection: Arc<SocketConnection<TcpContract, MySbTcpSerializer>>,
-    protocol_version: AtomicI32,
+    protocol_version: i32,
     delivery_packet_version: AtomicI32,
-    attr: RwLock<TcpConnectionAttributes>,
+    pub name: String,
+    pub version: Option<String>,
     pub logged_send_error_on_disconnected: AtomicI32,
 }
 
 impl TcpConnectionData {
-    pub fn new(connection: Arc<SocketConnection<TcpContract, MySbTcpSerializer>>) -> Self {
-        let attr = TcpConnectionAttributes {
-            name: None,
-            version: None,
-        };
-
+    pub fn new(
+        connection: Arc<SocketConnection<TcpContract, MySbTcpSerializer>>,
+        name: String,
+        version: Option<String>,
+        protocol_version: i32,
+    ) -> Self {
         Self {
             connection,
-            protocol_version: AtomicI32::new(0),
+            protocol_version: protocol_version,
             delivery_packet_version: AtomicI32::new(0),
             logged_send_error_on_disconnected: AtomicI32::new(0),
-            attr: RwLock::new(attr),
+            name,
+            version,
         }
-    }
-
-    pub async fn set_socket_name(&self, name: String, version: Option<String>) {
-        let mut write_access = self.attr.write().await;
-
-        write_access.name = Some(name);
-        write_access.version = version;
-    }
-
-    pub async fn get_attrs(&self) -> TcpConnectionAttributes {
-        let read_access = self.attr.read().await;
-        read_access.clone()
-    }
-
-    pub fn update_protocol_version(&self, value: i32) {
-        self.protocol_version.store(value, Ordering::SeqCst);
     }
 
     pub fn update_deliver_message_packet_version(&self, value: i32) {
@@ -60,7 +39,7 @@ impl TcpConnectionData {
     }
 
     pub fn get_protocol_version(&self) -> i32 {
-        self.protocol_version.load(Ordering::Relaxed)
+        self.protocol_version
     }
 
     pub fn get_messages_to_deliver_protocol_version(&self) -> PacketProtVer {

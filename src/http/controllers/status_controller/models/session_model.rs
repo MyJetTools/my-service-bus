@@ -30,12 +30,6 @@ impl SessionJsonResult {
 
         let session_metrics_data = session.get_metrics().await;
 
-        let name = if let Some(name) = session_metrics_data.name {
-            name
-        } else {
-            "???".to_string()
-        };
-
         let session_type = if let Some(prot_ver) = session_metrics_data.protocol_version {
             format!(
                 "{}[{}]",
@@ -50,7 +44,7 @@ impl SessionJsonResult {
             id: session_metrics_data.id.get_value(),
             ip: session_metrics_data.ip,
             session_type,
-            name,
+            name: session_metrics_data.name.clone(),
             version: session_metrics_data.version,
             connected: rust_extensions::duration_utils::duration_to_string(
                 now.duration_since(session.connected).as_positive_or_zero(),

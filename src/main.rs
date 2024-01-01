@@ -7,7 +7,7 @@ use background::{
 use my_service_bus::tcp_contracts::{ConnectionAttributes, MySbTcpSerializer};
 use my_tcp_sockets::TcpServer;
 use rust_extensions::MyTimer;
-use tcp::socket_loop::TcpServerEvents;
+use tcp::socket_events::TcpServerEvents;
 
 use std::time::Duration;
 use std::{net::SocketAddr, sync::Arc};

@@ -4,6 +4,7 @@ use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus::tcp_contracts::{MySbTcpSerializer, TcpContract};
 use my_tcp_sockets::tcp_connection::SocketConnection;
 
+use crate::sessions::TcpConnectionData;
 use crate::{app::AppContext, operations};
 
 use super::error::MySbSocketError;
@@ -23,19 +24,31 @@ pub async fn handle(
             name,
             protocol_version,
         } => {
-            let splitted: Vec<&str> = name.split(";").collect();
+            println!(
+                "New tcp connection [{}] with name: {} and protocol_version {}",
+                connection.id, name, protocol_version
+            );
+            let mut connection_name = None;
+            let mut version = None;
 
-            if let Some(session) = app.sessions.get_by_tcp_connection_id(connection.id).await {
-                if splitted.len() == 2 {
-                    session
-                        .set_tcp_socket_name(splitted[0].to_string(), Some(splitted[1].to_string()))
-                        .await;
-                } else {
-                    session.set_tcp_socket_name(name, None).await;
+            let mut no = 0;
+            for itm in name.split(";") {
+                match no {
+                    0 => connection_name = Some(itm.to_string()),
+                    1 => version = Some(itm.to_string()),
+                    _ => {}
                 }
-
-                session.update_tcp_protocol_version(protocol_version);
+                no += 1;
             }
+
+            app.sessions
+                .add_tcp(TcpConnectionData::new(
+                    connection,
+                    connection_name.unwrap(),
+                    version,
+                    protocol_version,
+                ))
+                .await;
 
             Ok(())
         }

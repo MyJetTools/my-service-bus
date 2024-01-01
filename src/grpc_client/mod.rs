@@ -12,13 +12,9 @@ pub use error::*;
 pub use messages_pages_grpc_repo::MessagesPagesGrpcRepo;
 #[cfg(test)]
 pub use messages_pages_mock_repo::MessagesPagesMockRepo;
-pub use protobuf_models::*;
 mod topics_and_queues_snapshot_grpc_repo;
 #[cfg(test)]
 mod topics_and_queues_snapshot_mock_repo;
 mod topics_and_queues_snapshot_repo;
 
 pub use topics_and_queues_snapshot_repo::TopicsAndQueuesSnapshotRepo;
-
-#[cfg(test)]
-pub use topics_and_queues_snapshot_mock_repo::TopicsAndQueuesSnapshotMockRepo;

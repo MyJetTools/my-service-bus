@@ -18,7 +18,7 @@ impl SessionType {
 }
 
 pub struct SessionMetrics {
-    pub name: Option<String>,
+    pub name: String,
     pub version: Option<String>,
     pub ip: String,
     pub id: SessionId,
@@ -43,29 +43,6 @@ impl MyServiceBusSession {
         }
     }
 
-    pub async fn set_tcp_socket_name(
-        &self,
-        set_socket_name: String,
-        client_version: Option<String>,
-    ) {
-        if let SessionConnection::Tcp(data) = &self.connection {
-            data.set_socket_name(set_socket_name, client_version).await;
-        } else {
-            panic!("Something went wrong. You re trying to set socket name for tcp session. But session has type: {}", self.connection.get_connection_type())
-        }
-    }
-
-    pub fn update_tcp_protocol_version(&self, value: i32) {
-        if let SessionConnection::Tcp(connection_data) = &self.connection {
-            connection_data.update_protocol_version(value);
-        } else {
-            panic!(
-                "Invalid connection type  [{}] to update Tcp protocol version",
-                self.connection.get_connection_type()
-            );
-        }
-    }
-
     pub fn update_tcp_delivery_packet_version(&self, value: i32) {
         if let SessionConnection::Tcp(connection_data) = &self.connection {
             connection_data.update_deliver_message_packet_version(value);
@@ -77,14 +54,11 @@ impl MyServiceBusSession {
         }
     }
 
-    pub async fn get_name_and_client_version(&self) -> (Option<String>, Option<String>) {
+    pub fn get_name_and_client_version(&self) -> (String, Option<String>) {
         match &self.connection {
-            SessionConnection::Tcp(data) => {
-                let attr = data.get_attrs().await;
-                (attr.name, attr.version)
-            }
+            SessionConnection::Tcp(data) => (data.name.to_string(), data.version.clone()),
             SessionConnection::Http(data) => {
-                (Some(data.name.to_string()), Some(data.version.to_string()))
+                (data.name.to_string(), Some(data.version.to_string()))
             }
             #[cfg(test)]
             SessionConnection::Test(data) => (data.name.clone(), data.version.clone()),
@@ -126,7 +100,7 @@ impl MyServiceBusSession {
 
         let protocol_version = self.protocol_version_as_string();
 
-        let (name, version) = self.get_name_and_client_version().await;
+        let (name, version) = self.get_name_and_client_version();
 
         SessionMetrics {
             id: self.id,

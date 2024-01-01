@@ -4,7 +4,7 @@ mod subscriber_id_generator;
 mod subscriber_metrics;
 mod subscribers_list;
 
-pub use queue_subscriber::{QueueSubscriber, QueueSubscriberDeliveryState};
+pub use queue_subscriber::QueueSubscriber;
 pub use subscriber_metrics::SubscriberMetrics;
 
 pub use subscriber_id::*;
