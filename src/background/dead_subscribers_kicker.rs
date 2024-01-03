@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use my_logger::LogEventCtx;
 use rust_extensions::MyTimerTick;
 
 use crate::app::AppContext;
@@ -25,16 +26,14 @@ impl MyTimerTick for DeadSubscribersKickerTimer {
                 .await
             {
                 for dead_subscriber in dead_subscribers {
-                    self.app.logs.add_info(
-                        Some(topic.topic_id.to_string()),
-                        crate::app::logs::SystemProcess::Timer,
+                    my_logger::LOGGER.write_info(
                         "Dead subscribers detector".to_string(),
                         format!(
                             "Kicking Connection {} with dead subscriber {}",
                             dead_subscriber.session.id,
                             dead_subscriber.subscriber_id.get_value()
                         ),
-                        None,
+                        LogEventCtx::new().add("topicId", topic.topic_id.as_str()),
                     );
 
                     dead_subscriber.session.disconnect().await;

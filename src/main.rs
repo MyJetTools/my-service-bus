@@ -61,7 +61,7 @@ async fn main() {
             }),
             Arc::new(TcpServerEvents::new(app.clone())),
             app.states.clone(),
-            app.logs.clone(),
+            my_logger::LOGGER.clone(),
         )
         .await;
 
@@ -86,11 +86,11 @@ async fn main() {
         Arc::new(DeadSubscribersKickerTimer::new(app.clone())),
     );
 
-    metrics_timer.start(app.clone(), app.logs.clone());
-    persist_and_gc_timer.start(app.clone(), app.logs.clone());
-    dead_subscribers.start(app.clone(), app.logs.clone());
+    metrics_timer.start(app.clone(), my_logger::LOGGER.clone());
+    persist_and_gc_timer.start(app.clone(), my_logger::LOGGER.clone());
+    dead_subscribers.start(app.clone(), my_logger::LOGGER.clone());
     app.immediately_persist_event_loop
-        .start(app.clone(), app.logs.clone())
+        .start(app.clone(), my_logger::LOGGER.clone())
         .await;
 
     app.states.wait_until_shutdown().await;

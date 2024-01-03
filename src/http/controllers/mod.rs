@@ -3,7 +3,7 @@ pub mod debug_controller;
 //pub mod extensions;
 pub mod greeting;
 mod home_controller;
-pub mod logs;
+//pub mod logs;
 pub mod prometheus_controller;
 pub mod publisher;
 pub mod queues;

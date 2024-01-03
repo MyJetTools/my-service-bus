@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use my_logger::LogEventCtx;
 use my_service_bus::abstractions::subscriber::TopicQueueType;
 
 use crate::{
@@ -50,21 +51,14 @@ pub async fn subscribe_to_queue(
         session.clone(),
     );
 
-    app.logs.add_info(
-        Some(topic.topic_id.to_string()),
-        crate::app::logs::SystemProcess::QueueOperation,
-        format!(
-            "Subscribed. SessionId: {}. SubscriberId: {}",
-            session.id.get_value(),
-            subscriber_id.get_value()
-        ),
-        format!(
-            "Session {} is subscribing to the {}/{} ",
-            session.id.get_value(),
-            topic.topic_id,
-            topic_queue.queue_id
-        ),
-        None,
+    my_logger::LOGGER.write_info(
+        "subscribe_to_queue",
+        "Subscribed.",
+        LogEventCtx::new()
+            .add("topicId", topic_queue.queue_id.as_str())
+            .add("queueId", topic_queue.queue_id.as_str())
+            .add("subscriberId", subscriber_id.get_value().to_string())
+            .add("sessionId", session.id.get_value().to_string()),
     );
 
     if let Some(kicked_subscriber) = kicked_subscriber_result {

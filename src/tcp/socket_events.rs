@@ -1,10 +1,11 @@
 use async_trait::async_trait;
+use my_logger::LogEventCtx;
 use my_tcp_sockets::{ConnectionEvent, SocketEventCallback};
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use my_service_bus::tcp_contracts::{MySbTcpSerializer, TcpContract};
 
-use crate::app::{logs::SystemProcess, AppContext};
+use crate::app::AppContext;
 
 pub struct TcpServerEvents {
     app: Arc<AppContext>,
@@ -36,14 +37,10 @@ impl SocketEventCallback<TcpContract, MySbTcpSerializer> for TcpServerEvents {
                 if let Err(err) =
                     super::incoming_packets::handle(&self.app, payload, connection).await
                 {
-                    let mut ctx = HashMap::new();
-                    ctx.insert("ConnectionId".to_string(), connection_id.to_string());
-                    self.app.logs.add_error(
-                        None,
-                        SystemProcess::TcpSocket,
-                        "Handle Payload".to_string(),
-                        format!("Err: {:?}", err),
-                        Some(ctx),
+                    my_logger::LOGGER.write_error(
+                        "Handle Tcp Payload".to_string(),
+                        format!("{:?}", err),
+                        LogEventCtx::new().add("connectionId", connection_id.to_string()),
                     );
                 }
             }

@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use my_logger::LogEventCtx;
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use rust_extensions::StopWatch;
 
@@ -14,8 +15,6 @@ pub async fn init(app: Arc<AppContext>) {
     let topics_and_queues = restore_topics_and_queues(app.as_ref()).await;
 
     println!("Loaded topics {}", topics_and_queues.len());
-
-    let topics_count = topics_and_queues.len();
 
     for topic_and_queues in topics_and_queues {
         let topic = app
@@ -46,15 +45,10 @@ pub async fn init(app: Arc<AppContext>) {
     app.states.set_initialized();
     sw.pause();
 
-    app.logs.add_info(
-        None,
-        crate::app::logs::SystemProcess::Init,
+    my_logger::LOGGER.write_info(
+        "Initialization",
         format!("Initialization is done in {:?}", sw.duration()),
-        format!(
-            "Application is initialized. Topics amount is: {}",
-            topics_count
-        ),
-        None,
+        LogEventCtx::new(),
     );
 
     println!("Application is initialized in {:?}", sw.duration());
@@ -66,7 +60,6 @@ async fn restore_topic_pages(app: Arc<AppContext>, topic: Arc<Topic>) {
     let sub_page = crate::operations::page_loader::load_page_to_cache(
         &topic,
         app.messages_pages_repo.clone(),
-        Some(app.logs.as_ref()),
         sub_page_id,
     )
     .await;
@@ -84,12 +77,10 @@ async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
 
         let topics_and_queues = app.topics_and_queues_repo.load().await;
 
-        app.logs.add_info(
-            None,
-            crate::app::logs::SystemProcess::Init,
-            "restore_topics_and_queues".to_string(),
-            format!("Restoring topics and queues. Attempt {}", attempt),
-            None,
+        my_logger::LOGGER.write_info(
+            "restore_topics_and_queues",
+            format!("Restoring topics and queues"),
+            LogEventCtx::new().add("attemptNo", attempt.to_string()),
         );
 
         if let Ok(result) = topics_and_queues {
@@ -98,12 +89,10 @@ async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
 
         let err = topics_and_queues.err().unwrap();
 
-        app.logs.add_error(
-            None,
-            crate::app::logs::SystemProcess::Init,
-            "restore_topics_and_queues".to_string(),
+        my_logger::LOGGER.write_error(
+            "restore_topics_and_queues",
             format!("Can not restore topics and queues. Err: {:?}", err),
-            None,
+            LogEventCtx::new().add("attemptNo", attempt.to_string()),
         );
 
         tokio::time::sleep(Duration::from_secs(5)).await;

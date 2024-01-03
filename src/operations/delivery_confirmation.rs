@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use my_logger::LogEventCtx;
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 
 use crate::{app::AppContext, queue_subscribers::SubscriberId};
@@ -31,11 +32,13 @@ pub async fn all_confirmed(
             })?;
 
     if let Err(err) = topic_queue.confirmed_delivered(subscriber_id) {
-        app.logs.add_fatal_error(
-            crate::app::logs::SystemProcess::DeliveryOperation,
+        my_logger::LOGGER.write_fatal_error(
             "confirm_delivery".to_string(),
             format!("{:?}", err),
-            None,
+            LogEventCtx::new()
+                .add("topicId", topic.topic_id.as_str())
+                .add("queueId", queue_id)
+                .add("subscriberId", subscriber_id.get_value().to_string()),
         );
     }
 
@@ -70,11 +73,13 @@ pub async fn all_fail(
                 })?;
 
         if let Err(err) = topic_queue.confirmed_non_delivered(subscriber_id) {
-            app.logs.add_fatal_error(
-                crate::app::logs::SystemProcess::DeliveryOperation,
+            my_logger::LOGGER.write_error(
                 "confirm_non_delivery".to_string(),
                 format!("{:?}", err),
-                None,
+                LogEventCtx::new()
+                    .add("topicId", topic.topic_id.as_str())
+                    .add("queueId", queue_id)
+                    .add("subscriberId", subscriber_id.get_value().to_string()),
             );
         }
     }
@@ -111,11 +116,13 @@ pub async fn intermediary_confirm(
                 })?;
 
         if let Err(err) = topic_queue.intermediary_confirmed(subscriber_id, confirmed) {
-            app.logs.add_fatal_error(
-                crate::app::logs::SystemProcess::DeliveryOperation,
+            my_logger::LOGGER.write_error(
                 "some_messages_are_not_confirmed".to_string(),
                 format!("{:?}", err),
-                None,
+                LogEventCtx::new()
+                    .add("topicId", topic.topic_id.as_str())
+                    .add("queueId", queue_id)
+                    .add("subscriberId", subscriber_id.get_value().to_string()),
             );
         }
     }
@@ -151,11 +158,13 @@ pub async fn some_messages_are_confirmed(
                 })?;
 
         if let Err(err) = topic_queue.confirmed_some_delivered(subscriber_id, confirmed_messages) {
-            app.logs.add_fatal_error(
-                crate::app::logs::SystemProcess::DeliveryOperation,
+            my_logger::LOGGER.write_fatal_error(
                 "some_messages_are_confirmed".to_string(),
                 format!("{:?}", err),
-                None,
+                LogEventCtx::new()
+                    .add("topicId", topic.topic_id.as_str())
+                    .add("queueId", queue_id)
+                    .add("subscriberId", subscriber_id.get_value().to_string()),
             );
         }
     }

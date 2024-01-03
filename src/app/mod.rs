@@ -1,5 +1,4 @@
 mod app_ctx;
-pub mod logs;
 pub mod prometheus_metrics;
 pub mod shutdown;
 

@@ -73,20 +73,22 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         Arc::new(super::debug_controller::OnDeliveryAction::new(app.clone()));
     controllers.register_get_action(on_delivery_controller);
 
-    let logs_controller = Arc::new(super::logs::LogsAction::new(app.clone()));
-    controllers.register_get_action(logs_controller);
+    /*
+       let logs_controller = Arc::new(super::logs::LogsAction::new(app.clone()));
+       controllers.register_get_action(logs_controller);
 
-    controllers.register_get_action(Arc::new(super::logs::GetLogsByTopicAction::new(
-        app.clone(),
-    )));
+       controllers.register_get_action(Arc::new(super::logs::GetLogsByTopicAction::new(
+           app.clone(),
+       )));
 
-    controllers.register_get_action(Arc::new(super::logs::GetLogsByProcessAction::new(
-        app.clone(),
-    )));
+       controllers.register_get_action(Arc::new(super::logs::GetLogsByProcessAction::new(
+           app.clone(),
+       )));
 
-    controllers.register_get_action(Arc::new(super::logs::SelectTopicAction::new(app.clone())));
+       controllers.register_get_action(Arc::new(super::logs::SelectTopicAction::new(app.clone())));
 
-    controllers.register_get_action(Arc::new(super::logs::SelectProcessAction::new()));
+       controllers.register_get_action(Arc::new(super::logs::SelectProcessAction::new()));
+    */
 
     controllers.register_post_action(Arc::new(super::publisher::PublishAction::new(app.clone())));
 

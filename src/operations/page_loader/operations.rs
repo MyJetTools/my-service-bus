@@ -4,10 +4,10 @@ use std::{
     time::Duration,
 };
 
+use my_logger::LogEventCtx;
 use my_service_bus::shared::sub_page::SubPageId;
 
 use crate::{
-    app::logs::Logs,
     grpc_client::{MessagesPagesRepo, PersistenceError},
     messages_page::{MySbCachedMessage, SubPage, SubPageInner},
     topics::Topic,
@@ -16,7 +16,6 @@ use crate::{
 pub async fn load_page(
     topic: &Topic,
     messages_pages_repo: &Arc<MessagesPagesRepo>,
-    logs: Option<&Logs>,
     sub_page_id: SubPageId,
 ) -> SubPage {
     let mut attempt_no = 0;
@@ -52,39 +51,36 @@ pub async fn load_page(
         let err = result.err().unwrap();
         match err {
             PersistenceError::ZipOperationError(zip_error) => {
-                let mut ctx = HashMap::new();
-
-                ctx.insert("subPageId".to_string(), sub_page_id.get_value().to_string());
-                ctx.insert("attemptNo".to_string(), attempt_no.to_string());
-                if let Some(logs) = logs {
-                    logs.add_error(
-                        Some(topic.topic_id.to_string()),
-                        crate::app::logs::SystemProcess::Init,
-                        "get_page".to_string(),
-                        format!("Can not load page from persistence storage. Creating empty page. Err:{}", zip_error),
-                        Some(ctx),
-                    );
-                }
+                my_logger::LOGGER.write_error(
+                    "load_page",
+                    format!(
+                        "Can not load page from persistence storage. Creating empty page. Err:{}",
+                        zip_error
+                    ),
+                    LogEventCtx::new()
+                        .add("topicId", topic.topic_id.as_str())
+                        .add("subPageId", sub_page_id.get_value().to_string())
+                        .add("attemptNo", attempt_no.to_string()),
+                );
 
                 return SubPage::create_as_missing(sub_page_id);
             }
             _ => {
-                if let Some(logs) = logs {
-                    let mut ctx = HashMap::new();
-                    ctx.insert("subPageId".to_string(), sub_page_id.get_value().to_string());
-                    ctx.insert("attemptNo".to_string(), attempt_no.to_string());
+                let mut ctx = HashMap::new();
+                ctx.insert("subPageId".to_string(), sub_page_id.get_value().to_string());
+                ctx.insert("attemptNo".to_string(), attempt_no.to_string());
 
-                    logs.add_error(
-                        Some(topic.topic_id.to_string()),
-                        crate::app::logs::SystemProcess::Init,
-                        "get_page".to_string(),
-                        format!(
-                            "Can not load page #{} from persistence storage.Retrying...",
-                            sub_page_id.get_value(),
-                        ),
-                        Some(ctx),
-                    );
-                }
+                my_logger::LOGGER.write_error(
+                    "load_page",
+                    format!(
+                        "Can not load sub_page #{} from persistence storage. Retrying...",
+                        sub_page_id.get_value(),
+                    ),
+                    LogEventCtx::new()
+                        .add("topicId", topic.topic_id.as_str())
+                        .add("subPageId", sub_page_id.get_value().to_string())
+                        .add("attemptNo", attempt_no.to_string()),
+                );
             }
         }
 
