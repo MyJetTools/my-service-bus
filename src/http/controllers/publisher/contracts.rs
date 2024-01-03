@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use my_http_server::{HttpFailResult, WebContentType};
 
 use my_http_server::macros::{MyHttpInput, MyHttpObjectStructure};
+use rust_extensions::base64::FromBase64;
 use serde::{Deserialize, Serialize};
-
-use crate::utils::FromBase64;
 
 #[derive(MyHttpInput)]
 pub struct PublishMessageHttpInput {
@@ -51,8 +50,7 @@ impl MessageToPublishJsonModel {
             Err(err) => Err(HttpFailResult {
                 content_type: WebContentType::Text,
                 status_code: 400,
-                content: format!("Can not convert content from Base64. Err: Err{}", err)
-                    .into_bytes(),
+                content: format!("Can not convert content from Base64. Err: {}", err).into_bytes(),
                 write_telemetry: false,
                 write_to_log: false,
             }),

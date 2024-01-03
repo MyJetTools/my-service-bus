@@ -23,6 +23,7 @@ my-http-server = { tag = "0.7.0", git = "https://github.com/MyJetTools/my-http-s
 my-tcp-sockets = { tag = "0.1.8", git = "https://github.com/MyJetTools/my-tcp-sockets.git" }
 rust-extensions = { tag = "0.1.4", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
     "with-tokio",
+    "base64",
 ] }
 
 

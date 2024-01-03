@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use rust_extensions::duration_utils::DurationExtensions;
 use serde::{Deserialize, Serialize};
 use tokio::{fs::File, io::AsyncReadExt};
 
@@ -9,7 +10,7 @@ use crate::grpc_client::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo};
 const TEST_GRPC_URL: &str = "test";
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct SettingsModelJson {
+pub struct SettingsModelYaml {
     #[serde(rename = "GrpcUrl")]
     pub persistence_grpc_url: String,
 
@@ -37,8 +38,8 @@ pub struct SettingsModelJson {
     #[serde(rename = "GrpcTimeoutSecs")]
     pub grpc_timeout_secs: u64,
 
-    #[serde(rename = "PersistTimerIntervalSecs")]
-    pub persist_timer_secs: u64,
+    #[serde(rename = "PersistTimerInterval")]
+    pub persist_timer_interval: String,
 
     #[serde(rename = "PersistCompressed")]
     pub persist_compressed: bool,
@@ -88,7 +89,7 @@ impl SettingsModel {
             }
         }
 
-        let result: SettingsModelJson = serde_yaml::from_slice(&file_content).unwrap();
+        let result: SettingsModelYaml = serde_yaml::from_slice(&file_content).unwrap();
 
         result.into()
     }
@@ -143,7 +144,7 @@ fn get_settings_filename() -> String {
     filename
 }
 
-impl Into<SettingsModel> for SettingsModelJson {
+impl Into<SettingsModel> for SettingsModelYaml {
     fn into(self) -> SettingsModel {
         let queue_gc_timeout =
             rust_extensions::duration_utils::parse_duration(self.queue_gc_timeout.as_str())
@@ -213,8 +214,22 @@ impl Into<SettingsModel> for SettingsModelJson {
             auto_create_topic_on_publish,
             auto_create_topic_on_subscribe,
             grpc_timeout: Duration::from_secs(self.grpc_timeout_secs),
-            persist_timer_interval: Duration::from_secs(self.persist_timer_secs),
+            persist_timer_interval: Duration::from_str(&self.persist_timer_interval).unwrap(),
             persist_compressed: self.persist_compressed,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use rust_extensions::duration_utils::DurationExtensions;
+
+    #[test]
+    fn test() {
+        let diration = Duration::from_str("100ms").unwrap();
+
+        println!("{:?}", diration);
     }
 }
