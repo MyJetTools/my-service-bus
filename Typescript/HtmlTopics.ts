@@ -30,10 +30,17 @@ class HtmlTopics {
         let msgPerSecColor = topic.messagesPerSec > 0 ? "white" : "gray";
         let packetsPerSecColor = topic.packetPerSec > 0 ? "white" : "gray";
 
+        let persist = "";
+        if (topic.persist) {
+            persist = '<div>Persist queue:<span style="color:' + queuesizeColor + '">' + topic.persistSize + '</span></div>'
+        } else {
+            persist = '<div>Persist: <span style="color:blue">disabled</span></div>'
+        }
+
         return '<div>MsgId:' + Utils.highlightPageOfMessageId(topic.messageId.toString()) + '</div>' +
             '<div>Msg/sec: <span style="color:' + msgPerSecColor + '">' + topic.messagesPerSec + '</span></div>' +
             '<div>Req/sec: <span style="color:' + packetsPerSecColor + '">' + topic.packetPerSec + '</span></div>' +
-            '<div>Persist queue:<span style="color:' + queuesizeColor + '">' + topic.persistSize + '</span></div>' +
+            persist +
             '<div>' + HtmlGraph.renderGraph(topic.publishHistory, v => v.toString(), v => v, _ => false) + '</div>' +
 
             '<div>' + this.renderCachedPages(topic.pages) + '</div>';

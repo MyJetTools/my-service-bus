@@ -45,7 +45,8 @@ interface ITopic {
     publishHistory: number[],
     pages: IPage[],
     publishers: ITopicPublisherApiContract[],
-    subscribers: ISubscriberApiContract[]
+    subscribers: ISubscriberApiContract[],
+    persist: boolean,
 }
 
 interface IPage {

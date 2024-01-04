@@ -31,6 +31,7 @@ pub struct TopicJsonContract {
     pub publish_history: Vec<i32>,
     pub publishers: Vec<TopicPublisherJsonModel>,
     pub subscribers: Vec<TopicQueueSubscriberJsonModel>,
+    pub persist: bool,
 }
 
 impl TopicJsonContract {
@@ -64,6 +65,7 @@ impl TopicJsonContract {
             publishers,
             pages: TopicPageJsonContract::as_vec(&topic_data.pages),
             subscribers,
+            persist: topic_data.persist,
         }
     }
 }
