@@ -42,10 +42,10 @@ impl SubPage {
             SubPage::AllMessagesMissing(inner) => inner.update_last_accessed(now),
         }
     }
-    pub fn add_message(&mut self, msg: MySbMessageContent) {
+    pub fn add_message(&mut self, msg: MySbMessageContent, persist: bool) {
         match self {
             SubPage::SubPage(inner) => {
-                inner.add_message(msg.into());
+                inner.add_message(msg.into(), persist);
             }
             SubPage::AllMessagesMissing(_) => {
                 panic!("Trying to add message to archived missing page");

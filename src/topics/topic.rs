@@ -22,10 +22,10 @@ pub struct Topic {
 }
 
 impl Topic {
-    pub fn new(topic_id: String, message_id: i64) -> Self {
+    pub fn new(topic_id: String, message_id: i64, persist: bool) -> Self {
         Self {
             topic_id: topic_id.to_string(),
-            inner: Mutex::new(TopicInner::new(topic_id, message_id)),
+            inner: Mutex::new(TopicInner::new(topic_id, message_id, persist)),
             restore_page_lock: Mutex::new(DateTimeAsMicroseconds::now()),
             immediately_persist_is_charged: AtomicBool::new(false),
         }
@@ -50,12 +50,13 @@ impl Topic {
     }
 
     pub async fn get_topic_snapshot(&self) -> TopicSnapshot {
-        let topic_data = self.inner.lock().await;
+        let inner = self.inner.lock().await;
 
         TopicSnapshot {
-            message_id: topic_data.message_id.into(),
-            topic_id: topic_data.topic_id.as_str().into(),
-            queues: topic_data.queues.get_snapshot_to_persist(),
+            message_id: inner.message_id.into(),
+            topic_id: inner.topic_id.as_str().into(),
+            queues: inner.queues.get_snapshot_to_persist(),
+            persist: inner.persist,
         }
     }
 
@@ -111,5 +112,10 @@ impl Topic {
     pub async fn get_topic_size_metrics(&self) -> SizeMetrics {
         let read_access = self.get_access().await;
         read_access.get_topic_size_metrics()
+    }
+
+    pub async fn update_persist(&self, persist: bool) {
+        let mut write_access = self.get_access().await;
+        write_access.persist = persist;
     }
 }

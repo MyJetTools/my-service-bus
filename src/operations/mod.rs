@@ -25,3 +25,5 @@ pub use persist_topics_and_queues::persist_topics_and_queues;
 pub use save_messages_for_topic::save_messages_for_topic;
 mod restore_topic;
 pub use restore_topic::*;
+mod update_topic_persist;
+pub use update_topic_persist::*;

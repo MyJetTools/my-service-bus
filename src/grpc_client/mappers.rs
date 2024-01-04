@@ -18,6 +18,7 @@ impl From<&TopicSnapshot> for TopicAndQueuesSnapshotGrpcModel {
             topic_id: src.topic_id.to_string(),
             message_id: src.message_id,
             queue_snapshots: src.queues.iter().map(|itm| itm.into()).collect(),
+            persist: Some(src.persist),
         }
     }
 }
@@ -27,6 +28,11 @@ impl From<TopicAndQueuesSnapshotGrpcModel> for TopicSnapshot {
         Self {
             topic_id: src.topic_id.as_str().into(),
             message_id: src.message_id,
+            persist: if let Some(persist) = src.persist {
+                persist
+            } else {
+                true
+            },
             queues: src
                 .queue_snapshots
                 .into_iter()

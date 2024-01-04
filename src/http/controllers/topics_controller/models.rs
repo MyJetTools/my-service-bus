@@ -50,3 +50,11 @@ pub struct RestoreTopicRequestContract {
 pub struct RestoreTopicResponseContract {
     pub restored: bool,
 }
+
+#[derive(Debug, MyHttpInput)]
+pub struct UpdatePersistRequestContract {
+    #[http_body(name = "topicId"; description = "Id of topic")]
+    pub topic_id: String,
+    #[http_body(description = "Persist or not persist")]
+    pub persist: bool,
+}

@@ -35,12 +35,17 @@ impl TopicsList {
 
     pub async fn add_if_not_exists(&self, topic_id: &str) -> Result<Arc<Topic>, InvalidTopicName> {
         let mut write_access = self.data.write().await;
-        write_access.add_if_not_exists(topic_id)
+        write_access.add_if_not_exists(topic_id, true)
     }
 
-    pub async fn restore(&self, topic_id: &str, message_id: MessageId) -> Arc<Topic> {
+    pub async fn restore(
+        &self,
+        topic_id: &str,
+        message_id: MessageId,
+        persist: bool,
+    ) -> Arc<Topic> {
         let mut write_access = self.data.write().await;
-        write_access.restore(topic_id, message_id)
+        write_access.restore(topic_id, message_id, persist)
     }
 
     pub async fn delete_topic(&self, topic_id: &str) -> Option<Arc<Topic>> {

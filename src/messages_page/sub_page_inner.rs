@@ -82,7 +82,11 @@ impl SubPageInner {
         self.last_accessed.update(now);
     }
 
-    pub fn add_message(&mut self, message: MySbCachedMessage) -> Option<MySbCachedMessage> {
+    pub fn add_message(
+        &mut self,
+        message: MySbCachedMessage,
+        persist: bool,
+    ) -> Option<MySbCachedMessage> {
         let message_id = message.get_message_id();
 
         if !self.sub_page_id.is_my_message_id(message_id) {
@@ -96,7 +100,9 @@ impl SubPageInner {
 
         self.size_and_amount.added(message.get_content_size());
 
-        self.to_persist.enqueue(message_id.get_value());
+        if persist {
+            self.to_persist.enqueue(message_id.get_value());
+        }
 
         if let Some(old_message) = self.messages.insert(message_id.get_value(), message) {
             self.size_and_amount.removed(old_message.get_content_size());
@@ -211,6 +217,7 @@ mod tests {
                 headers: None,
             }
             .into(),
+            true,
         );
 
         sub_page.add_message(
@@ -221,6 +228,7 @@ mod tests {
                 headers: None,
             }
             .into(),
+            true,
         );
 
         let gc_full_page = sub_page.gc_messages(1.into());
@@ -246,6 +254,7 @@ mod tests {
                 headers: None,
             }
             .into(),
+            true,
         );
 
         sub_page.add_message(
@@ -256,6 +265,7 @@ mod tests {
                 headers: None,
             }
             .into(),
+            true,
         );
 
         let gc_full_page = sub_page.gc_messages(5.into());
@@ -278,6 +288,7 @@ mod tests {
                 headers: None,
             }
             .into(),
+            true,
         );
 
         sub_page.add_message(
@@ -288,6 +299,7 @@ mod tests {
                 headers: None,
             }
             .into(),
+            true,
         );
 
         let gc_full_page = sub_page.gc_messages(9999.into());

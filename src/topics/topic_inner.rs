@@ -25,10 +25,11 @@ pub struct TopicInner {
     pub statistics: TopicStatistics,
     pub pages: MessagesPageList,
     pub publishers: HashMap<i64, u8>,
+    pub persist: bool,
 }
 
 impl TopicInner {
-    pub fn new(topic_id: String, message_id: i64) -> Self {
+    pub fn new(topic_id: String, message_id: i64, persist: bool) -> Self {
         Self {
             topic_id,
             message_id: message_id.into(),
@@ -36,6 +37,7 @@ impl TopicInner {
             statistics: TopicStatistics::new(),
             pages: MessagesPageList::new(),
             publishers: HashMap::new(),
+            persist,
         }
     }
 
@@ -64,7 +66,7 @@ impl TopicInner {
 
             let page = self.pages.get_or_create_mut(page_id);
             page.update_last_accessed(message.time);
-            page.add_message(message);
+            page.add_message(message, self.persist);
 
             self.message_id.increment();
         }

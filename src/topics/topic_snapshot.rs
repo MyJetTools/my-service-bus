@@ -14,4 +14,5 @@ pub struct TopicSnapshot {
     pub topic_id: ShortString,
     pub message_id: i64,
     pub queues: Vec<TopicQueueSnapshot>,
+    pub persist: bool,
 }

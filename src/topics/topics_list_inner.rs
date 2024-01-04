@@ -35,11 +35,15 @@ impl TopicListInner {
         self.snapshot_id
     }
 
-    pub fn add_if_not_exists(&mut self, topic_id: &str) -> Result<Arc<Topic>, InvalidTopicName> {
+    pub fn add_if_not_exists(
+        &mut self,
+        topic_id: &str,
+        persist: bool,
+    ) -> Result<Arc<Topic>, InvalidTopicName> {
         if !self.topics.contains_key(topic_id) {
             my_service_bus::shared::validators::validate_topic_name(topic_id)?;
 
-            let topic = Topic::new(topic_id.to_string(), 0);
+            let topic = Topic::new(topic_id.to_string(), 0, persist);
             let topic = Arc::new(topic);
             self.topics.insert(topic_id.to_string(), topic.clone());
             self.snapshot_id += 1;
@@ -50,8 +54,8 @@ impl TopicListInner {
         return Ok(result);
     }
 
-    pub fn restore(&mut self, topic_id: &str, message_id: MessageId) -> Arc<Topic> {
-        let topic = Topic::new(topic_id.to_string(), message_id.get_value());
+    pub fn restore(&mut self, topic_id: &str, message_id: MessageId, persist: bool) -> Arc<Topic> {
+        let topic = Topic::new(topic_id.to_string(), message_id.get_value(), persist);
         let result = Arc::new(topic);
         self.topics.insert(topic_id.to_string(), result.clone());
 
