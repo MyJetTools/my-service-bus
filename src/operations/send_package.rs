@@ -11,7 +11,7 @@ pub fn send_package(
     let _handle = tokio::spawn(async move {
         match &session.connection {
             crate::sessions::SessionConnection::Tcp(data) => {
-                data.connection.send(tcp_packet).await;
+                data.connection.send(&tcp_packet).await;
             }
             #[cfg(test)]
             crate::sessions::SessionConnection::Test(data) => {

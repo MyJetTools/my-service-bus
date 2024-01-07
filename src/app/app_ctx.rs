@@ -65,7 +65,10 @@ impl AppContext {
                 Duration::from_secs(30)
             },
             debug_topic_and_queue: RwLock::new(None),
-            immediately_persist_event_loop: EventsLoop::new("ImmediatelyPersist".to_string()),
+            immediately_persist_event_loop: EventsLoop::new(
+                "ImmediatelyPersist".to_string(),
+                my_logger::LOGGER.clone(),
+            ),
             persistence_version: MultiThreadedShortString::new(),
             settings,
         }

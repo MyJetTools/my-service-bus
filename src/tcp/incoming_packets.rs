@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus::tcp_contracts::{MySbTcpSerializer, TcpContract};
-use my_tcp_sockets::tcp_connection::SocketConnection;
+use my_tcp_sockets::tcp_connection::TcpSocketConnection;
 
 use crate::sessions::TcpConnectionData;
 use crate::{app::AppContext, operations};
@@ -12,11 +12,11 @@ use super::error::MySbSocketError;
 pub async fn handle(
     app: &Arc<AppContext>,
     tcp_contract: TcpContract,
-    connection: Arc<SocketConnection<TcpContract, MySbTcpSerializer>>,
+    connection: Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer>>,
 ) -> Result<(), MySbSocketError> {
     match tcp_contract {
         TcpContract::Ping {} => {
-            connection.send(TcpContract::Pong).await;
+            connection.send(&TcpContract::Pong).await;
             Ok(())
         }
         TcpContract::Pong {} => Ok(()),
@@ -74,13 +74,13 @@ pub async fn handle(
 
                 if let Err(err) = result {
                     connection
-                        .send(TcpContract::Reject {
+                        .send(&TcpContract::Reject {
                             message: format!("{:?}", err),
                         })
                         .await;
                 } else {
                     connection
-                        .send(TcpContract::PublishResponse { request_id })
+                        .send(&TcpContract::PublishResponse { request_id })
                         .await;
                 }
             }

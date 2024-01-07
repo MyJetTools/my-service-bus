@@ -4,12 +4,12 @@ use std::sync::{
 };
 
 use my_service_bus::tcp_contracts::{MySbTcpSerializer, PacketProtVer, TcpContract};
-use my_tcp_sockets::tcp_connection::SocketConnection;
+use my_tcp_sockets::tcp_connection::TcpSocketConnection;
 
 use crate::sessions::ConnectionMetricsSnapshot;
 
 pub struct TcpConnectionData {
-    pub connection: Arc<SocketConnection<TcpContract, MySbTcpSerializer>>,
+    pub connection: Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer>>,
     protocol_version: i32,
     delivery_packet_version: AtomicI32,
     pub name: String,
@@ -19,7 +19,7 @@ pub struct TcpConnectionData {
 
 impl TcpConnectionData {
     pub fn new(
-        connection: Arc<SocketConnection<TcpContract, MySbTcpSerializer>>,
+        connection: Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer>>,
         name: String,
         version: Option<String>,
         protocol_version: i32,
@@ -59,15 +59,19 @@ impl TcpConnectionData {
         ConnectionMetricsSnapshot {
             read: self
                 .connection
-                .statistics
+                .statistics()
                 .total_received
                 .load(Ordering::SeqCst),
-            written: self.connection.statistics.total_sent.load(Ordering::SeqCst),
-            read_per_sec: self.connection.statistics.received_per_sec.get_value(),
-            written_per_sec: self.connection.statistics.sent_per_sec.get_value(),
+            written: self
+                .connection
+                .statistics()
+                .total_sent
+                .load(Ordering::SeqCst),
+            read_per_sec: self.connection.statistics().received_per_sec.get_value(),
+            written_per_sec: self.connection.statistics().sent_per_sec.get_value(),
             last_incoming_moment: self
                 .connection
-                .statistics
+                .statistics()
                 .last_receive_moment
                 .as_date_time(),
         }
