@@ -22,7 +22,7 @@ impl PageSizeMetrics {
         let mut result = SizeMetrics::new(0);
 
         for metrics in self.sub_page_metrics.values() {
-            result.append(metrics);
+            result.append_without_avg(metrics);
         }
 
         result

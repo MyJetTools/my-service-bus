@@ -13,6 +13,7 @@ use std::time::Duration;
 use std::{net::SocketAddr, sync::Arc};
 
 mod app;
+mod avg_value;
 mod errors;
 mod grpc_client;
 mod http;

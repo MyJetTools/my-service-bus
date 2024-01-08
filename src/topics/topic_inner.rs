@@ -8,6 +8,7 @@ use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
+use crate::avg_value::AvgValue;
 use crate::messages_page::{MessagesPageList, MySbMessageContent, SizeMetrics};
 use crate::queue_subscribers::QueueSubscriber;
 use crate::queues::{TopicQueue, TopicQueuesList};
@@ -27,8 +28,7 @@ pub struct TopicInner {
     pub publishers: HashMap<i64, u8>,
     pub persist: bool,
 
-    pub total_size: usize,
-    pub total_messages: usize,
+    pub avg_size: AvgValue,
 }
 
 impl TopicInner {
@@ -41,17 +41,8 @@ impl TopicInner {
             pages: MessagesPageList::new(),
             publishers: HashMap::new(),
             persist,
-            total_messages: 0,
-            total_size: 0,
+            avg_size: AvgValue::new(),
         }
-    }
-
-    pub fn get_avg_message_size(&self) -> usize {
-        if self.total_messages == 0 {
-            return 0;
-        }
-
-        self.total_size / self.total_messages
     }
 
     #[inline]
@@ -73,8 +64,7 @@ impl TopicInner {
                 headers: msg.headers,
             };
 
-            self.total_messages += 1;
-            self.total_size += message.content.len();
+            self.avg_size.add(message.content.len());
 
             ids.enqueue(message.id.into());
 
@@ -201,12 +191,11 @@ impl TopicInner {
     }
 
     pub fn get_topic_size_metrics(&self) -> SizeMetrics {
-        let mut result = SizeMetrics::new(self.get_avg_message_size());
+        let mut result = SizeMetrics::new(self.avg_size.get());
 
         for sub_page in self.pages.sub_pages.values() {
             let metrics = sub_page.get_size_metrics();
-
-            result.append(&metrics);
+            result.append_without_avg(&metrics);
         }
 
         result

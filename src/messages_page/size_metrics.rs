@@ -15,15 +15,10 @@ impl SizeMetrics {
         }
     }
 
-    pub fn append(&mut self, other: &SizeMetrics) {
+    pub fn append_without_avg(&mut self, other: &SizeMetrics) {
         self.messages_amount += other.messages_amount;
         self.data_size += other.data_size;
         self.persist_size += other.persist_size;
-        self.avg_message_size = if self.messages_amount == 0 {
-            0
-        } else {
-            self.data_size / self.messages_amount
-        };
     }
 
     pub fn update(&mut self, data: &SizeMetrics) {
