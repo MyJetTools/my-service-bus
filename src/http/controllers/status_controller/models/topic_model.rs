@@ -22,6 +22,8 @@ pub struct TopicJsonContract {
     pub message_id: i64,
     #[serde(rename = "packetPerSec")]
     pub packets_per_second: usize,
+    #[serde(rename = "meanMessageSize")]
+    pub mean_message_size: usize,
     #[serde(rename = "messagesPerSec")]
     pub messages_per_second: usize,
     pub pages: Vec<TopicPageJsonContract>,
@@ -66,6 +68,7 @@ impl TopicJsonContract {
             pages: TopicPageJsonContract::as_vec(&topic_data.pages),
             subscribers,
             persist: topic_data.persist,
+            mean_message_size: topic_data.statistics.size_metrics.avg_message_size,
         }
     }
 }

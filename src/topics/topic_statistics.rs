@@ -24,7 +24,7 @@ impl TopicStatistics {
             packets_per_second: 0,
             publish_history: MetricsHistory::new(),
 
-            size_metrics: SizeMetrics::new(),
+            size_metrics: SizeMetrics::new(0),
         }
     }
 

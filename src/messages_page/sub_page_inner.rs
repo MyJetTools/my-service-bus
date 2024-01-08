@@ -75,6 +75,11 @@ impl SubPageInner {
             messages_amount: self.messages.len(),
             data_size: self.size_and_amount.size,
             persist_size: self.to_persist.len() as usize,
+            avg_message_size: if self.messages.len() == 0 {
+                0
+            } else {
+                self.size_and_amount.size / self.messages.len()
+            },
         }
     }
 

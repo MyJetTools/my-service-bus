@@ -19,7 +19,7 @@ impl PageSizeMetrics {
     }
 
     pub fn get_size_metrics(&self) -> SizeMetrics {
-        let mut result = SizeMetrics::new();
+        let mut result = SizeMetrics::new(0);
 
         for metrics in self.sub_page_metrics.values() {
             result.append(metrics);

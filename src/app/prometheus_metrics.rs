@@ -9,6 +9,7 @@ pub struct PrometheusMetrics {
     permanent_queues_without_subscribers: IntGauge,
     topics_without_queues: IntGauge,
     topic_data_size: IntGaugeVec,
+    topic_mean_message_size: IntGaugeVec,
     topic_messages_amount: IntGaugeVec,
     http_connections_amount: IntGauge,
 }
@@ -30,6 +31,8 @@ impl PrometheusMetrics {
         let topic_messages_amount = create_topic_messages_amount();
 
         let http_connections_amount = create_http_connections_amount();
+
+        let topic_mean_message_size = create_topic_mean_message_size();
 
         registry
             .register(Box::new(http_connections_amount.clone()))
@@ -68,6 +71,7 @@ impl PrometheusMetrics {
             topic_data_size,
             topic_messages_amount,
             http_connections_amount,
+            topic_mean_message_size,
         };
     }
 
@@ -97,6 +101,10 @@ impl PrometheusMetrics {
         self.topic_messages_amount
             .with_label_values(&[topic_id])
             .set(metrics.messages_amount as i64);
+
+        self.topic_mean_message_size
+            .with_label_values(&[topic_id])
+            .set(metrics.avg_message_size as i64);
     }
 
     pub fn build(&self) -> Vec<u8> {
@@ -151,6 +159,14 @@ fn create_permanent_queues_without_subscribers() -> IntGauge {
 
 fn create_topic_data_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_data_size", "Topic data size");
+
+    let lables = &["topic"];
+
+    IntGaugeVec::new(gauge_opts, lables).unwrap()
+}
+
+fn create_topic_mean_message_size() -> IntGaugeVec {
+    let gauge_opts = Opts::new("topic_mean_message_size", "Topic mean message size");
 
     let lables = &["topic"];
 

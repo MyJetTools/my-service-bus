@@ -26,6 +26,9 @@ pub struct TopicInner {
     pub pages: MessagesPageList,
     pub publishers: HashMap<i64, u8>,
     pub persist: bool,
+
+    pub total_size: usize,
+    pub total_messages: usize,
 }
 
 impl TopicInner {
@@ -38,7 +41,17 @@ impl TopicInner {
             pages: MessagesPageList::new(),
             publishers: HashMap::new(),
             persist,
+            total_messages: 0,
+            total_size: 0,
         }
+    }
+
+    pub fn get_avg_message_size(&self) -> usize {
+        if self.total_messages == 0 {
+            return 0;
+        }
+
+        self.total_size / self.total_messages
     }
 
     #[inline]
@@ -59,6 +72,9 @@ impl TopicInner {
                 time: DateTimeAsMicroseconds::now(),
                 headers: msg.headers,
             };
+
+            self.total_messages += 1;
+            self.total_size += message.content.len();
 
             ids.enqueue(message.id.into());
 
@@ -185,7 +201,7 @@ impl TopicInner {
     }
 
     pub fn get_topic_size_metrics(&self) -> SizeMetrics {
-        let mut result = SizeMetrics::new();
+        let mut result = SizeMetrics::new(self.get_avg_message_size());
 
         for sub_page in self.pages.sub_pages.values() {
             let metrics = sub_page.get_size_metrics();

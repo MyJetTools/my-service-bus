@@ -88,6 +88,7 @@ impl SubPage {
                 messages_amount: 0,
                 data_size: 0,
                 persist_size: 0,
+                avg_message_size: 0,
             },
         }
     }
