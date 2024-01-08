@@ -21,9 +21,11 @@ impl TcpServerEvents {
 impl SocketEventCallback<TcpContract, MySbTcpSerializer> for TcpServerEvents {
     async fn handle(&self, connection_event: ConnectionEvent<TcpContract, MySbTcpSerializer>) {
         match connection_event {
-            ConnectionEvent::Connected(_) => {}
+            ConnectionEvent::Connected(_) => {
+                self.app.prometheus.mark_new_tcp_connection();
+            }
             ConnectionEvent::Disconnected(connection) => {
-                println!("Connection {} is disconnected", connection.id);
+                self.app.prometheus.mark_new_tcp_disconnection();
                 if let Some(session) = self.app.sessions.remove_tcp(connection.id).await {
                     crate::operations::sessions::disconnect(self.app.as_ref(), session.as_ref())
                         .await;

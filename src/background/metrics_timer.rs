@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use my_http_server::HttpConnectionsCounter;
+use my_tcp_sockets::ThreadsStatistics;
 use rust_extensions::MyTimerTick;
 
 use crate::app::AppContext;
@@ -8,13 +9,19 @@ use crate::app::AppContext;
 pub struct MetricsTimer {
     app: Arc<AppContext>,
     http_connections_counter: HttpConnectionsCounter,
+    threads_statistics: Arc<ThreadsStatistics>,
 }
 
 impl MetricsTimer {
-    pub fn new(app: Arc<AppContext>, http_connections_counter: HttpConnectionsCounter) -> Self {
+    pub fn new(
+        app: Arc<AppContext>,
+        http_connections_counter: HttpConnectionsCounter,
+        threads_statistics: Arc<ThreadsStatistics>,
+    ) -> Self {
         Self {
             app,
             http_connections_counter,
+            threads_statistics,
         }
     }
 }
@@ -23,6 +30,10 @@ impl MetricsTimer {
 impl MyTimerTick for MetricsTimer {
     async fn tick(&self) {
         self.app.sessions.one_second_tick().await;
+
+        self.app
+            .prometheus
+            .update_tcp_threads(&self.threads_statistics);
 
         let mut permanent_queues_without_subscribers = 0;
         let mut topics_without_queues = 0;

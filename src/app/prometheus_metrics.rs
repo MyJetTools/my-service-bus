@@ -1,6 +1,9 @@
+use my_tcp_sockets::ThreadsStatistics;
 use prometheus::{Encoder, IntGauge, IntGaugeVec, Opts, Registry, TextEncoder};
 
 use crate::messages_page::SizeMetrics;
+
+const TCP_METRIC: &str = "tcp_metric";
 
 pub struct PrometheusMetrics {
     registry: Registry,
@@ -12,6 +15,7 @@ pub struct PrometheusMetrics {
     topic_mean_message_size: IntGaugeVec,
     topic_messages_amount: IntGaugeVec,
     http_connections_amount: IntGauge,
+    tcp_connections: IntGaugeVec,
 }
 
 impl PrometheusMetrics {
@@ -33,6 +37,12 @@ impl PrometheusMetrics {
         let http_connections_amount = create_http_connections_amount();
 
         let topic_mean_message_size = create_topic_mean_message_size();
+
+        let tcp_connections = create_tcp_connections();
+
+        registry
+            .register(Box::new(tcp_connections.clone()))
+            .unwrap();
 
         registry
             .register(Box::new(http_connections_amount.clone()))
@@ -76,6 +86,7 @@ impl PrometheusMetrics {
             topic_messages_amount,
             http_connections_amount,
             topic_mean_message_size,
+            tcp_connections,
         };
     }
 
@@ -134,6 +145,28 @@ impl PrometheusMetrics {
     pub fn update_http_connections_amount(&self, amount: i64) {
         self.http_connections_amount.set(amount);
     }
+
+    pub fn mark_new_tcp_connection(&self) {
+        self.tcp_connections.with_label_values(&["count"]).inc();
+    }
+
+    pub fn mark_new_tcp_disconnection(&self) {
+        self.tcp_connections.with_label_values(&["count"]).dec();
+    }
+
+    pub fn update_tcp_threads(&self, threads_statistics: &ThreadsStatistics) {
+        self.tcp_connections
+            .with_label_values(&["ping_threads"])
+            .set(threads_statistics.get_ping_threads() as i64);
+
+        self.tcp_connections
+            .with_label_values(&["read_threads"])
+            .set(threads_statistics.get_read_threads() as i64);
+
+        self.tcp_connections
+            .with_label_values(&["write_threads"])
+            .set(threads_statistics.get_read_threads() as i64);
+    }
 }
 
 fn create_topic_persist_queue_size() -> IntGaugeVec {
@@ -191,4 +224,10 @@ fn create_topics_without_queues() -> IntGauge {
 
 fn create_http_connections_amount() -> IntGauge {
     IntGauge::new("http_connections_amount", "Amount of Http Connections").unwrap()
+}
+
+fn create_tcp_connections() -> IntGaugeVec {
+    let gauge_opts = Opts::new(format!("tcp_connections"), format!("Tcp Connections"));
+    let labels = &[TCP_METRIC];
+    IntGaugeVec::new(gauge_opts, labels).unwrap()
 }

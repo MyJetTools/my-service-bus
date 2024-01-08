@@ -74,7 +74,11 @@ async fn main() {
     let mut metrics_timer = MyTimer::new(Duration::from_secs(1));
     metrics_timer.register_timer(
         "Metrics",
-        Arc::new(MetricsTimer::new(app.clone(), http_connections_counter)),
+        Arc::new(MetricsTimer::new(
+            app.clone(),
+            http_connections_counter,
+            tcp_server.threads_statistics,
+        )),
     );
 
     let mut persist_and_gc_timer = MyTimer::new(app.settings.persist_timer_interval);
