@@ -62,6 +62,10 @@ impl PrometheusMetrics {
             .register(Box::new(topic_messages_amount.clone()))
             .unwrap();
 
+        registry
+            .register(Box::new(topic_mean_message_size.clone()))
+            .unwrap();
+
         return Self {
             registry,
             persist_queue_size,
