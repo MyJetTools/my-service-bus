@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use rust_extensions::{events_loop::EventsLoop, AppStates, ApplicationStates};
+use rust_extensions::{AppStates, ApplicationStates};
 use tokio::sync::RwLock;
 
 use crate::{
@@ -8,11 +8,11 @@ use crate::{
     queue_subscribers::SubscriberIdGenerator,
     sessions::SessionsList,
     settings::SettingsModel,
-    topics::{Topic, TopicsList},
+    topics::TopicsList,
     utils::MultiThreadedShortString,
 };
 
-use super::prometheus_metrics::PrometheusMetrics;
+use super::{prometheus_metrics::PrometheusMetrics, ImmediatelyPersistEventLoop};
 
 pub const APP_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -37,7 +37,7 @@ pub struct AppContext {
 
     pub debug_topic_and_queue: RwLock<Option<DebugTopicAndQueue>>,
 
-    pub immediately_persist_event_loop: EventsLoop<Arc<Topic>>,
+    pub immediately_persist_event_loop: ImmediatelyPersistEventLoop,
 
     pub persistence_version: MultiThreadedShortString,
 
@@ -65,10 +65,7 @@ impl AppContext {
                 Duration::from_secs(30)
             },
             debug_topic_and_queue: RwLock::new(None),
-            immediately_persist_event_loop: EventsLoop::new(
-                "ImmediatelyPersist".to_string(),
-                my_logger::LOGGER.clone(),
-            ),
+            immediately_persist_event_loop: ImmediatelyPersistEventLoop::new(),
             persistence_version: MultiThreadedShortString::new(),
             settings,
         }
