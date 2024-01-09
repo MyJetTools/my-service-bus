@@ -165,7 +165,7 @@ impl PrometheusMetrics {
 
         self.tcp_connections
             .with_label_values(&["write_threads"])
-            .set(threads_statistics.get_read_threads() as i64);
+            .set(threads_statistics.get_write_threads() as i64);
     }
 }
 
