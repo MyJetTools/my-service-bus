@@ -157,15 +157,19 @@ impl PrometheusMetrics {
     pub fn update_tcp_threads(&self, threads_statistics: &ThreadsStatistics) {
         self.tcp_connections
             .with_label_values(&["ping_threads"])
-            .set(threads_statistics.get_ping_threads() as i64);
+            .set(threads_statistics.ping_threads.get());
 
         self.tcp_connections
             .with_label_values(&["read_threads"])
-            .set(threads_statistics.get_read_threads() as i64);
+            .set(threads_statistics.read_threads.get());
 
         self.tcp_connections
             .with_label_values(&["write_threads"])
-            .set(threads_statistics.get_write_threads() as i64);
+            .set(threads_statistics.write_threads.get());
+
+        self.tcp_connections
+            .with_label_values(&["connection_objects"])
+            .set(threads_statistics.connections_objects.get());
     }
 }
 
