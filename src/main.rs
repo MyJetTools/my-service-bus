@@ -4,7 +4,6 @@ use background::{
     DeadSubscribersKickerTimer, GcTimer, ImmediatelyPersistEventLoop, MetricsTimer,
     PersistTopicsAndQueuesTimer,
 };
-use my_service_bus::tcp_contracts::{ConnectionAttributes, MySbTcpSerializer};
 use my_tcp_sockets::TcpServer;
 use rust_extensions::MyTimer;
 use tcp::socket_events::TcpServerEvents;
@@ -59,10 +58,6 @@ async fn main() {
 
     tcp_server
         .start(
-            Arc::new(|| -> MySbTcpSerializer {
-                let attrs = ConnectionAttributes::new(0);
-                MySbTcpSerializer::new(attrs)
-            }),
             Arc::new(TcpServerEvents::new(app.clone())),
             app.states.clone(),
             my_logger::LOGGER.clone(),

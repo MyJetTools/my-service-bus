@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
-use my_service_bus::tcp_contracts::{MySbTcpSerializer, TcpContract};
+use my_service_bus::tcp_contracts::{MySbSerializerMetadata, MySbTcpSerializer, TcpContract};
 use my_tcp_sockets::tcp_connection::TcpSocketConnection;
 
 use crate::sessions::TcpConnectionData;
@@ -12,7 +12,7 @@ use super::error::MySbSocketError;
 pub async fn handle(
     app: &Arc<AppContext>,
     tcp_contract: TcpContract,
-    connection: Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer>>,
+    connection: Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer, MySbSerializerMetadata>>,
 ) -> Result<(), MySbSocketError> {
     match tcp_contract {
         TcpContract::Ping {} => {
@@ -167,7 +167,7 @@ pub async fn handle(
                 packet_versions.get(&my_service_bus::tcp_contracts::tcp_message_id::NEW_MESSAGES)
             {
                 if let Some(session) = app.sessions.get_by_tcp_connection_id(connection.id).await {
-                    session.update_tcp_delivery_packet_version(*version)
+                    session.update_tcp_delivery_packet_version(*version as u8)
                 }
             }
 

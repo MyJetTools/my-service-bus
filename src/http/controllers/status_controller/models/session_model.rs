@@ -30,7 +30,7 @@ impl SessionJsonResult {
 
         let session_metrics_data = session.get_metrics().await;
 
-        let session_type = if let Some(prot_ver) = session_metrics_data.protocol_version {
+        let session_type = if let Some(prot_ver) = session_metrics_data.tcp_protocol_version {
             format!(
                 "{}[{}]",
                 session_metrics_data.session_type.as_string(),

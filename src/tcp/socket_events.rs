@@ -3,7 +3,7 @@ use my_logger::LogEventCtx;
 use my_tcp_sockets::{ConnectionEvent, SocketEventCallback};
 use std::sync::Arc;
 
-use my_service_bus::tcp_contracts::{MySbTcpSerializer, TcpContract};
+use my_service_bus::tcp_contracts::{MySbSerializerMetadata, MySbTcpSerializer, TcpContract};
 
 use crate::app::AppContext;
 
@@ -18,8 +18,13 @@ impl TcpServerEvents {
 }
 
 #[async_trait]
-impl SocketEventCallback<TcpContract, MySbTcpSerializer> for TcpServerEvents {
-    async fn handle(&self, connection_event: ConnectionEvent<TcpContract, MySbTcpSerializer>) {
+impl SocketEventCallback<TcpContract, MySbTcpSerializer, MySbSerializerMetadata>
+    for TcpServerEvents
+{
+    async fn handle(
+        &self,
+        connection_event: ConnectionEvent<TcpContract, MySbTcpSerializer, MySbSerializerMetadata>,
+    ) {
         match connection_event {
             ConnectionEvent::Connected(_) => {
                 self.app.prometheus.mark_new_tcp_connection();

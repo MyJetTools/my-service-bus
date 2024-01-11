@@ -1,17 +1,20 @@
 use std::sync::{
-    atomic::{AtomicI32, Ordering},
+    atomic::{AtomicI32, AtomicU8, Ordering},
     Arc,
 };
 
-use my_service_bus::tcp_contracts::{MySbTcpSerializer, PacketProtVer, TcpContract};
+use my_service_bus::tcp_contracts::{
+    MySbSerializerMetadata, MySbTcpSerializer, PacketProtVer, TcpContract,
+};
 use my_tcp_sockets::tcp_connection::TcpSocketConnection;
 
 use crate::sessions::ConnectionMetricsSnapshot;
 
 pub struct TcpConnectionData {
-    pub connection: Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer>>,
+    pub connection:
+        Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer, MySbSerializerMetadata>>,
     protocol_version: i32,
-    delivery_packet_version: AtomicI32,
+    delivery_packet_version: AtomicU8,
     pub name: String,
     pub version: Option<String>,
     pub logged_send_error_on_disconnected: AtomicI32,
@@ -19,7 +22,9 @@ pub struct TcpConnectionData {
 
 impl TcpConnectionData {
     pub fn new(
-        connection: Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer>>,
+        connection: Arc<
+            TcpSocketConnection<TcpContract, MySbTcpSerializer, MySbSerializerMetadata>,
+        >,
         name: String,
         version: Option<String>,
         protocol_version: i32,
@@ -27,14 +32,14 @@ impl TcpConnectionData {
         Self {
             connection,
             protocol_version: protocol_version,
-            delivery_packet_version: AtomicI32::new(0),
+            delivery_packet_version: AtomicU8::new(0),
             logged_send_error_on_disconnected: AtomicI32::new(0),
             name,
             version,
         }
     }
 
-    pub fn update_deliver_message_packet_version(&self, value: i32) {
+    pub fn update_deliver_message_packet_version(&self, value: u8) {
         self.delivery_packet_version.store(value, Ordering::SeqCst);
     }
 
@@ -50,7 +55,7 @@ impl TcpConnectionData {
         let packet_version = self.delivery_packet_version.load(Ordering::Relaxed);
 
         PacketProtVer {
-            protocol_version,
+            tcp_protocol_version: protocol_version.into(),
             packet_version,
         }
     }

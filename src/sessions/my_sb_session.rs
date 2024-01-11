@@ -23,7 +23,7 @@ pub struct SessionMetrics {
     pub ip: String,
     pub id: SessionId,
     pub connection_metrics: ConnectionMetricsSnapshot,
-    pub protocol_version: Option<i32>,
+    pub tcp_protocol_version: Option<i32>,
 
     pub session_type: SessionType,
 }
@@ -43,7 +43,7 @@ impl MyServiceBusSession {
         }
     }
 
-    pub fn update_tcp_delivery_packet_version(&self, value: i32) {
+    pub fn update_tcp_delivery_packet_version(&self, value: u8) {
         if let SessionConnection::Tcp(connection_data) = &self.connection {
             connection_data.update_deliver_message_packet_version(value);
         } else {
@@ -65,7 +65,7 @@ impl MyServiceBusSession {
         }
     }
 
-    fn protocol_version_as_string(&self) -> Option<i32> {
+    fn get_tcp_protocol_version(&self) -> Option<i32> {
         match &self.connection {
             SessionConnection::Tcp(data) => data.get_protocol_version().into(),
             SessionConnection::Http(_) => None,
@@ -82,7 +82,7 @@ impl MyServiceBusSession {
             }
             #[cfg(test)]
             SessionConnection::Test(_) => PacketProtVer {
-                protocol_version: 3,
+                tcp_protocol_version: 3.into(),
                 packet_version: 0,
             },
         }
@@ -98,7 +98,7 @@ impl MyServiceBusSession {
             }
         };
 
-        let protocol_version = self.protocol_version_as_string();
+        let tcp_protocol_version = self.get_tcp_protocol_version();
 
         let (name, version) = self.get_name_and_client_version();
 
@@ -107,7 +107,7 @@ impl MyServiceBusSession {
             name,
             version,
             ip: self.connection.get_ip().to_string(),
-            protocol_version,
+            tcp_protocol_version,
             connection_metrics,
             session_type,
         }
