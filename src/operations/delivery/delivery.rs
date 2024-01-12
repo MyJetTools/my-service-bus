@@ -164,6 +164,7 @@ fn compile_package(
 #[cfg(test)]
 mod tests {
 
+    use my_service_bus::abstractions::publisher::SbMessageHeaders;
     use my_service_bus::abstractions::{
         publisher::MessageToPublish, queue_with_intervals::QueueWithIntervals,
         subscriber::TopicQueueType,
@@ -214,12 +215,12 @@ mod tests {
         .unwrap();
 
         let msg1 = MessageToPublish {
-            headers: None,
+            headers: SbMessageHeaders::new(),
             content: vec![0u8, 1u8, 2u8],
         };
 
         let msg2 = MessageToPublish {
-            headers: None,
+            headers: SbMessageHeaders::new(),
             content: vec![3u8, 4u8, 5u8],
         };
 

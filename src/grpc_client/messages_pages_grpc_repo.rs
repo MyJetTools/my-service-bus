@@ -1,8 +1,9 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use futures_util::stream;
 
+use my_service_bus::abstractions::publisher::SbMessageHeaders;
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::page_id::PageId;
 use my_service_bus::shared::protobuf_models::MessageProtobufModel;
@@ -151,7 +152,10 @@ impl MessagesPagesGrpcRepo {
                     id: grpc_model.message_id.into(),
                     content: grpc_model.data,
                     time: DateTimeAsMicroseconds::new(grpc_model.created),
-                    headers: restore_headers(grpc_model.meta_data),
+                    headers: SbMessageHeaders::from_iterator(
+                        grpc_model.meta_data.len().into(),
+                        grpc_model.meta_data.into_iter().map(|x| (x.key, x.value)),
+                    ),
                 },
             );
         }
@@ -215,19 +219,4 @@ fn split(src: &[u8], max_payload_size: usize) -> Vec<Vec<u8>> {
     }
 
     result
-}
-
-fn restore_headers(
-    grpc_meta_data: Vec<MessageContentMetaDataItem>,
-) -> Option<HashMap<String, String>> {
-    if grpc_meta_data.is_empty() {
-        return None;
-    }
-
-    let mut result = HashMap::new();
-    for kv in grpc_meta_data {
-        result.insert(kv.key, kv.value);
-    }
-
-    Some(result)
 }

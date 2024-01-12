@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-
 use my_http_server::{HttpFailResult, WebContentType};
 
 use my_http_server::macros::{MyHttpInput, MyHttpObjectStructure};
+use my_service_bus::abstractions::publisher::SbMessageHeaders;
 use rust_extensions::base64::FromBase64;
 use serde::{Deserialize, Serialize};
 
@@ -29,19 +28,17 @@ pub struct MessageToPublishJsonModel {
 }
 
 impl MessageToPublishJsonModel {
-    pub fn get_headers(&mut self) -> Option<HashMap<String, String>> {
-        let mut result = None;
+    pub fn get_headers(&mut self) -> SbMessageHeaders {
+        if let Some(headers) = self.headers.take() {
+            let mut result = SbMessageHeaders::with_capacity(headers.len());
+            for itm in headers {
+                result = result.add(itm.key, itm.value);
+            }
 
-        std::mem::swap(&mut self.headers, &mut result);
-
-        let src = result?;
-        let mut result = HashMap::new();
-
-        for itm in src {
-            result.insert(itm.key, itm.value);
+            return result;
         }
 
-        Some(result)
+        SbMessageHeaders::new()
     }
 
     pub fn get_content(&self) -> Result<Vec<u8>, HttpFailResult> {

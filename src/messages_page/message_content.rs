@@ -1,7 +1,6 @@
-use std::collections::HashMap;
-
+use my_service_bus::abstractions::publisher::SbMessageHeaders;
 use my_service_bus::abstractions::MessageId;
-use my_service_bus::shared::protobuf_models::MessageProtobufModel;
+use my_service_bus::shared::protobuf_models::{MessageMetaDataProtobufModel, MessageProtobufModel};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 #[derive(Debug, Clone)]
@@ -9,14 +8,14 @@ pub struct MySbMessageContent {
     pub id: MessageId,
     pub content: Vec<u8>,
     pub time: DateTimeAsMicroseconds,
-    pub headers: Option<HashMap<String, String>>,
+    pub headers: SbMessageHeaders,
 }
 
 impl MySbMessageContent {
     pub fn new(
         id: MessageId,
         content: Vec<u8>,
-        headers: Option<HashMap<String, String>>,
+        headers: SbMessageHeaders,
         time: DateTimeAsMicroseconds,
     ) -> Self {
         Self {
@@ -43,7 +42,13 @@ impl Into<MessageProtobufModel> for &MySbMessageContent {
             self.id,
             self.time,
             self.content.clone(),
-            convert_headers_from_hash_map(&self.headers),
+            self.headers
+                .iter()
+                .map(|x| MessageMetaDataProtobufModel {
+                    key: x.0.clone(),
+                    value: x.1.clone(),
+                })
+                .collect(),
         )
     }
 }
@@ -54,41 +59,51 @@ impl From<MessageProtobufModel> for MySbMessageContent {
             id: src.get_message_id(),
             time: src.get_created(),
             content: src.data,
-            headers: convert_headers_to_hash_map(src.headers),
+            headers: SbMessageHeaders::from_iterator(
+                src.headers.len().into(),
+                src.headers.into_iter().map(|x| (x.key, x.value)),
+            ),
         }
     }
 }
 
-fn convert_headers_to_hash_map(
+//impl From<&Vec<MessageMetaDataProtobufModel>> for SbMessageHeaders {
+/*
+fn into(self) -> SbMessageHeaders {
+    let mut result = SbMessageHeaders::new();
+
+    for itm in self {
+        result = result.add(itm.key.clone(), itm.value.clone());
+    }
+
+    result
+}
+ */
+//}
+
+/*
+fn convert_headers_from_grpc(
     src: Vec<my_service_bus::shared::protobuf_models::MessageMetaDataProtobufModel>,
-) -> Option<HashMap<String, String>> {
-    if src.len() == 0 {
-        return None;
-    }
-
-    let mut result = HashMap::new();
-
+) -> Vec<(String, String)> {
+    let mut result = Vec::with_capacity(src.len());
     for header in src {
-        result.insert(header.key, header.value);
+        result.push((header.key, header.value));
     }
-
-    Some(result)
+    result
 }
 
-fn convert_headers_from_hash_map(
-    src: &Option<HashMap<String, String>>,
+fn convert_headers_to_grpc(
+    src: &Vec<(String, String)>,
 ) -> Vec<my_service_bus::shared::protobuf_models::MessageMetaDataProtobufModel> {
-    if let Some(src) = src {
-        let mut result = Vec::with_capacity(src.len());
-        for (key, value) in src {
-            result.push(
-                my_service_bus::shared::protobuf_models::MessageMetaDataProtobufModel {
-                    key: key.clone(),
-                    value: value.clone(),
-                },
-            );
-        }
-        return result;
+    let mut result = Vec::with_capacity(src.len());
+    for (key, value) in src {
+        result.push(
+            my_service_bus::shared::protobuf_models::MessageMetaDataProtobufModel {
+                key: key.clone(),
+                value: value.clone(),
+            },
+        );
     }
-    vec![]
+    result
 }
+ */

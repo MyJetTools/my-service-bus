@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use my_service_bus::abstractions::publisher::SbMessageHeaders;
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MyServiceBusMessage};
 
 use my_service_bus::tcp_contracts::{
@@ -26,8 +27,8 @@ impl<'s> MyServiceBusMessage for PacketToSendWrapper<'s> {
         self.attempt
     }
 
-    fn get_headers(&self) -> Option<&std::collections::HashMap<String, String>> {
-        self.inner.headers.as_ref()
+    fn get_headers(&self) -> &SbMessageHeaders {
+        &self.inner.headers
     }
 
     fn get_content(&self) -> &[u8] {

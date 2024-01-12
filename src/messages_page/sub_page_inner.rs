@@ -206,6 +206,8 @@ impl SubPageInner {
 #[cfg(test)]
 mod tests {
 
+    use my_service_bus::abstractions::publisher::SbMessageHeaders;
+
     use crate::messages_page::MySbMessageContent;
 
     use super::*;
@@ -219,7 +221,7 @@ mod tests {
                 id: 0.into(),
                 content: vec![],
                 time: DateTimeAsMicroseconds::now(),
-                headers: None,
+                headers: SbMessageHeaders::new(),
             }
             .into(),
             true,
@@ -230,7 +232,7 @@ mod tests {
                 id: 1.into(),
                 content: vec![],
                 time: DateTimeAsMicroseconds::now(),
-                headers: None,
+                headers: SbMessageHeaders::new(),
             }
             .into(),
             true,
@@ -256,7 +258,7 @@ mod tests {
                 id: 1000.into(),
                 content: vec![],
                 time: DateTimeAsMicroseconds::now(),
-                headers: None,
+                headers: SbMessageHeaders::new(),
             }
             .into(),
             true,
@@ -267,7 +269,7 @@ mod tests {
                 id: 1001.into(),
                 content: vec![],
                 time: DateTimeAsMicroseconds::now(),
-                headers: None,
+                headers: SbMessageHeaders::new(),
             }
             .into(),
             true,
@@ -290,7 +292,7 @@ mod tests {
                 id: 1000.into(),
                 content: vec![],
                 time: DateTimeAsMicroseconds::now(),
-                headers: None,
+                headers: SbMessageHeaders::new(),
             }
             .into(),
             true,
@@ -301,7 +303,7 @@ mod tests {
                 id: 1001.into(),
                 content: vec![],
                 time: DateTimeAsMicroseconds::now(),
-                headers: None,
+                headers: SbMessageHeaders::new(),
             }
             .into(),
             true,
