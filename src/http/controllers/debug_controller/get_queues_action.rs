@@ -45,7 +45,7 @@ async fn handle_request(
     {
         let topic_data = topic.get_access().await;
 
-        for queue in topic_data.queues.get_queues() {
+        for queue in topic_data.queues.get_all() {
             let mut subscribers = Vec::new();
 
             if let Some(the_subscribers) = queue.subscribers.get_all() {

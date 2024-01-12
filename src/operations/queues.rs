@@ -50,7 +50,7 @@ pub async fn delete_queue(
 
     let mut topic_data = topic.get_access().await;
 
-    topic_data.queues.delete_queue(queue_id);
+    topic_data.queues.remove(queue_id);
 
     app.prometheus.queue_is_deleted(topic_id, queue_id);
 

@@ -55,7 +55,7 @@ async fn handle_request(
 
     {
         let topic_data = topic.get_access().await;
-        for queue in topic_data.queues.get_queues() {
+        for queue in topic_data.queues.get_all() {
             result.push(queue.queue_id.clone());
         }
     }

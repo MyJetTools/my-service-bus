@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use my_service_bus::abstractions::MessageId;
@@ -7,14 +7,14 @@ use my_service_bus::shared::validators::InvalidTopicName;
 use super::Topic;
 
 pub struct TopicListInner {
-    topics: BTreeMap<String, Arc<Topic>>,
+    topics: HashMap<String, Arc<Topic>>,
     snapshot_id: usize,
 }
 
 impl TopicListInner {
     pub fn new() -> Self {
         Self {
-            topics: BTreeMap::new(),
+            topics: HashMap::new(),
             snapshot_id: 0,
         }
     }
