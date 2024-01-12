@@ -42,7 +42,7 @@ impl TopicJsonContract {
 
         let mut subscribers = Vec::new();
 
-        for (session_id, active) in &topic_data.publishers {
+        for (session_id, active) in topic_data.publishers.iter() {
             publishers.push(TopicPublisherJsonModel {
                 session_id: *session_id,
                 active: *active,

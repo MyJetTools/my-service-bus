@@ -1,9 +1,6 @@
-use std::time::Duration;
+use std::sync::Arc;
 
-use super::{
-    GetMessageResult, MessagesToPersistBucket, MissingSubPageInner, MySbMessageContent,
-    SizeMetrics, SubPageInner,
-};
+use super::{GetMessageResult, MissingSubPageInner, MySbMessageContent, SizeMetrics, SubPageInner};
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
 use my_service_bus::shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
@@ -53,10 +50,17 @@ impl SubPage {
         }
     }
 
-    pub fn get_messages_to_persist(&self, max_size: usize) -> Option<MessagesToPersistBucket> {
+    pub fn get_messages_to_persist(
+        &self,
+        result: &mut Vec<(SubPageId, Vec<Arc<MySbMessageContent>>)>,
+    ) {
         match self {
-            SubPage::SubPage(inner) => inner.get_messages_to_persist(max_size),
-            SubPage::AllMessagesMissing(_) => None,
+            SubPage::SubPage(inner) => {
+                if let Some(messages_to_persist) = inner.get_messages_to_persist() {
+                    result.push((inner.sub_page_id, messages_to_persist));
+                }
+            }
+            SubPage::AllMessagesMissing(_) => {}
         }
     }
 
@@ -67,9 +71,16 @@ impl SubPage {
         }
     }
 
-    pub fn gc_messages(&mut self, min_message_id: MessageId) -> bool {
+    pub fn gc_messages(&mut self, min_message_id: MessageId) {
         match self {
             SubPage::SubPage(inner) => inner.gc_messages(min_message_id),
+            SubPage::AllMessagesMissing(_) => {}
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            SubPage::SubPage(inner) => inner.messages.is_empty(),
             SubPage::AllMessagesMissing(_) => true,
         }
     }
@@ -92,19 +103,15 @@ impl SubPage {
             },
         }
     }
-    pub fn ready_to_be_gc(&self, now: DateTimeAsMicroseconds, gc_delay: Duration) -> bool {
-        let last_access_time = match self {
-            SubPage::SubPage(inner) => {
-                if inner.has_messages_to_persist() {
-                    return false;
-                }
 
-                inner.last_accessed.as_date_time()
+    pub fn is_ready_to_be_gc(&self, min_message_id: MessageId) -> bool {
+        match self {
+            SubPage::SubPage(inner) => inner.is_ready_to_gc(min_message_id),
+            SubPage::AllMessagesMissing(inner) => {
+                let min_message_sub_page_id: SubPageId = min_message_id.into();
+                inner.sub_page_id.get_value() < min_message_sub_page_id.get_value()
             }
-            SubPage::AllMessagesMissing(inner) => inner.last_accessed.as_date_time(),
-        };
-
-        now.duration_since(last_access_time).as_positive_or_zero() > gc_delay
+        }
     }
 }
 

@@ -1,5 +1,3 @@
-use crate::topics::TopicData;
-
 pub fn gc_message_pages(topic_data: &mut TopicData) {
     let active_pages = topic_data.get_active_sub_pages();
 

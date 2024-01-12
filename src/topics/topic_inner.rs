@@ -1,4 +1,3 @@
-use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 use my_service_bus::abstractions::publisher::MessageToPublish;
@@ -9,13 +8,13 @@ use my_service_bus::shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::avg_value::AvgValue;
-use crate::messages_page::{MessagesPageList, MySbMessageContent, SizeMetrics};
+use crate::messages_page::{ActiveSubPages, MessagesPageList, MySbMessageContent, SizeMetrics};
 use crate::queue_subscribers::QueueSubscriber;
 use crate::queues::{TopicQueue, TopicQueuesList};
 use crate::sessions::SessionId;
 use crate::utils::MinMessageIdCalculator;
 
-use super::TopicStatistics;
+use super::{TopicPublishers, TopicStatistics};
 
 const BADGE_HIGHLIGHT_TIME_OUT: u8 = 2;
 
@@ -25,9 +24,8 @@ pub struct TopicInner {
     pub queues: TopicQueuesList,
     pub statistics: TopicStatistics,
     pub pages: MessagesPageList,
-    pub publishers: HashMap<i64, u8>,
+    pub publishers: TopicPublishers,
     pub persist: bool,
-
     pub avg_size: AvgValue,
 }
 
@@ -39,7 +37,7 @@ impl TopicInner {
             queues: TopicQueuesList::new(),
             statistics: TopicStatistics::new(),
             pages: MessagesPageList::new(),
-            publishers: HashMap::new(),
+            publishers: TopicPublishers::new(),
             persist,
             avg_size: AvgValue::new(),
         }
@@ -47,8 +45,7 @@ impl TopicInner {
 
     #[inline]
     pub fn set_publisher_as_active(&mut self, session_id: SessionId) {
-        self.publishers
-            .insert(session_id.get_value(), BADGE_HIGHLIGHT_TIME_OUT);
+        self.publishers.add(session_id, BADGE_HIGHLIGHT_TIME_OUT);
     }
 
     pub fn publish_messages(&mut self, session_id: SessionId, messages: Vec<MessageToPublish>) {
@@ -83,18 +80,14 @@ impl TopicInner {
     }
 
     pub fn one_second_tick(&mut self) {
-        for value in self.publishers.values_mut() {
-            if *value > 0 {
-                *value -= 1;
-            }
-        }
+        self.publishers.one_second_tick();
     }
 
     pub fn disconnect(
         &mut self,
         session_id: SessionId,
     ) -> Option<Vec<(&mut TopicQueue, QueueSubscriber)>> {
-        self.publishers.remove(&session_id.get_value());
+        self.publishers.remove(session_id);
 
         self.queues.remove_subscribers_by_session_id(session_id)
     }
@@ -115,34 +108,34 @@ impl TopicInner {
         min_message_id.get()
     }
 
-    pub fn get_active_sub_pages(&self) -> HashSet<i64> {
-        let mut result: HashSet<i64> = HashSet::new();
+    pub fn get_active_sub_pages(&self) -> ActiveSubPages {
+        let mut result = ActiveSubPages::new();
 
         let sub_page_id: SubPageId = self.message_id.into();
 
-        result.insert(sub_page_id.get_value());
+        result.add_if_not_exists(sub_page_id);
 
         if let Some(message_id) = self.pages.get_persisted_min_message_id() {
             let sub_page_id: SubPageId = message_id.into();
-            result.insert(sub_page_id.get_value());
+            result.add_if_not_exists(sub_page_id);
         }
 
         for queue in self.queues.get_all() {
             if let Some(min_msg_id) = queue.get_min_msg_id() {
                 let sub_page_id = SubPageId::from_message_id(min_msg_id);
 
-                if !result.contains(&sub_page_id.get_value()) {
-                    result.insert(sub_page_id.get_value());
-                }
+                result.add_if_not_exists(sub_page_id);
             }
         }
 
         result
     }
 
-    pub fn gc_pages(&mut self, now: DateTimeAsMicroseconds, gc_delay: Duration) {
-        let active_pages = self.get_active_sub_pages();
-        self.pages.gc_pages(&active_pages, now, gc_delay);
+    pub fn gc_pages(&mut self) {
+        if let Some(min_message_id) = self.get_min_message_id() {
+            let active_sub_pages = self.get_active_sub_pages();
+            self.pages.gc_pages(&active_sub_pages, min_message_id);
+        }
     }
 
     pub fn gc_queues_with_no_subscribers(
@@ -199,5 +192,11 @@ impl TopicInner {
         }
 
         result
+    }
+
+    pub fn gc_messages(&mut self) {
+        if let Some(min_message_id) = self.get_min_message_id() {
+            self.pages.gc_messages(min_message_id);
+        }
     }
 }

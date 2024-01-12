@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::app::AppContext;
 
@@ -19,7 +19,7 @@ pub struct SystemStatusModel {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StatusJsonResult {
     pub topics: TopicsJsonResult,
-    pub queues: HashMap<String, QueuesJsonResult>,
+    pub queues: BTreeMap<String, QueuesJsonResult>,
     pub sessions: SessionsJsonResult,
     pub system: SystemStatusModel,
     #[serde(rename = "persistenceVersion")]
@@ -35,7 +35,7 @@ impl StatusJsonResult {
 
         let (snapshot_id, all_topics) = app.topic_list.get_all_with_snapshot_id().await;
 
-        let mut queues = HashMap::new();
+        let mut queues = BTreeMap::new();
 
         let mut topics = TopicsJsonResult {
             snapshot_id,

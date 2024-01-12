@@ -1,10 +1,11 @@
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
 use my_service_bus::shared::sub_page::{SizeAndAmount, SubPageId};
 use rust_extensions::date_time::{AtomicDateTimeAsMicroseconds, DateTimeAsMicroseconds};
 
-use super::{MessagesToPersistBucket, MySbCachedMessage, MySbMessageContent, SizeMetrics};
+use super::{MySbCachedMessage, MySbMessageContent, SizeMetrics};
 
 pub enum GetMessageResult<'s> {
     Message(&'s MySbMessageContent),
@@ -128,63 +129,50 @@ impl SubPageInner {
         }
     }
 
-    fn get_first_message_id(&self) -> Option<MessageId> {
+    pub fn gc_messages(&mut self, min_message_id: MessageId) {
+        let mut to_gc = Vec::new();
         for msg_id in self.messages.keys() {
-            return Some(MessageId::new(*msg_id));
-        }
-
-        None
-    }
-
-    pub fn gc_messages(&mut self, min_message_id: MessageId) -> bool {
-        let first_message_id_of_next_page =
-            self.sub_page_id.get_first_message_id_of_next_sub_page();
-
-        if min_message_id.get_value() >= first_message_id_of_next_page.get_value() {
-            return true;
-        }
-
-        if min_message_id.get_value() < self.sub_page_id.get_first_message_id().get_value() {
-            return false;
-        }
-
-        let first_message_id = self.get_first_message_id();
-
-        if first_message_id.is_none() {
-            return false;
-        }
-
-        let first_message_id = first_message_id.unwrap();
-
-        for msg_id in first_message_id.get_value()..min_message_id.get_value() {
-            if let Some(message) = self.messages.remove(&msg_id) {
-                self.size_and_amount.removed(message.get_content_size());
+            if self.message_can_be_gc(*msg_id, min_message_id) {
+                to_gc.push(*msg_id);
+            } else {
+                break;
             }
         }
 
-        false
+        for msg_to_gc in to_gc {
+            self.remove_message(msg_to_gc);
+        }
     }
 
-    pub fn get_messages_to_persist(&self, max_size: usize) -> Option<MessagesToPersistBucket> {
+    fn remove_message(&mut self, msg_id: i64) -> usize {
+        if let Some(msg) = self.messages.remove(&msg_id) {
+            let freed_size = msg.get_content_size();
+            self.size_and_amount.removed(freed_size);
+            return freed_size;
+        }
+
+        0
+    }
+
+    pub fn get_messages_to_persist(&self) -> Option<Vec<Arc<MySbMessageContent>>> {
         if self.to_persist.len() == 0 {
             return None;
         }
 
-        let mut result = MessagesToPersistBucket::new(self.sub_page_id);
-
+        let mut result = Vec::with_capacity(self.get_messages_to_persist_amount());
         for message_id in &self.to_persist {
-            if result.size >= max_size {
-                break;
-            }
-
             if let Some(msg) = self.messages.get(&message_id) {
                 if let MySbCachedMessage::Loaded(msg) = msg {
-                    result.add(msg.into());
+                    result.push(msg.clone());
                 }
             }
         }
 
-        result.into()
+        Some(result)
+    }
+
+    pub fn get_messages_to_persist_amount(&self) -> usize {
+        self.to_persist.len() as usize
     }
 
     pub fn mark_messages_as_persisted(&mut self, ids: &QueueWithIntervals) {
@@ -200,6 +188,34 @@ impl SubPageInner {
 
     pub fn has_messages_to_persist(&self) -> bool {
         self.to_persist.len() > 0
+    }
+
+    pub fn is_ready_to_gc(&self, min_message_id: MessageId) -> bool {
+        if self.has_messages_to_persist() {
+            return false;
+        }
+
+        let min_message_sub_page_id: SubPageId = min_message_id.into();
+
+        if self.sub_page_id.get_value() < min_message_sub_page_id.get_value() {
+            return true;
+        }
+
+        for msg_id in self.messages.keys() {
+            if !self.message_can_be_gc(*msg_id, min_message_id) {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    fn message_can_be_gc(&self, msg_id: i64, min_message_id: MessageId) -> bool {
+        if self.to_persist.has_message(msg_id) {
+            return false;
+        }
+
+        msg_id < min_message_id.get_value()
     }
 }
 
@@ -224,7 +240,7 @@ mod tests {
                 headers: SbMessageHeaders::new(),
             }
             .into(),
-            true,
+            false,
         );
 
         sub_page.add_message(
@@ -235,12 +251,14 @@ mod tests {
                 headers: SbMessageHeaders::new(),
             }
             .into(),
-            true,
+            false,
         );
 
-        let gc_full_page = sub_page.gc_messages(1.into());
+        let min_message_id = 1.into();
 
-        assert!(!gc_full_page);
+        sub_page.gc_messages(min_message_id);
+
+        assert_eq!(sub_page.is_ready_to_gc(min_message_id), false);
 
         let result = sub_page.get_message(0.into());
         assert!(result.is_garbage_collected());
@@ -275,9 +293,10 @@ mod tests {
             true,
         );
 
-        let gc_full_page = sub_page.gc_messages(5.into());
+        let min_message_id = 5.into();
+        sub_page.gc_messages(min_message_id);
 
-        assert!(!gc_full_page);
+        assert_eq!(sub_page.is_ready_to_gc(min_message_id), false);
 
         let result = sub_page.get_message(1000.into());
         assert!(result.is_message_content());
@@ -309,9 +328,11 @@ mod tests {
             true,
         );
 
-        let gc_full_page = sub_page.gc_messages(9999.into());
+        let min_message_id = 9999.into();
 
-        assert!(gc_full_page);
+        sub_page.gc_messages(min_message_id);
+
+        assert_eq!(sub_page.is_ready_to_gc(min_message_id), false);
 
         let result = sub_page.get_message(1000.into());
         assert!(result.is_message_content());

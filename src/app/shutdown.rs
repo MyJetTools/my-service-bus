@@ -17,7 +17,7 @@ async fn empty_persistence_queues(app: Arc<AppContext>) {
                 topic.topic_id, metrics.persist_size
             );
 
-            crate::operations::save_messages_for_topic(&app, &topic).await;
+            crate::operations::persist_topic_messages(&app, &topic).await;
         }
 
         println!("Topic {} has no messages to persist.", topic.topic_id);

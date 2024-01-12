@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 use my_service_bus::abstractions::{subscriber::TopicQueueType, MessageId};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
@@ -11,7 +11,7 @@ use crate::{
 use super::{QueueSubscriber, SubscriberId};
 
 pub enum SubscribersData {
-    MultiSubscribers(HashMap<i64, QueueSubscriber>),
+    MultiSubscribers(BTreeMap<i64, QueueSubscriber>),
     SingleSubscriber(Option<QueueSubscriber>),
 }
 
@@ -43,12 +43,12 @@ impl SubscribersList {
         match queue_type {
             TopicQueueType::Permanent => Self {
                 snapshot_id: 0,
-                data: SubscribersData::MultiSubscribers(HashMap::new()),
+                data: SubscribersData::MultiSubscribers(BTreeMap::new()),
                 last_unsubscribe,
             },
             TopicQueueType::DeleteOnDisconnect => Self {
                 snapshot_id: 0,
-                data: SubscribersData::MultiSubscribers(HashMap::new()),
+                data: SubscribersData::MultiSubscribers(BTreeMap::new()),
                 last_unsubscribe,
             },
             TopicQueueType::PermanentWithSingleConnection => Self {

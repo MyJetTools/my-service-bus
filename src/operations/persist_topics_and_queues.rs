@@ -29,6 +29,6 @@ pub async fn persist_topics_and_queues(app: &Arc<AppContext>) {
     }
 
     for topic in &topics {
-        crate::operations::save_messages_for_topic(&app, topic).await;
+        crate::operations::persist_topic_messages(&app, topic).await;
     }
 }

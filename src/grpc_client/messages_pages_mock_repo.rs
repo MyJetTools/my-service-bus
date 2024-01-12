@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::protobuf_models::MessageProtobufModel;
@@ -9,13 +9,13 @@ use crate::messages_page::MySbMessageContent;
 use super::PersistenceError;
 
 pub struct MessagesPagesMockRepo {
-    messages: Mutex<HashMap<String, HashMap<i64, MySbMessageContent>>>,
+    messages: Mutex<BTreeMap<String, BTreeMap<i64, MySbMessageContent>>>,
 }
 
 impl MessagesPagesMockRepo {
     pub fn new() -> Self {
         Self {
-            messages: Mutex::new(HashMap::new()),
+            messages: Mutex::new(BTreeMap::new()),
         }
     }
 
@@ -30,7 +30,7 @@ impl MessagesPagesMockRepo {
         let mut write_access = self.messages.lock().await;
 
         if !write_access.contains_key(topic_id) {
-            write_access.insert(topic_id.to_string(), HashMap::new());
+            write_access.insert(topic_id.to_string(), BTreeMap::new());
         }
 
         let messages = write_access.get(topic_id).unwrap();
@@ -55,7 +55,7 @@ impl MessagesPagesMockRepo {
     ) -> Result<(), PersistenceError> {
         let mut write_access = self.messages.lock().await;
         if !write_access.contains_key(topic_id) {
-            write_access.insert(topic_id.to_string(), HashMap::new());
+            write_access.insert(topic_id.to_string(), BTreeMap::new());
         }
 
         let messages_by_topic = write_access.get_mut(topic_id).unwrap();

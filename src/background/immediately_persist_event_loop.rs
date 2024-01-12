@@ -18,7 +18,7 @@ impl ImmediatelyPersistEventLoop {
 impl EventsLoopTick<Arc<Topic>> for ImmediatelyPersistEventLoop {
     async fn started(&self) {}
     async fn tick(&self, topic: Arc<Topic>) {
-        crate::operations::save_messages_for_topic(&self.app, &topic).await;
+        crate::operations::persist_topic_messages(&self.app, &topic).await;
     }
     async fn finished(&self) {}
 }

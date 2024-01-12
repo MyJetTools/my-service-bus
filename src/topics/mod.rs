@@ -13,3 +13,5 @@ pub use topic_snapshot::TopicSnapshot;
 pub use topic_statistics::*;
 pub use topics_list::TopicsList;
 pub use topics_list_inner::*;
+mod topic_publishers;
+pub use topic_publishers::*;

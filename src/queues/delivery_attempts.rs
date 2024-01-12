@@ -1,15 +1,15 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use my_service_bus::abstractions::MessageId;
 
 pub struct DeliveryAttempts {
-    attempts: HashMap<MessageId, i32>,
+    attempts: BTreeMap<MessageId, i32>,
 }
 
 impl DeliveryAttempts {
     pub fn new() -> Self {
         Self {
-            attempts: HashMap::new(),
+            attempts: BTreeMap::new(),
         }
     }
 

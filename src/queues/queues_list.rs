@@ -1,6 +1,6 @@
 use std::collections::{
-    hash_map::{Values, ValuesMut},
-    HashMap,
+    btree_map::{Values, ValuesMut},
+    BTreeMap,
 };
 
 use my_service_bus::abstractions::{
@@ -12,14 +12,14 @@ use crate::{queue_subscribers::QueueSubscriber, sessions::SessionId, topics::Top
 use super::queue::TopicQueue;
 
 pub struct TopicQueuesList {
-    queues: HashMap<String, TopicQueue>,
+    queues: BTreeMap<String, TopicQueue>,
     snapshot_id: usize,
 }
 
 impl TopicQueuesList {
     pub fn new() -> Self {
         TopicQueuesList {
-            queues: HashMap::new(),
+            queues: BTreeMap::new(),
             snapshot_id: 0,
         }
     }

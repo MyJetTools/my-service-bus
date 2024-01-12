@@ -1,0 +1,31 @@
+use std::sync::Arc;
+
+use crate::{app::AppContext, messages_page::MessagesToPersistBucket, topics::Topic};
+
+//pub const PERSIST_PAYLOAD_MAX_SIZE: usize = 1024 * 1024 * 4;
+
+pub async fn persist_topic_messages(app: &Arc<AppContext>, topic: &Arc<Topic>) {
+    let messages_to_persist = topic.get_messages_to_persist().await;
+
+    for (sub_page_id, messages_to_persist) in messages_to_persist {
+        let mut bucket = MessagesToPersistBucket::new(sub_page_id);
+
+        for msg in messages_to_persist {
+            bucket.add(msg.as_ref().into());
+        }
+
+        if app.settings.persist_compressed {
+            app.messages_pages_repo
+                .save_messages(&topic.topic_id, bucket.get())
+                .await
+                .unwrap();
+        } else {
+            app.messages_pages_repo
+                .save_messages_uncompressed(&topic.topic_id, bucket.get())
+                .await
+                .unwrap();
+        }
+
+        topic.mark_messages_as_persisted(&bucket).await;
+    }
+}

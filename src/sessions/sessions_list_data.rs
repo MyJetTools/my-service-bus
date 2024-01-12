@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 use my_tcp_sockets::ConnectionId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
@@ -7,11 +7,11 @@ use super::{MyServiceBusSession, SessionConnection, SessionId};
 
 pub struct SessionsListData {
     snapshot_id: usize,
-    sessions: HashMap<i64, Arc<MyServiceBusSession>>,
-    tcp_sessions: HashMap<ConnectionId, Arc<MyServiceBusSession>>,
-    http_sessions: HashMap<String, Arc<MyServiceBusSession>>,
+    sessions: BTreeMap<i64, Arc<MyServiceBusSession>>,
+    tcp_sessions: BTreeMap<ConnectionId, Arc<MyServiceBusSession>>,
+    http_sessions: BTreeMap<String, Arc<MyServiceBusSession>>,
     #[cfg(test)]
-    test_sessions: HashMap<i64, Arc<MyServiceBusSession>>,
+    test_sessions: BTreeMap<i64, Arc<MyServiceBusSession>>,
     current_session_id: i64,
 }
 
@@ -19,12 +19,12 @@ impl SessionsListData {
     pub fn new() -> Self {
         Self {
             snapshot_id: 0,
-            sessions: HashMap::new(),
+            sessions: BTreeMap::new(),
             current_session_id: 0,
-            tcp_sessions: HashMap::new(),
+            tcp_sessions: BTreeMap::new(),
             #[cfg(test)]
-            test_sessions: HashMap::new(),
-            http_sessions: HashMap::new(),
+            test_sessions: BTreeMap::new(),
+            http_sessions: BTreeMap::new(),
         }
     }
     pub fn get_next_session_id(&mut self) -> SessionId {
