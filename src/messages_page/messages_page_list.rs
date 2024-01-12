@@ -5,7 +5,7 @@ use std::{
 
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::{page_id::PageId, sub_page::SubPageId};
-use rust_extensions::{date_time::DateTimeAsMicroseconds, lazy::LazyVec};
+use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::utils::MinMessageIdCalculator;
 
@@ -69,10 +69,8 @@ impl MessagesPageList {
     ) {
         let pages_to_gc = self.get_sub_pages_to_gc(active_pages, now, gc_delay);
 
-        if let Some(pages_to_gc) = pages_to_gc {
-            for page_id in pages_to_gc {
-                self.sub_pages.remove(page_id.as_ref());
-            }
+        for page_id in pages_to_gc {
+            self.sub_pages.remove(page_id.as_ref());
         }
     }
 
@@ -82,20 +80,18 @@ impl MessagesPageList {
         now: DateTimeAsMicroseconds,
         gc_delay: Duration,
     ) {
-        let mut pages_to_gc = LazyVec::new();
+        let mut pages_to_gc = Vec::new();
 
         for page in self.sub_pages.values_mut() {
             if page.gc_messages(min_message_id) {
                 if page.ready_to_be_gc(now, gc_delay) {
-                    pages_to_gc.add(page.get_id());
+                    pages_to_gc.push(page.get_id());
                 }
             }
         }
 
-        if let Some(pages_to_gc) = pages_to_gc.get_result() {
-            for sub_page_id in pages_to_gc {
-                self.sub_pages.remove(sub_page_id.as_ref());
-            }
+        for sub_page_id in pages_to_gc {
+            self.sub_pages.remove(sub_page_id.as_ref());
         }
     }
 
@@ -104,19 +100,19 @@ impl MessagesPageList {
         active_pages: &HashSet<i64>,
         now: DateTimeAsMicroseconds,
         gc_delay: Duration,
-    ) -> Option<Vec<SubPageId>> {
-        let mut result = LazyVec::new();
+    ) -> Vec<SubPageId> {
+        let mut result = Vec::new();
 
         for sub_page in self.sub_pages.values() {
             let sub_page_id = sub_page.get_id();
             if !active_pages.contains(sub_page_id.as_ref()) {
                 if sub_page.ready_to_be_gc(now, gc_delay) {
-                    result.add(sub_page_id);
+                    result.push(sub_page_id);
                 }
             }
         }
 
-        result.get_result()
+        result
     }
 
     pub fn get_messages_to_persist(&self, max_size: usize) -> Option<MessagesToPersistBucket> {

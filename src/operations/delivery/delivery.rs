@@ -1,6 +1,6 @@
 use my_service_bus::abstractions::AsMessageId;
 use my_service_bus::shared::sub_page::SubPageId;
-use rust_extensions::{date_time::DateTimeAsMicroseconds, lazy::LazyVec, StopWatch};
+use rust_extensions::{date_time::DateTimeAsMicroseconds, StopWatch};
 
 use std::sync::Arc;
 
@@ -22,7 +22,7 @@ pub fn try_to_deliver_to_subscribers(
 ) {
     let mut sw = StopWatch::new();
     sw.start();
-    let mut to_send = LazyVec::new();
+    let mut to_send = Vec::new();
 
     for topic_queue in topic_data.queues.get_all_mut() {
         compile_packages(app, topic, &mut to_send, topic_queue, &topic_data.pages);
@@ -30,7 +30,7 @@ pub fn try_to_deliver_to_subscribers(
 
     sw.pause();
 
-    if let Some(to_send) = to_send.get_result() {
+    if to_send.len() > 0 {
         for package_builder in to_send {
             crate::operations::send_package::send_new_messages_to_deliver(
                 package_builder,
@@ -44,11 +44,11 @@ pub fn try_to_deliver_to_subscribers(
 fn compile_packages(
     app: &Arc<AppContext>,
     topic: &Arc<Topic>,
-    to_send: &mut LazyVec<SubscriberPackageBuilder>,
+    to_send: &mut Vec<SubscriberPackageBuilder>,
     topic_queue: &mut TopicQueue,
     pages: &MessagesPageList,
 ) {
-    let mut not_engaged_topics = LazyVec::new();
+    let mut not_engaged_topics = Vec::new();
 
     while topic_queue.queue.len() > 0 {
         let subscriber = topic_queue
@@ -64,16 +64,14 @@ fn compile_packages(
         if let Some(package_builder) =
             compile_package(app, topic, topic_queue, pages, subscriber_id, &session)
         {
-            to_send.add(package_builder);
+            to_send.push(package_builder);
         } else {
-            not_engaged_topics.add(subscriber_id);
+            not_engaged_topics.push(subscriber_id);
         }
     }
 
-    if let Some(not_engaged_topics) = not_engaged_topics.get_result() {
-        for subscriber_id in not_engaged_topics {
-            topic_queue.subscribers.cancel_rent(subscriber_id);
-        }
+    for subscriber_id in not_engaged_topics {
+        topic_queue.subscribers.cancel_rent(subscriber_id);
     }
 }
 
