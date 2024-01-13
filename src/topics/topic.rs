@@ -42,14 +42,6 @@ impl Topic {
         read_access.message_id.into()
     }
 
-    pub async fn get_current_sub_page(&self) -> SubPageId {
-        let read_access = self.inner.lock().await;
-
-        let sub_page_id = SubPageId::from_message_id(read_access.message_id.into());
-
-        sub_page_id
-    }
-
     pub async fn get_topic_snapshot(&self) -> TopicSnapshot {
         let inner = self.inner.lock().await;
 

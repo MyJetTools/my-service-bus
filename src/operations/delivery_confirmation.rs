@@ -38,6 +38,10 @@ pub async fn all_confirmed(
         if let Some(delivery_bucket) = get_delivery_bucket(topic_queue, subscriber_id, true) {
             topic_queue.confirm_delivered(&delivery_bucket.ids);
         }
+
+        if !topic_access.persist {
+            topic_access.gc_messages();
+        }
     }
 
     super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_access);
