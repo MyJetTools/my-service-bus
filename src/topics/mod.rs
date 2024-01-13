@@ -17,3 +17,5 @@ mod topic_publishers;
 pub use topic_publishers::*;
 mod reusable_topics_list;
 pub use reusable_topics_list::*;
+mod atomic_snapshot_id;
+pub use atomic_snapshot_id::*;
