@@ -33,7 +33,7 @@ impl AtomicSnapshotId {
     }
 
     pub fn has_the_same_snapshot_id(&self, reusable_topic_id: &ReusableTopicsList) -> bool {
-        self.get_snapshot_id() == reusable_topic_id.get_snapshot_id()
+        reusable_topic_id.check_with_snapshot_id(self.get_snapshot_id())
             && self.get_len() == reusable_topic_id.len()
     }
 }

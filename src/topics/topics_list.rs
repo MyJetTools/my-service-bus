@@ -36,7 +36,7 @@ impl TopicsList {
 
         let read_access = self.data.read().await;
 
-        if dest.get_snapshot_id() == read_access.get_snapshot_id()
+        if dest.check_with_snapshot_id(read_access.get_snapshot_id())
             && dest.len() == read_access.len()
         {
             return;

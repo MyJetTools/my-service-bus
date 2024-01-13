@@ -4,19 +4,22 @@ use super::Topic;
 
 pub struct ReusableTopicsList {
     data: Vec<Arc<Topic>>,
-    snapshot_id: usize,
+    snapshot_id: Option<usize>,
 }
 
 impl ReusableTopicsList {
     pub fn new() -> Self {
         Self {
             data: Vec::new(),
-            snapshot_id: 0,
+            snapshot_id: None,
         }
     }
 
-    pub fn get_snapshot_id(&self) -> usize {
-        self.snapshot_id
+    pub fn check_with_snapshot_id(&self, value: usize) -> bool {
+        match self.snapshot_id {
+            Some(snapshot_id) => snapshot_id == value,
+            None => false,
+        }
     }
 
     pub fn clean(&mut self, capacity: usize) {
@@ -29,7 +32,7 @@ impl ReusableTopicsList {
     }
 
     pub fn update_snapshot_id(&mut self, snapshot_id: usize) {
-        self.snapshot_id = snapshot_id;
+        self.snapshot_id = Some(snapshot_id);
     }
 
     pub fn len(&self) -> usize {
