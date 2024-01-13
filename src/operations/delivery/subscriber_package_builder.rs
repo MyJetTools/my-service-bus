@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use my_service_bus::abstractions::publisher::SbMessageHeaders;
+use my_service_bus::abstractions::SbMessageHeaders;
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MyServiceBusMessage};
 
 use my_service_bus::tcp_contracts::{

@@ -181,11 +181,6 @@ impl SubPageInner {
         }
     }
 
-    pub fn get_min_message_to_persist(&self) -> Option<MessageId> {
-        let message_id = self.to_persist.peek()?;
-        Some(message_id.into())
-    }
-
     pub fn has_messages_to_persist(&self) -> bool {
         self.to_persist.queue_size() > 0
     }
@@ -222,7 +217,7 @@ impl SubPageInner {
 #[cfg(test)]
 mod tests {
 
-    use my_service_bus::abstractions::publisher::SbMessageHeaders;
+    use my_service_bus::abstractions::SbMessageHeaders;
 
     use crate::messages_page::MySbMessageContent;
 

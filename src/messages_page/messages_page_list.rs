@@ -5,8 +5,6 @@ use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::{page_id::PageId, sub_page::SubPageId};
 
-use crate::utils::MinMessageIdCalculator;
-
 use super::{ActiveSubPages, MySbMessageContent, PageSizeMetrics, SubPage, SubPageInner};
 
 pub struct MessagesPageList {
@@ -47,16 +45,6 @@ impl MessagesPageList {
         if let Some(sub_page) = self.sub_pages.get_mut(sub_page_id.as_ref()) {
             sub_page.mark_messages_as_persisted(ids);
         }
-    }
-
-    pub fn get_persisted_min_message_id(&self) -> Option<MessageId> {
-        let mut min_message_id_calculator = MinMessageIdCalculator::new();
-
-        for sub_page in self.sub_pages.values() {
-            min_message_id_calculator.add(sub_page.get_min_message_to_persist());
-        }
-
-        min_message_id_calculator.get()
     }
 
     pub fn gc_pages(&mut self, active_pages: &ActiveSubPages, min_message_id: MessageId) {

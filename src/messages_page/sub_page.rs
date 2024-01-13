@@ -85,13 +85,6 @@ impl SubPage {
         }
     }
 
-    pub fn get_min_message_to_persist(&self) -> Option<MessageId> {
-        match self {
-            SubPage::SubPage(inner) => inner.get_min_message_to_persist(),
-            SubPage::AllMessagesMissing(_) => None,
-        }
-    }
-
     pub fn get_size_metrics(&self) -> SizeMetrics {
         match self {
             SubPage::SubPage(inner) => inner.get_size_metrics(),

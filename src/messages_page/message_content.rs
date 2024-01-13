@@ -1,5 +1,5 @@
-use my_service_bus::abstractions::publisher::SbMessageHeaders;
 use my_service_bus::abstractions::MessageId;
+use my_service_bus::abstractions::SbMessageHeaders;
 use my_service_bus::shared::protobuf_models::{MessageMetaDataProtobufModel, MessageProtobufModel};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 

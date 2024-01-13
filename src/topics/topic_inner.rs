@@ -98,8 +98,6 @@ impl TopicInner {
 
         min_message_id.add(Some(self.message_id.get_value()));
 
-        min_message_id.add(self.pages.get_persisted_min_message_id());
-
         for topic_queue in self.queues.get_all() {
             let min_id = topic_queue.queue.get_min_id();
             min_message_id.add(min_id);
@@ -115,11 +113,6 @@ impl TopicInner {
         let sub_page_id: SubPageId = self.message_id.into();
 
         result.add_if_not_exists(sub_page_id);
-
-        if let Some(message_id) = self.pages.get_persisted_min_message_id() {
-            let sub_page_id: SubPageId = message_id.into();
-            result.add_if_not_exists(sub_page_id);
-        }
 
         for queue in self.queues.get_all() {
             if let Some(min_msg_id) = queue.get_min_msg_id() {
@@ -234,9 +227,8 @@ impl TopicInner {
 #[cfg(test)]
 mod tests {
     use my_service_bus::abstractions::{
-        publisher::{MessageToPublish, SbMessageHeaders},
-        queue_with_intervals::QueueWithIntervals,
-        subscriber::TopicQueueType,
+        publisher::MessageToPublish, queue_with_intervals::QueueWithIntervals,
+        subscriber::TopicQueueType, SbMessageHeaders,
     };
 
     #[test]

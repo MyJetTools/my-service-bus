@@ -164,7 +164,7 @@ fn compile_package(
 #[cfg(test)]
 mod tests {
 
-    use my_service_bus::abstractions::publisher::SbMessageHeaders;
+    use my_service_bus::abstractions::SbMessageHeaders;
     use my_service_bus::abstractions::{
         publisher::MessageToPublish, queue_with_intervals::QueueWithIntervals,
         subscriber::TopicQueueType,

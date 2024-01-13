@@ -3,8 +3,8 @@ use std::time::Duration;
 
 use futures_util::stream;
 
-use my_service_bus::abstractions::publisher::SbMessageHeaders;
 use my_service_bus::abstractions::MessageId;
+use my_service_bus::abstractions::SbMessageHeaders;
 use my_service_bus::shared::page_id::PageId;
 use my_service_bus::shared::protobuf_models::MessageProtobufModel;
 use rust_extensions::date_time::DateTimeAsMicroseconds;

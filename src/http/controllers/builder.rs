@@ -62,6 +62,12 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
     controllers
         .register_delete_action(Arc::new(super::queues::DeleteQueueAction::new(app.clone())));
 
+    // DEBUG
+
+    controllers.register_get_action(Arc::new(
+        super::debug_controller::GetMinMessageIdAction::new(app.clone()),
+    ));
+
     controllers.register_post_action(Arc::new(
         super::debug_controller::EnableDebugModeAction::new(app.clone()),
     ));

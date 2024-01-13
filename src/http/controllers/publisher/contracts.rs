@@ -1,7 +1,7 @@
 use my_http_server::{HttpFailResult, WebContentType};
 
 use my_http_server::macros::{MyHttpInput, MyHttpObjectStructure};
-use my_service_bus::abstractions::publisher::SbMessageHeaders;
+use my_service_bus::abstractions::SbMessageHeaders;
 use rust_extensions::base64::FromBase64;
 use serde::{Deserialize, Serialize};
 
