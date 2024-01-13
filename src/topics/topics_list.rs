@@ -4,7 +4,7 @@ use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::validators::InvalidTopicName;
 use tokio::sync::RwLock;
 
-use super::{topic::Topic, TopicListInner};
+use super::{topic::Topic, ReusableTopicsList, TopicListInner};
 
 pub struct TopicsList {
     data: RwLock<TopicListInner>,
@@ -26,6 +26,18 @@ impl TopicsList {
     pub async fn get_all(&self) -> Vec<Arc<Topic>> {
         let read_access = self.data.read().await;
         read_access.get_all()
+    }
+
+    pub async fn fill_topics(&self, dest: &mut ReusableTopicsList) {
+        let read_access = self.data.read().await;
+
+        if dest.get_snapshot_id() == read_access.get_snapshot_id()
+            && dest.len() == read_access.len()
+        {
+            return;
+        }
+
+        read_access.fill_with_topics(dest);
     }
 
     pub async fn get_all_with_snapshot_id(&self) -> (usize, Vec<Arc<Topic>>) {

@@ -2,19 +2,23 @@ use std::sync::Arc;
 
 use my_logger::LogEventCtx;
 
-use crate::app::AppContext;
+use crate::{app::AppContext, topics::ReusableTopicsList};
 
-pub async fn persist_topics_and_queues(app: &Arc<AppContext>) {
+pub async fn persist_topics_and_queues(
+    app: &Arc<AppContext>,
+    reusable_topics: &mut ReusableTopicsList,
+) {
     if let Some(get_persistence_version) = app.messages_pages_repo.get_persistence_version().await {
         app.persistence_version
             .update(get_persistence_version.as_str())
             .await;
     }
 
-    let topics = app.topic_list.get_all().await;
-    let mut topics_snapshots = Vec::with_capacity(topics.len());
+    app.topic_list.fill_topics(reusable_topics).await;
 
-    for topic in &topics {
+    let mut topics_snapshots = Vec::with_capacity(reusable_topics.len());
+
+    for topic in reusable_topics.iter() {
         topics_snapshots.push(topic.get_topic_snapshot().await);
     }
 
@@ -28,7 +32,7 @@ pub async fn persist_topics_and_queues(app: &Arc<AppContext>) {
         );
     }
 
-    for topic in &topics {
+    for topic in reusable_topics.iter() {
         crate::operations::persist_topic_messages(&app, topic).await;
     }
 }

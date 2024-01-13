@@ -2,25 +2,44 @@ use std::sync::Arc;
 
 use my_logger::LogEventCtx;
 use rust_extensions::MyTimerTick;
+use tokio::sync::Mutex;
 
-use crate::app::AppContext;
+use crate::{app::AppContext, topics::ReusableTopicsList};
 
 pub struct DeadSubscribersKickerTimer {
     app: Arc<AppContext>,
+    reusable_topics_vec: Mutex<Option<ReusableTopicsList>>,
 }
 
 impl DeadSubscribersKickerTimer {
     pub fn new(app: Arc<AppContext>) -> Self {
-        Self { app }
+        Self {
+            app,
+            reusable_topics_vec: Mutex::new(None),
+        }
+    }
+
+    async fn get_reusable_topics_vec(&self) -> ReusableTopicsList {
+        let mut result = self.reusable_topics_vec.lock().await;
+
+        match result.take() {
+            Some(topics) => topics,
+            None => ReusableTopicsList::new(),
+        }
+    }
+
+    async fn put_reusable_topics_vec_back(&self, topics: ReusableTopicsList) {
+        let mut result = self.reusable_topics_vec.lock().await;
+        *result = Some(topics);
     }
 }
 
 #[async_trait::async_trait]
 impl MyTimerTick for DeadSubscribersKickerTimer {
     async fn tick(&self) {
-        let topics = self.app.topic_list.get_all().await;
+        let topics = self.get_reusable_topics_vec().await;
 
-        for topic in topics {
+        for topic in topics.iter() {
             if let Some(dead_subscribers) = topic
                 .find_subscribers_dead_on_delivery(self.app.delivery_timeout)
                 .await
@@ -40,5 +59,7 @@ impl MyTimerTick for DeadSubscribersKickerTimer {
                 }
             }
         }
+
+        self.put_reusable_topics_vec_back(topics).await;
     }
 }

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::validators::InvalidTopicName;
 
-use super::Topic;
+use super::{ReusableTopicsList, Topic};
 
 pub struct TopicListInner {
     topics: HashMap<String, Arc<Topic>>,
@@ -23,6 +23,14 @@ impl TopicListInner {
         self.topics.get(topic_id).cloned()
     }
 
+    pub fn fill_with_topics(&self, dest: &mut ReusableTopicsList) {
+        dest.clean(self.topics.len());
+        for topic in self.topics.values() {
+            dest.push(topic.clone());
+        }
+
+        dest.update_snapshot_id(self.snapshot_id);
+    }
     pub fn get_all(&self) -> Vec<Arc<Topic>> {
         let mut result = Vec::with_capacity(self.topics.len());
         for topic in self.topics.values() {
@@ -68,5 +76,9 @@ impl TopicListInner {
         let result = self.topics.remove(topic_id);
         self.snapshot_id += 1;
         result
+    }
+
+    pub fn len(&self) -> usize {
+        self.topics.len()
     }
 }

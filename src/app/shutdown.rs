@@ -26,6 +26,7 @@ async fn empty_persistence_queues(app: Arc<AppContext>) {
 
 async fn make_last_topics_and_queues_persist(app: Arc<AppContext>) {
     println!("Making final topics and queues snapshot save");
-    crate::operations::persist_topics_and_queues(&app).await;
+    let mut reusable_topics = crate::topics::ReusableTopicsList::new();
+    crate::operations::persist_topics_and_queues(&app, &mut reusable_topics).await;
     println!("Final topics and queues snapshot save is done");
 }

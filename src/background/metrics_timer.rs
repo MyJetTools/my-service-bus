@@ -3,13 +3,15 @@ use std::sync::Arc;
 use my_http_server::HttpConnectionsCounter;
 use my_tcp_sockets::ThreadsStatistics;
 use rust_extensions::MyTimerTick;
+use tokio::sync::Mutex;
 
-use crate::app::AppContext;
+use crate::{app::AppContext, topics::ReusableTopicsList};
 
 pub struct MetricsTimer {
     app: Arc<AppContext>,
     http_connections_counter: HttpConnectionsCounter,
     threads_statistics: Arc<ThreadsStatistics>,
+    reusable_topics_vec: Mutex<Option<ReusableTopicsList>>,
 }
 
 impl MetricsTimer {
@@ -22,7 +24,22 @@ impl MetricsTimer {
             app,
             http_connections_counter,
             threads_statistics,
+            reusable_topics_vec: Mutex::new(None),
         }
+    }
+
+    async fn get_reusable_topics_vec(&self) -> ReusableTopicsList {
+        let mut result = self.reusable_topics_vec.lock().await;
+
+        match result.take() {
+            Some(topics) => topics,
+            None => ReusableTopicsList::new(),
+        }
+    }
+
+    async fn put_reusable_topics_vec_back(&self, topics: ReusableTopicsList) {
+        let mut result = self.reusable_topics_vec.lock().await;
+        *result = Some(topics);
     }
 }
 
@@ -38,7 +55,11 @@ impl MyTimerTick for MetricsTimer {
         let mut permanent_queues_without_subscribers = 0;
         let mut topics_without_queues = 0;
 
-        for topic in self.app.topic_list.get_all().await {
+        let mut reusable_topics = self.get_reusable_topics_vec().await;
+
+        self.app.topic_list.fill_topics(&mut reusable_topics).await;
+
+        for topic in reusable_topics.iter() {
             let metrics = {
                 let mut topic_data = topic.get_access().await;
 
@@ -82,6 +103,8 @@ impl MyTimerTick for MetricsTimer {
                 .prometheus
                 .update_http_connections_amount(http_connections_amount);
         }
+
+        self.put_reusable_topics_vec_back(reusable_topics).await;
 
         self.app
             .prometheus

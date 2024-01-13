@@ -13,7 +13,8 @@ pub async fn create_topic_if_not_exists(
 ) -> Result<Arc<Topic>, OperationFailResult> {
     let topic = app.topic_list.add_if_not_exists(topic_id).await?;
 
-    crate::operations::persist_topics_and_queues(&app).await;
+    let mut reusable_topics = crate::topics::ReusableTopicsList::new();
+    crate::operations::persist_topics_and_queues(&app, &mut reusable_topics).await;
 
     {
         if let Some(session_id) = session_id {
