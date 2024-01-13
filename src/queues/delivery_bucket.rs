@@ -12,7 +12,7 @@ impl DeliveryBucket {
     }
 
     pub fn confirmed(&mut self, confirmed: &QueueWithIntervals) {
-        self.confirmed += confirmed.len() as usize;
+        self.confirmed += confirmed.queue_size();
 
         for id in confirmed {
             if let Err(err) = self.ids.remove(id) {

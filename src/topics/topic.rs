@@ -98,16 +98,12 @@ impl Topic {
 
     pub async fn get_messages_to_persist(&self) -> Vec<(SubPageId, Vec<Arc<MySbMessageContent>>)> {
         let read_access = self.get_access().await;
-
-        let mut result = Vec::with_capacity(2);
-        read_access.pages.get_messages_to_persist(&mut result);
-        result
+        read_access.get_messages_to_persist()
     }
 
     pub async fn mark_messages_as_persisted(&self, bucket: &MessagesToPersistBucket) {
         let mut write_access = self.get_access().await;
-        write_access.pages.mark_messages_as_persisted(bucket);
-        write_access.gc_messages();
+        write_access.mark_messages_as_persisted(bucket.sub_page_id, &bucket.ids);
     }
 
     pub async fn get_topic_size_metrics(&self) -> SizeMetrics {

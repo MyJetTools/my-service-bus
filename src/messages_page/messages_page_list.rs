@@ -1,15 +1,13 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
+use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::{page_id::PageId, sub_page::SubPageId};
 
 use crate::utils::MinMessageIdCalculator;
 
-use super::{
-    ActiveSubPages, MessagesToPersistBucket, MySbMessageContent, PageSizeMetrics, SubPage,
-    SubPageInner,
-};
+use super::{ActiveSubPages, MySbMessageContent, PageSizeMetrics, SubPage, SubPageInner};
 
 pub struct MessagesPageList {
     pub sub_pages: BTreeMap<i64, SubPage>,
@@ -45,9 +43,9 @@ impl MessagesPageList {
         self.sub_pages.remove(sub_page_id.as_ref());
     }
 
-    pub fn mark_messages_as_persisted(&mut self, bucket: &MessagesToPersistBucket) {
-        if let Some(sub_page) = self.sub_pages.get_mut(bucket.sub_page_id.as_ref()) {
-            sub_page.mark_messages_as_persisted(&bucket.ids);
+    pub fn mark_messages_as_persisted(&mut self, sub_page_id: SubPageId, ids: &QueueWithIntervals) {
+        if let Some(sub_page) = self.sub_pages.get_mut(sub_page_id.as_ref()) {
+            sub_page.mark_messages_as_persisted(ids);
         }
     }
 
@@ -69,14 +67,16 @@ impl MessagesPageList {
         }
     }
 
-    pub fn gc_messages(&mut self, min_message_id: MessageId) {
+    pub fn gc_messages(&mut self, min_message_id: MessageId, current_sub_page_id: SubPageId) {
         let mut pages_to_gc = Vec::new();
 
         for page in self.sub_pages.values_mut() {
             page.gc_messages(min_message_id);
 
             if page.is_empty() {
-                pages_to_gc.push(page.get_id());
+                if current_sub_page_id.get_value() != page.get_id().get_value() {
+                    pages_to_gc.push(page.get_id());
+                }
             }
         }
 

@@ -75,7 +75,7 @@ impl SubPageInner {
         SizeMetrics {
             messages_amount: self.messages.len(),
             data_size: self.size_and_amount.size,
-            persist_size: self.to_persist.len() as usize,
+            persist_size: self.to_persist.queue_size(),
             avg_message_size: if self.messages.len() == 0 {
                 0
             } else {
@@ -155,7 +155,7 @@ impl SubPageInner {
     }
 
     pub fn get_messages_to_persist(&self) -> Option<Vec<Arc<MySbMessageContent>>> {
-        if self.to_persist.len() == 0 {
+        if self.to_persist.queue_size() == 0 {
             return None;
         }
 
@@ -172,7 +172,7 @@ impl SubPageInner {
     }
 
     pub fn get_messages_to_persist_amount(&self) -> usize {
-        self.to_persist.len() as usize
+        self.to_persist.queue_size()
     }
 
     pub fn mark_messages_as_persisted(&mut self, ids: &QueueWithIntervals) {
@@ -187,7 +187,7 @@ impl SubPageInner {
     }
 
     pub fn has_messages_to_persist(&self) -> bool {
-        self.to_persist.len() > 0
+        self.to_persist.queue_size() > 0
     }
 
     pub fn is_ready_to_gc(&self, min_message_id: MessageId) -> bool {

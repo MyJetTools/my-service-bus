@@ -50,7 +50,7 @@ fn compile_packages(
 ) {
     let mut not_engaged_topics = Vec::new();
 
-    while topic_queue.queue.len() > 0 {
+    while topic_queue.queue.queue_size() > 0 {
         let subscriber = topic_queue
             .subscribers
             .get_and_rent_next_subscriber_ready_to_deliver();

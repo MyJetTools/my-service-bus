@@ -90,10 +90,10 @@ impl PrometheusMetrics {
         };
     }
 
-    pub fn update_topic_queue_size(&self, topic_id: &str, queue_id: &str, value: i64) {
+    pub fn update_topic_queue_size(&self, topic_id: &str, queue_id: &str, value: usize) {
         self.topic_queue_size
             .with_label_values(&[topic_id, queue_id])
-            .set(value);
+            .set(value as i64);
     }
 
     pub fn update_permanent_queues_without_subscribers(&self, value: i64) {
@@ -184,10 +184,10 @@ fn create_topic_persist_queue_size() -> IntGaugeVec {
 fn create_topic_queue_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_queue_size", "Topic queue size");
 
-    let lables = &["topic", "queue"];
+    let labels = &["topic", "queue"];
 
     // This unwraps runs on application start. If it fails - applications is not started
-    IntGaugeVec::new(gauge_opts, lables).unwrap()
+    IntGaugeVec::new(gauge_opts, labels).unwrap()
 }
 
 fn create_permanent_queues_without_subscribers() -> IntGauge {
@@ -201,25 +201,25 @@ fn create_permanent_queues_without_subscribers() -> IntGauge {
 fn create_topic_data_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_data_size", "Topic data size");
 
-    let lables = &["topic"];
+    let labels = &["topic"];
 
-    IntGaugeVec::new(gauge_opts, lables).unwrap()
+    IntGaugeVec::new(gauge_opts, labels).unwrap()
 }
 
 fn create_topic_mean_message_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_mean_message_size", "Topic mean message size");
 
-    let lables = &["topic"];
+    let labels = &["topic"];
 
-    IntGaugeVec::new(gauge_opts, lables).unwrap()
+    IntGaugeVec::new(gauge_opts, labels).unwrap()
 }
 
 fn create_topic_messages_amount() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_messages_amount", "Messages amount in cache");
 
-    let lables = &["topic"];
+    let labels = &["topic"];
 
-    IntGaugeVec::new(gauge_opts, lables).unwrap()
+    IntGaugeVec::new(gauge_opts, labels).unwrap()
 }
 
 fn create_topics_without_queues() -> IntGauge {

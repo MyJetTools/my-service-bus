@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
-use my_logger::LogEventCtx;
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 
-use crate::{app::AppContext, queue_subscribers::SubscriberId};
+use crate::{
+    app::AppContext,
+    queue_subscribers::SubscriberId,
+    queues::{DeliveryBucket, TopicQueue},
+};
 
 use super::OperationFailResult;
 
@@ -23,23 +26,18 @@ pub async fn all_confirmed(
 
     let mut topic_access = topic.get_access().await;
 
-    let topic_queue =
-        topic_access
-            .queues
-            .get_mut(queue_id)
-            .ok_or(OperationFailResult::QueueNotFound {
-                queue_id: queue_id.to_string(),
-            })?;
+    {
+        let topic_queue =
+            topic_access
+                .queues
+                .get_mut(queue_id)
+                .ok_or(OperationFailResult::QueueNotFound {
+                    queue_id: queue_id.to_string(),
+                })?;
 
-    if let Err(err) = topic_queue.confirmed_delivered(subscriber_id) {
-        my_logger::LOGGER.write_fatal_error(
-            "confirm_delivery".to_string(),
-            format!("{:?}", err),
-            LogEventCtx::new()
-                .add("topicId", topic.topic_id.as_str())
-                .add("queueId", queue_id)
-                .add("subscriberId", subscriber_id.get_value().to_string()),
-        );
+        if let Some(delivery_bucket) = get_delivery_bucket(topic_queue, subscriber_id, true) {
+            topic_queue.confirm_delivered(&delivery_bucket.ids);
+        }
     }
 
     super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_access);
@@ -72,15 +70,8 @@ pub async fn all_fail(
                     queue_id: queue_id.to_string(),
                 })?;
 
-        if let Err(err) = topic_queue.confirmed_non_delivered(subscriber_id) {
-            my_logger::LOGGER.write_error(
-                "confirm_non_delivery".to_string(),
-                format!("{:?}", err),
-                LogEventCtx::new()
-                    .add("topicId", topic.topic_id.as_str())
-                    .add("queueId", queue_id)
-                    .add("subscriberId", subscriber_id.get_value().to_string()),
-            );
+        if let Some(delivery_bucket) = get_delivery_bucket(topic_queue, subscriber_id, false) {
+            topic_queue.confirm_non_delivered(&delivery_bucket.ids);
         }
     }
 
@@ -115,16 +106,15 @@ pub async fn intermediary_confirm(
                     queue_id: queue_id.to_string(),
                 })?;
 
-        if let Err(err) = topic_queue.intermediary_confirmed(subscriber_id, confirmed) {
-            my_logger::LOGGER.write_error(
-                "some_messages_are_not_confirmed".to_string(),
-                format!("{:?}", err),
-                LogEventCtx::new()
-                    .add("topicId", topic.topic_id.as_str())
-                    .add("queueId", queue_id)
-                    .add("subscriberId", subscriber_id.get_value().to_string()),
-            );
+        {
+            let subscriber = topic_queue.subscribers.get_by_id_mut(subscriber_id);
+
+            if let Some(subscriber) = subscriber {
+                subscriber.intermediary_confirmed(&confirmed)
+            }
         }
+
+        topic_queue.confirm_delivered(&confirmed);
     }
 
     crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
@@ -157,19 +147,63 @@ pub async fn some_messages_are_confirmed(
                     queue_id: queue_id.to_string(),
                 })?;
 
-        if let Err(err) = topic_queue.confirmed_some_delivered(subscriber_id, confirmed_messages) {
-            my_logger::LOGGER.write_fatal_error(
-                "some_messages_are_confirmed".to_string(),
-                format!("{:?}", err),
-                LogEventCtx::new()
-                    .add("topicId", topic.topic_id.as_str())
-                    .add("queueId", queue_id)
-                    .add("subscriberId", subscriber_id.get_value().to_string()),
-            );
+        if let Some(mut delivery_bucket) = get_delivery_bucket(topic_queue, subscriber_id, false) {
+            delivery_bucket.confirmed(&confirmed_messages);
+            topic_queue.confirm_non_delivered(&delivery_bucket.ids);
         }
     }
 
     super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
 
     Ok(())
+}
+
+fn get_delivery_bucket(
+    topic_queue: &mut TopicQueue,
+    subscriber_id: SubscriberId,
+    positive: bool,
+) -> Option<DeliveryBucket> {
+    let subscriber = topic_queue.subscribers.get_by_id_mut(subscriber_id);
+
+    if subscriber.is_none() {
+        println!(
+            "{}/{} Can not find subscriber {} to confirm '{}' delivery",
+            topic_queue.topic_id,
+            topic_queue.queue_id,
+            subscriber_id.get_value(),
+            if positive { "positive" } else { "negative" }
+        );
+
+        return None;
+    }
+
+    let subscriber = subscriber.unwrap();
+
+    let mut delivery_bucket = subscriber.reset_delivery();
+
+    if let Some(delivery_bucket) = &mut delivery_bucket {
+        let delivery_amount = delivery_bucket.ids.queue_size();
+        if delivery_amount > 0 {
+            subscriber.update_delivery_time(delivery_amount, positive);
+        } else {
+            println!(
+                "{}/{} No messages on delivery at subscriber {}",
+                topic_queue.topic_id,
+                topic_queue.queue_id,
+                subscriber_id.get_value()
+            );
+        }
+        return None;
+    } else {
+        if delivery_bucket.is_none() {
+            println!(
+                "{}/{}: No messages basket on delivery at subscriber {}",
+                topic_queue.topic_id,
+                topic_queue.queue_id,
+                subscriber_id.get_value()
+            );
+        };
+    }
+
+    delivery_bucket
 }

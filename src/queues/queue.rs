@@ -3,16 +3,14 @@ use my_service_bus::abstractions::{
     subscriber::TopicQueueType,
     MessageId,
 };
-use rust_extensions::date_time::DateTimeAsMicroseconds;
 use tokio::sync::Mutex;
 
 use crate::{
-    operations::OperationFailResult,
-    queue_subscribers::{QueueSubscriber, SubscriberId, SubscribersList},
+    queue_subscribers::{SubscriberId, SubscribersList},
     topics::TopicQueueSnapshot,
 };
 
-use super::{delivery_attempts::DeliveryAttempts, DeliveryBucket};
+use super::delivery_attempts::DeliveryAttempts;
 
 pub struct TopicQueue {
     pub topic_id: String,
@@ -96,11 +94,11 @@ impl TopicQueue {
         self.queue_type = queue_type;
     }
 
-    pub fn get_queue_size(&self) -> i64 {
-        return self.queue.len();
+    pub fn get_queue_size(&self) -> usize {
+        return self.queue.queue_size();
     }
 
-    pub fn get_on_delivery(&self) -> i64 {
+    pub fn get_on_delivery(&self) -> usize {
         self.subscribers.get_on_delivery_amount()
     }
 
@@ -118,104 +116,89 @@ impl TopicQueue {
 
         self.queue.reset(intervals);
     }
-
+    /*
     pub fn mark_not_delivered(&mut self, delivery_bucket: &DeliveryBucket) {
         self.process_not_delivered(&delivery_bucket.ids);
     }
 
-    fn process_not_delivered(&mut self, not_delivered_ids: &QueueWithIntervals) {
-        self.queue.merge_with(not_delivered_ids);
 
-        for msg_id in not_delivered_ids {
-            self.delivery_attempts.add(msg_id.into());
-        }
-    }
+       pub fn confirmed_delivered(
+           &mut self,
+           confirmed_messages: &QueueWithIntervals,
+           subscriber_id: SubscriberId,
+       ) -> Result<(), OperationFailResult> {
 
-    pub fn confirmed_delivered(
-        &mut self,
-        subscriber_id: SubscriberId,
-    ) -> Result<(), OperationFailResult> {
-        let subscriber = self.subscribers.get_by_id_mut(subscriber_id);
+                  let subscriber = self.subscribers.get_by_id_mut(subscriber_id);
 
-        if subscriber.is_none() {
-            return Err(OperationFailResult::SubscriberNotFound { id: subscriber_id });
-        }
+                  if subscriber.is_none() {
+                      return Err(OperationFailResult::SubscriberNotFound { id: subscriber_id });
+                  }
 
-        let subscriber = subscriber.unwrap();
+                  let subscriber = subscriber.unwrap();
 
-        let messages_bucket = subscriber.reset_delivery();
+                  let messages_bucket = subscriber.reset_delivery();
 
-        if messages_bucket.is_none() {
-            println!(
-                "{}/{} confirmed_delivered: No messages on delivery at subscriber {}",
-                self.topic_id,
-                self.queue_id,
-                subscriber_id.get_value()
-            );
+                  if messages_bucket.is_none() {
+                      println!(
+                          "{}/{} confirmed_delivered: No messages on delivery at subscriber {}",
+                          self.topic_id,
+                          self.queue_id,
+                          subscriber_id.get_value()
+                      );
 
-            return Ok(());
-        };
+                      return Ok(());
+                  };
 
-        let messages_bucket = messages_bucket.unwrap();
+                  let messages_bucket = messages_bucket.unwrap();
 
-        if messages_bucket.ids.len() == 0 {
-            println!(
-                "{}/{} confirmed_delivered: No messages on delivery at subscriber {}",
-                self.topic_id,
-                self.queue_id,
-                subscriber_id.get_value()
-            );
+                  if messages_bucket.ids.len() == 0 {
+                      println!(
+                          "{}/{} confirmed_delivered: No messages on delivery at subscriber {}",
+                          self.topic_id,
+                          self.queue_id,
+                          subscriber_id.get_value()
+                      );
 
-            return Ok(());
-        };
+                      return Ok(());
+                  };
 
-        update_delivery_time(subscriber, messages_bucket.ids.len() as usize, true);
+           subscriber.update_delivery_time(messages_bucket.ids.len() as usize, true);
 
-        self.process_delivered(&messages_bucket.ids);
+           self.process_delivered(&messages_bucket.ids);
 
-        Ok(())
-    }
-
-    fn process_delivered(&mut self, delivered_ids: &QueueWithIntervals) {
+           Ok(())
+       }
+    */
+    pub fn confirm_delivered(&mut self, delivered_ids: &QueueWithIntervals) {
         for msg_id in delivered_ids {
             self.delivery_attempts.reset(msg_id.into());
         }
     }
 
-    pub fn confirmed_non_delivered(
-        &mut self,
-        subscriber_id: SubscriberId,
-    ) -> Result<(), OperationFailResult> {
-        let subscriber = self.subscribers.get_by_id_mut(subscriber_id);
+    pub fn confirm_non_delivered(&mut self, ids: &QueueWithIntervals) {
+        /*
+               let subscriber = self.subscribers.get_by_id_mut(subscriber_id);
 
-        if subscriber.is_none() {
-            return Err(OperationFailResult::SubscriberNotFound { id: subscriber_id });
+               if subscriber.is_none() {
+                   return Err(OperationFailResult::SubscriberNotFound { id: subscriber_id });
+               }
+
+               let subscriber = subscriber.unwrap();
+
+               let messages_bucket = subscriber.reset_delivery();
+
+               let messages_bucket = messages_bucket.unwrap();
+
+               subscriber.update_delivery_time(messages_bucket.ids.len() as usize, false);
+        */
+        self.queue.merge_with(ids);
+
+        for msg_id in ids {
+            self.delivery_attempts.add(msg_id.into());
         }
-
-        let subscriber = subscriber.unwrap();
-
-        let messages_bucket = subscriber.reset_delivery();
-
-        if messages_bucket.is_none() {
-            println!(
-                "{}/{} confirmed_non_delivered: No messages on delivery at subscriber {}",
-                self.topic_id,
-                self.queue_id,
-                subscriber_id.get_value()
-            );
-
-            return Ok(());
-        };
-
-        let messages_bucket = messages_bucket.unwrap();
-
-        update_delivery_time(subscriber, messages_bucket.ids.len() as usize, false);
-
-        self.process_not_delivered(&messages_bucket.ids);
-
-        Ok(())
     }
 
+    /*
     pub fn confirmed_some_delivered(
         &mut self,
         subscriber_id: SubscriberId,
@@ -247,7 +230,7 @@ impl TopicQueue {
         //Remove delivered and what remains - is not delivered
         delivery_bucket.confirmed(&delivered);
 
-        update_delivery_time(subscriber, delivery_bucket.confirmed, false);
+        subscriber.update_delivery_time(delivery_bucket.confirmed, false);
 
         if delivery_bucket.ids.len() > 0 {
             self.process_not_delivered(&delivery_bucket.ids);
@@ -257,6 +240,7 @@ impl TopicQueue {
 
         Ok(())
     }
+
 
     pub fn intermediary_confirmed(
         &mut self,
@@ -278,6 +262,7 @@ impl TopicQueue {
 
         return Ok(());
     }
+     */
 
     pub fn get_messages_on_delivery(
         &self,
@@ -313,27 +298,5 @@ impl TopicQueue {
             TopicQueueType::DeleteOnDisconnect => false,
             TopicQueueType::PermanentWithSingleConnection => true,
         }
-    }
-}
-
-fn update_delivery_time(subscriber: &mut QueueSubscriber, amount: usize, positive: bool) {
-    let delivery_duration = DateTimeAsMicroseconds::now()
-        .duration_since(subscriber.metrics.start_delivery_time)
-        .as_positive_or_zero();
-
-    if delivery_duration.is_zero() {
-        println!(
-            "Delivery duration is zero. This is a bug. Please report it. (update_delivery_time)"
-        )
-    }
-
-    if positive {
-        subscriber
-            .metrics
-            .set_delivered_statistic(amount, delivery_duration);
-    } else {
-        subscriber
-            .metrics
-            .set_not_delivered_statistic(amount as i32, delivery_duration);
     }
 }

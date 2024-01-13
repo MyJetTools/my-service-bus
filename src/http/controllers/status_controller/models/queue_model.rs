@@ -32,9 +32,9 @@ pub struct QueueJsonContract {
     id: String,
     #[serde(rename = "queueType")]
     queue_type: u8,
-    size: i64,
+    size: usize,
     #[serde(rename = "onDelivery")]
-    on_delivery: i64,
+    on_delivery: usize,
     data: Vec<QueueIndex>,
 }
 
@@ -62,7 +62,7 @@ impl QueueIndex {
     pub fn get_queue_snapshot(topic_queue: &TopicQueue) -> Vec<Self> {
         let mut result = Vec::new();
 
-        for queue_index in &topic_queue.queue.intervals {
+        for queue_index in topic_queue.queue.iterate_intervals() {
             result.push(Self {
                 from_id: queue_index.from_id,
                 to_id: queue_index.to_id,

@@ -59,7 +59,7 @@ impl SubscribersList {
         }
     }
 
-    pub fn get_on_delivery_amount(&self) -> i64 {
+    pub fn get_on_delivery_amount(&self) -> usize {
         match &self.data {
             SubscribersData::MultiSubscribers(subscribers) => {
                 let mut result = 0;

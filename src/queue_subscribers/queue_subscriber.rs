@@ -45,7 +45,7 @@ pub struct QueueSubscriber {
     pub delivery_state: QueueSubscriberDeliveryState,
 
     pub last_delivered: DateTimeAsMicroseconds,
-    pub last_delivered_amount: i64,
+    pub last_delivered_amount: usize,
 
     pub delivery_compilation_duration: Duration,
 
@@ -84,11 +84,13 @@ impl QueueSubscriber {
         return false;
     }
 
-    pub fn get_on_delivery_amount(&self) -> i64 {
+    pub fn get_on_delivery_amount(&self) -> usize {
         match &self.delivery_state {
             QueueSubscriberDeliveryState::ReadyToDeliver => 0,
             QueueSubscriberDeliveryState::Rented => 0,
-            QueueSubscriberDeliveryState::OnDelivery(on_delivery) => on_delivery.bucket.ids.len(),
+            QueueSubscriberDeliveryState::OnDelivery(on_delivery) => {
+                on_delivery.bucket.ids.queue_size()
+            }
         }
     }
 
@@ -105,7 +107,7 @@ impl QueueSubscriber {
 
         self.metrics.set_delivery_mode_as_ready_to_deliver();
         if let QueueSubscriberDeliveryState::OnDelivery(state) = prev_delivery_state {
-            self.last_delivered_amount = state.bucket.ids.len();
+            self.last_delivered_amount = state.bucket.ids.queue_size();
             return Some(state.bucket);
         }
 
@@ -166,5 +168,26 @@ impl QueueSubscriber {
     pub fn get_min_message_id(&self) -> Option<MessageId> {
         let messages_on_delivery = self.get_messages_on_delivery()?;
         MessageId::from_opt_i64(messages_on_delivery.get_min_id())
+    }
+
+    //todo!("Check  who calls it")
+    pub fn update_delivery_time(&mut self, amount: usize, positive: bool) {
+        let delivery_duration = DateTimeAsMicroseconds::now()
+            .duration_since(self.metrics.start_delivery_time)
+            .as_positive_or_zero();
+
+        if delivery_duration.is_zero() {
+            println!(
+                "Delivery duration is zero. This is a bug. Please report it. (update_delivery_time)"
+            )
+        }
+
+        if positive {
+            self.metrics
+                .set_delivered_statistic(amount, delivery_duration);
+        } else {
+            self.metrics
+                .set_not_delivered_statistic(amount as i32, delivery_duration);
+        }
     }
 }

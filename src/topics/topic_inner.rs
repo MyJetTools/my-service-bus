@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use my_service_bus::abstractions::publisher::MessageToPublish;
@@ -131,6 +132,12 @@ impl TopicInner {
         result
     }
 
+    pub fn get_current_sub_page(&self) -> SubPageId {
+        let sub_page_id: SubPageId = self.message_id.into();
+
+        sub_page_id
+    }
+
     pub fn gc_pages(&mut self) {
         if let Some(min_message_id) = self.get_min_message_id() {
             let active_sub_pages = self.get_active_sub_pages();
@@ -196,7 +203,83 @@ impl TopicInner {
 
     pub fn gc_messages(&mut self) {
         if let Some(min_message_id) = self.get_min_message_id() {
-            self.pages.gc_messages(min_message_id);
+            let current_sub_page_id = self.get_current_sub_page();
+            self.pages.gc_messages(min_message_id, current_sub_page_id);
         }
+    }
+
+    pub fn get_messages_to_persist(&self) -> Vec<(SubPageId, Vec<Arc<MySbMessageContent>>)> {
+        let mut result = Vec::with_capacity(2);
+        self.pages.get_messages_to_persist(&mut result);
+        result
+    }
+
+    pub fn mark_messages_as_persisted(&mut self, sub_page_id: SubPageId, ids: &QueueWithIntervals) {
+        self.pages.mark_messages_as_persisted(sub_page_id, ids);
+        self.gc_messages();
+    }
+
+    #[cfg(test)]
+    pub fn get_message<'s>(
+        &'s self,
+        message_id: MessageId,
+    ) -> Option<crate::messages_page::GetMessageResult<'s>> {
+        let sub_page_id: SubPageId = message_id.into();
+        let sub_page = self.pages.get(sub_page_id)?;
+
+        Some(sub_page.get_message(message_id))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use my_service_bus::abstractions::{
+        publisher::{MessageToPublish, SbMessageHeaders},
+        queue_with_intervals::QueueWithIntervals,
+        subscriber::TopicQueueType,
+    };
+
+    #[test]
+    fn test_we_deliver_then_persist_then_gc_message() {
+        let mut topic_inner = super::TopicInner::new("test".to_string(), 0, true);
+
+        topic_inner.queues.add_queue_if_not_exists(
+            "test".to_string(),
+            "test".to_string(),
+            TopicQueueType::DeleteOnDisconnect,
+        );
+
+        topic_inner.publish_messages(
+            10.into(),
+            vec![MessageToPublish {
+                headers: SbMessageHeaders::new(),
+                content: vec![1, 2, 3],
+            }],
+        );
+
+        let queue = topic_inner.queues.get_mut("test").unwrap();
+
+        let message_to_deliver_id = queue.queue.dequeue().unwrap();
+
+        let mut delivered = QueueWithIntervals::new();
+
+        delivered.enqueue(message_to_deliver_id);
+
+        queue.confirm_delivered(&delivered);
+
+        let messages_to_persist = topic_inner.get_messages_to_persist();
+
+        for (sub_page_id, messages) in messages_to_persist {
+            let mut confirm_persisted = QueueWithIntervals::new();
+            for msg in messages {
+                confirm_persisted.enqueue(msg.id.get_value());
+            }
+
+            topic_inner.mark_messages_as_persisted(sub_page_id, &confirm_persisted);
+        }
+
+        let message_result = topic_inner.get_message(message_to_deliver_id.into());
+
+        assert!(message_result.unwrap().is_garbage_collected());
     }
 }
