@@ -76,22 +76,22 @@ async fn main() {
         )),
     );
 
-    let mut persist_and_gc_timer = MyTimer::new(app.settings.persist_timer_interval);
-    persist_and_gc_timer.register_timer(
+    let mut persist_timer = MyTimer::new(app.settings.persist_timer_interval);
+    persist_timer.register_timer(
         "PersistTopicsAndQueues",
         Arc::new(PersistTopicsAndQueuesTimer::new(app.clone())),
     );
-    persist_and_gc_timer.register_timer("GC", Arc::new(GcTimer::new(app.clone())));
 
-    let mut dead_subscribers = MyTimer::new(Duration::from_secs(10));
-    dead_subscribers.register_timer(
+    let mut gc_timer = MyTimer::new(Duration::from_secs(3));
+    gc_timer.register_timer("GC", Arc::new(GcTimer::new(app.clone())));
+    gc_timer.register_timer(
         "DeadSubscribers",
         Arc::new(DeadSubscribersKickerTimer::new(app.clone())),
     );
 
     metrics_timer.start(app.clone(), my_logger::LOGGER.clone());
-    persist_and_gc_timer.start(app.clone(), my_logger::LOGGER.clone());
-    dead_subscribers.start(app.clone(), my_logger::LOGGER.clone());
+    persist_timer.start(app.clone(), my_logger::LOGGER.clone());
+    gc_timer.start(app.clone(), my_logger::LOGGER.clone());
     app.immediately_persist_event_loop.start(app.clone()).await;
 
     app.states.wait_until_shutdown().await;

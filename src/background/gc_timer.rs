@@ -24,6 +24,7 @@ impl MyTimerTick for GcTimer {
 
             let removed_queues = {
                 let mut topic_data = topic.get_access().await;
+                topic_data.gc_messages();
                 topic_data.gc_pages();
 
                 let removed_queues = topic_data

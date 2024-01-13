@@ -170,7 +170,7 @@ impl QueueSubscriber {
         MessageId::from_opt_i64(messages_on_delivery.get_min_id())
     }
 
-    //todo!("Check  who calls it")
+    //todo!("TechDebt: We does not call it with intermediary confirmed messages");
     pub fn update_delivery_time(&mut self, amount: usize, positive: bool) {
         let delivery_duration = DateTimeAsMicroseconds::now()
             .duration_since(self.metrics.start_delivery_time)
