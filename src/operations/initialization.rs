@@ -4,7 +4,7 @@ use my_logger::LogEventCtx;
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use rust_extensions::StopWatch;
 
-use crate::topics::{Topic, TopicSnapshot};
+use crate::topics::TopicSnapshot;
 
 use crate::app::AppContext;
 
@@ -39,9 +39,11 @@ pub async fn init(app: Arc<AppContext>) {
         }
     }
 
-    for topic in app.topic_list.get_all().await {
-        restore_topic_pages(app.clone(), topic.clone()).await;
-    }
+    /*
+       for topic in app.topic_list.get_all().await {
+           restore_topic_pages(app.clone(), topic.clone()).await;
+       }
+    */
 
     app.states.set_initialized();
     sw.pause();
@@ -55,6 +57,7 @@ pub async fn init(app: Arc<AppContext>) {
     println!("Application is initialized in {:?}", sw.duration());
 }
 
+/*
 async fn restore_topic_pages(app: Arc<AppContext>, topic: Arc<Topic>) {
     let sub_page_id = topic.get_current_sub_page().await;
 
@@ -70,7 +73,7 @@ async fn restore_topic_pages(app: Arc<AppContext>, topic: Arc<Topic>) {
         topic_data.pages.restore_sub_page(sub_page);
     }
 }
-
+ */
 async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
     let mut attempt = 0;
     loop {
