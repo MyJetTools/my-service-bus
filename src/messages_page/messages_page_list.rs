@@ -55,15 +55,15 @@ impl MessagesPageList {
         }
     }
 
-    pub fn gc_messages(&mut self, min_message_id: MessageId, current_sub_page_id: SubPageId) {
+    pub fn gc_messages(&mut self, min_message_id: MessageId, active_sub_pages: &ActiveSubPages) {
         let mut pages_to_gc = Vec::new();
 
-        for page in self.sub_pages.values_mut() {
-            page.gc_messages(min_message_id);
+        for sub_page in self.sub_pages.values_mut() {
+            sub_page.gc_messages(min_message_id);
 
-            if page.is_empty() {
-                if current_sub_page_id.get_value() != page.get_id().get_value() {
-                    pages_to_gc.push(page.get_id());
+            if sub_page.is_empty() {
+                if !active_sub_pages.has_sub_page(sub_page.get_id()) {
+                    pages_to_gc.push(sub_page.get_id());
                 }
             }
         }

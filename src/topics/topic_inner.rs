@@ -125,12 +125,6 @@ impl TopicInner {
         result
     }
 
-    pub fn get_current_sub_page(&self) -> SubPageId {
-        let sub_page_id: SubPageId = self.message_id.into();
-
-        sub_page_id
-    }
-
     pub fn gc_pages(&mut self) {
         if let Some(min_message_id) = self.get_min_message_id() {
             let active_sub_pages = self.get_active_sub_pages();
@@ -196,8 +190,8 @@ impl TopicInner {
 
     pub fn gc_messages(&mut self) {
         if let Some(min_message_id) = self.get_min_message_id() {
-            let current_sub_page_id = self.get_current_sub_page();
-            self.pages.gc_messages(min_message_id, current_sub_page_id);
+            let active_sub_pages = self.get_active_sub_pages();
+            self.pages.gc_messages(min_message_id, &active_sub_pages);
         }
     }
 
