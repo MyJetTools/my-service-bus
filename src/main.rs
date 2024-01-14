@@ -45,11 +45,7 @@ async fn main() {
         .register_event_loop(Arc::new(ImmediatelyPersistEventLoop::new(app.clone())))
         .await;
 
-    let mut tasks = Vec::new();
-
-    tasks.push(tokio::task::spawn(crate::operations::initialization::init(
-        app.clone(),
-    )));
+    tokio::task::spawn(crate::operations::initialization::init(app.clone()));
 
     let tcp_server = TcpServer::new(
         "MySbTcpServer".to_string(),
@@ -97,10 +93,6 @@ async fn main() {
     app.states.wait_until_shutdown().await;
 
     shut_down_task(app).await;
-
-    for task in tasks {
-        task.await.unwrap();
-    }
 }
 
 async fn shut_down_task(app: Arc<AppContext>) {
