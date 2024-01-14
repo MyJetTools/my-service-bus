@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::{GetMessageResult, MissingSubPageInner, MySbMessageContent, SizeMetrics, SubPageInner};
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
 use my_service_bus::shared::sub_page::SubPageId;
@@ -50,13 +48,14 @@ impl SubPage {
         }
     }
 
-    pub fn get_messages_to_persist(
+    pub fn get_messages_to_persist<TResult>(
         &self,
-        result: &mut Vec<(SubPageId, Vec<Arc<MySbMessageContent>>)>,
+        result: &mut Vec<(SubPageId, Vec<TResult>)>,
+        transform: &impl Fn(&MySbMessageContent) -> TResult,
     ) {
         match self {
             SubPage::SubPage(inner) => {
-                if let Some(messages_to_persist) = inner.get_messages_to_persist() {
+                if let Some(messages_to_persist) = inner.get_messages_to_persist(transform) {
                     result.push((inner.sub_page_id, messages_to_persist));
                 }
             }

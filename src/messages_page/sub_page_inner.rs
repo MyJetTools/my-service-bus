@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::sync::Arc;
 
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
 use my_service_bus::shared::sub_page::{SizeAndAmount, SubPageId};
@@ -154,7 +153,10 @@ impl SubPageInner {
         0
     }
 
-    pub fn get_messages_to_persist(&self) -> Option<Vec<Arc<MySbMessageContent>>> {
+    pub fn get_messages_to_persist<TResult>(
+        &self,
+        transform: impl Fn(&MySbMessageContent) -> TResult,
+    ) -> Option<Vec<TResult>> {
         if self.to_persist.queue_size() == 0 {
             return None;
         }
@@ -163,7 +165,7 @@ impl SubPageInner {
         for message_id in &self.to_persist {
             if let Some(msg) = self.messages.get(&message_id) {
                 if let MySbCachedMessage::Loaded(msg) = msg {
-                    result.push(msg.clone());
+                    result.push(transform(msg));
                 }
             }
         }

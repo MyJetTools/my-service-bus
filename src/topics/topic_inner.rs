@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use my_service_bus::abstractions::publisher::MessageToPublish;
@@ -195,9 +194,12 @@ impl TopicInner {
         }
     }
 
-    pub fn get_messages_to_persist(&self) -> Vec<(SubPageId, Vec<Arc<MySbMessageContent>>)> {
+    pub fn get_messages_to_persist<TResult>(
+        &self,
+        transform: impl Fn(&MySbMessageContent) -> TResult,
+    ) -> Vec<(SubPageId, Vec<TResult>)> {
         let mut result = Vec::with_capacity(2);
-        self.pages.get_messages_to_persist(&mut result);
+        self.pages.get_messages_to_persist(&mut result, transform);
         result
     }
 
@@ -253,7 +255,7 @@ mod tests {
 
         queue.confirm_delivered(&delivered);
 
-        let messages_to_persist = topic_inner.get_messages_to_persist();
+        let messages_to_persist = topic_inner.get_messages_to_persist(|itm| itm.clone());
 
         for (sub_page_id, messages) in messages_to_persist {
             let mut confirm_persisted = QueueWithIntervals::new();

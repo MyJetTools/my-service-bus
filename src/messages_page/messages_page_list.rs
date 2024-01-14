@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::sync::Arc;
 
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus::abstractions::MessageId;
@@ -92,12 +91,13 @@ impl MessagesPageList {
         result
     }
 
-    pub fn get_messages_to_persist(
+    pub fn get_messages_to_persist<TResult>(
         &self,
-        result: &mut Vec<(SubPageId, Vec<Arc<MySbMessageContent>>)>,
+        result: &mut Vec<(SubPageId, Vec<TResult>)>,
+        transform: impl Fn(&MySbMessageContent) -> TResult,
     ) {
         for sub_page in self.sub_pages.values() {
-            sub_page.get_messages_to_persist(result)
+            sub_page.get_messages_to_persist(result, &transform)
         }
     }
 

@@ -1,5 +1,4 @@
 use std::sync::atomic::AtomicBool;
-use std::sync::Arc;
 use std::time::Duration;
 
 use my_service_bus::abstractions::MessageId;
@@ -88,9 +87,12 @@ impl Topic {
         result
     }
 
-    pub async fn get_messages_to_persist(&self) -> Vec<(SubPageId, Vec<Arc<MySbMessageContent>>)> {
+    pub async fn get_messages_to_persist<TResult>(
+        &self,
+        transform: impl Fn(&MySbMessageContent) -> TResult,
+    ) -> Vec<(SubPageId, Vec<TResult>)> {
         let read_access = self.get_access().await;
-        read_access.get_messages_to_persist()
+        read_access.get_messages_to_persist(transform)
     }
 
     pub async fn mark_messages_as_persisted(&self, bucket: &MessagesToPersistBucket) {

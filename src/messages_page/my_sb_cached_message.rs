@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use my_service_bus::abstractions::MessageId;
 
 use super::MySbMessageContent;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum MySbCachedMessage {
-    Loaded(Arc<MySbMessageContent>),
+    Loaded(MySbMessageContent),
     Missing(MessageId),
 }
 
@@ -43,6 +41,6 @@ impl MySbCachedMessage {
 
 impl Into<MySbCachedMessage> for MySbMessageContent {
     fn into(self) -> MySbCachedMessage {
-        MySbCachedMessage::Loaded(Arc::new(self))
+        MySbCachedMessage::Loaded(self)
     }
 }
