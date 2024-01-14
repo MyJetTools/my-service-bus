@@ -325,9 +325,11 @@ mod tests {
 
         let meta_data = MySbSerializerMetadata::new(version.tcp_protocol_version.get_value());
 
-        let packet =
-            my_service_bus::tcp_contracts::tcp_serializers::convert_from_raw(packet, &meta_data)
-                .await;
+        let packet = my_service_bus::tcp_contracts::tcp_serializers::convert_from_raw(
+            packet,
+            Some(&meta_data),
+        )
+        .await;
 
         if let TcpContract::NewMessages {
             topic_id,

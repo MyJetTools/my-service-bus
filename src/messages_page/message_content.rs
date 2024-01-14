@@ -3,7 +3,7 @@ use my_service_bus::abstractions::SbMessageHeaders;
 use my_service_bus::shared::protobuf_models::{MessageMetaDataProtobufModel, MessageProtobufModel};
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct MySbMessageContent {
     pub id: MessageId,
     pub content: Vec<u8>,
