@@ -4,7 +4,7 @@ use std::sync::{
 };
 
 use my_service_bus::tcp_contracts::{
-    MySbSerializerMetadata, MySbTcpSerializer, PacketProtVer, TcpContract,
+    MySbSerializerMetadata, MySbTcpContract, MySbTcpSerializer, PacketProtVer,
 };
 use my_tcp_sockets::tcp_connection::TcpSocketConnection;
 
@@ -12,7 +12,7 @@ use crate::sessions::ConnectionMetricsSnapshot;
 
 pub struct TcpConnectionData {
     pub connection:
-        Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer, MySbSerializerMetadata>>,
+        Arc<TcpSocketConnection<MySbTcpContract, MySbTcpSerializer, MySbSerializerMetadata>>,
     protocol_version: i32,
     delivery_packet_version: AtomicU8,
     pub name: String,
@@ -23,7 +23,7 @@ pub struct TcpConnectionData {
 impl TcpConnectionData {
     pub fn new(
         connection: Arc<
-            TcpSocketConnection<TcpContract, MySbTcpSerializer, MySbSerializerMetadata>,
+            TcpSocketConnection<MySbTcpContract, MySbTcpSerializer, MySbSerializerMetadata>,
         >,
         name: String,
         version: Option<String>,

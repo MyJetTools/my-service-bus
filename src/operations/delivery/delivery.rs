@@ -170,7 +170,7 @@ mod tests {
         subscriber::TopicQueueType,
     };
     use my_service_bus::shared::protobuf_models::MessageProtobufModel;
-    use my_service_bus::tcp_contracts::{MySbSerializerMetadata, TcpContract};
+    use my_service_bus::tcp_contracts::{MySbSerializerMetadata, MySbTcpContract};
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
     use crate::{
@@ -239,7 +239,7 @@ mod tests {
 
         let packet = result_packets.remove(0);
 
-        if let TcpContract::Raw(_) = packet {
+        if let MySbTcpContract::Raw(_) = packet {
         } else {
             panic!("Should not be here")
         }
@@ -329,7 +329,7 @@ mod tests {
             my_service_bus::tcp_contracts::tcp_serializers::convert_from_raw(packet, &meta_data)
                 .await;
 
-        if let TcpContract::NewMessages {
+        if let MySbTcpContract::NewMessages {
             topic_id,
             queue_id,
             confirmation_id,

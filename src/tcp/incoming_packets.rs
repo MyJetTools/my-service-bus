@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
-use my_service_bus::tcp_contracts::{MySbSerializerMetadata, MySbTcpSerializer, TcpContract};
+use my_service_bus::tcp_contracts::{MySbSerializerMetadata, MySbTcpContract, MySbTcpSerializer};
 use my_tcp_sockets::tcp_connection::TcpSocketConnection;
 
 use crate::sessions::TcpConnectionData;
@@ -11,16 +11,18 @@ use super::error::MySbSocketError;
 
 pub async fn handle(
     app: &Arc<AppContext>,
-    tcp_contract: TcpContract,
-    connection: Arc<TcpSocketConnection<TcpContract, MySbTcpSerializer, MySbSerializerMetadata>>,
+    tcp_contract: MySbTcpContract,
+    connection: &Arc<
+        TcpSocketConnection<MySbTcpContract, MySbTcpSerializer, MySbSerializerMetadata>,
+    >,
 ) -> Result<(), MySbSocketError> {
     match tcp_contract {
-        TcpContract::Ping {} => {
-            connection.send(&TcpContract::Pong).await;
+        MySbTcpContract::Ping {} => {
+            connection.send(&MySbTcpContract::Pong).await;
             Ok(())
         }
-        TcpContract::Pong {} => Ok(()),
-        TcpContract::Greeting {
+        MySbTcpContract::Pong {} => Ok(()),
+        MySbTcpContract::Greeting {
             name,
             protocol_version,
         } => {
@@ -43,7 +45,7 @@ pub async fn handle(
 
             app.sessions
                 .add_tcp(TcpConnectionData::new(
-                    connection,
+                    connection.clone(),
                     connection_name.unwrap(),
                     version,
                     protocol_version,
@@ -52,7 +54,7 @@ pub async fn handle(
 
             Ok(())
         }
-        TcpContract::Publish {
+        MySbTcpContract::Publish {
             topic_id,
             request_id,
             persist_immediately,
@@ -74,13 +76,13 @@ pub async fn handle(
 
                 if let Err(err) = result {
                     connection
-                        .send(&TcpContract::Reject {
+                        .send(&MySbTcpContract::Reject {
                             message: format!("{:?}", err),
                         })
                         .await;
                 } else {
                     connection
-                        .send(&TcpContract::PublishResponse { request_id })
+                        .send(&MySbTcpContract::PublishResponse { request_id })
                         .await;
                 }
             }
@@ -88,11 +90,11 @@ pub async fn handle(
             Ok(())
         }
 
-        TcpContract::PublishResponse { request_id: _ } => {
+        MySbTcpContract::PublishResponse { request_id: _ } => {
             //This is a client packet
             Ok(())
         }
-        TcpContract::Subscribe {
+        MySbTcpContract::Subscribe {
             topic_id,
             queue_id,
             queue_type,
@@ -106,18 +108,18 @@ pub async fn handle(
 
             Ok(())
         }
-        TcpContract::SubscribeResponse {
+        MySbTcpContract::SubscribeResponse {
             topic_id: _,
             queue_id: _,
         } => {
             //This is a client packet
             Ok(())
         }
-        TcpContract::Raw(_) => {
+        MySbTcpContract::Raw(_) => {
             //This is a client packet
             Ok(())
         }
-        TcpContract::NewMessagesConfirmation {
+        MySbTcpContract::NewMessagesConfirmation {
             topic_id,
             queue_id,
             confirmation_id,
@@ -132,7 +134,7 @@ pub async fn handle(
 
             Ok(())
         }
-        TcpContract::CreateTopicIfNotExists { topic_id } => {
+        MySbTcpContract::CreateTopicIfNotExists { topic_id } => {
             if let Some(session) = app.sessions.get_by_tcp_connection_id(connection.id).await {
                 operations::publisher::create_topic_if_not_exists(
                     app,
@@ -144,7 +146,7 @@ pub async fn handle(
 
             Ok(())
         }
-        TcpContract::IntermediaryConfirm {
+        MySbTcpContract::IntermediaryConfirm {
             packet_version: _,
             topic_id,
             queue_id,
@@ -162,7 +164,7 @@ pub async fn handle(
 
             Ok(())
         }
-        TcpContract::PacketVersions { packet_versions } => {
+        MySbTcpContract::PacketVersions { packet_versions } => {
             if let Some(version) =
                 packet_versions.get(&my_service_bus::tcp_contracts::tcp_message_id::NEW_MESSAGES)
             {
@@ -173,11 +175,11 @@ pub async fn handle(
 
             Ok(())
         }
-        TcpContract::Reject { message: _ } => {
+        MySbTcpContract::Reject { message: _ } => {
             //This is a client packet
             Ok(())
         }
-        TcpContract::AllMessagesConfirmedAsFail {
+        MySbTcpContract::AllMessagesConfirmedAsFail {
             topic_id,
             queue_id,
             confirmation_id,
@@ -192,7 +194,7 @@ pub async fn handle(
             Ok(())
         }
 
-        TcpContract::ConfirmSomeMessagesAsOk {
+        MySbTcpContract::ConfirmSomeMessagesAsOk {
             packet_version: _,
             topic_id,
             queue_id,
@@ -210,7 +212,7 @@ pub async fn handle(
 
             Ok(())
         }
-        TcpContract::NewMessages {
+        MySbTcpContract::NewMessages {
             topic_id: _,
             queue_id: _,
             confirmation_id: _,

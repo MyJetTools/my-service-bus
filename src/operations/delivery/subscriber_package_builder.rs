@@ -4,7 +4,7 @@ use my_service_bus::abstractions::SbMessageHeaders;
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MyServiceBusMessage};
 
 use my_service_bus::tcp_contracts::{
-    delivery_package_builder::DeliverTcpPacketBuilder, TcpContract,
+    delivery_package_builder::DeliverTcpPacketBuilder, MySbTcpContract,
 };
 use rust_extensions::ShortString;
 
@@ -39,7 +39,7 @@ impl<'s> MyServiceBusMessage for PacketToSendWrapper<'s> {
 pub enum SendNewMessagesResult {
     Send {
         session: Arc<MyServiceBusSession>,
-        tcp_contract: TcpContract,
+        tcp_contract: MySbTcpContract,
         queue_id: ShortString,
         messages_on_delivery: QueueWithIntervals,
     },

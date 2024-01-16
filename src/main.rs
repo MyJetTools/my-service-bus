@@ -54,6 +54,7 @@ async fn main() {
 
     tcp_server
         .start(
+            Arc::new(my_service_bus::tcp_contracts::SbTcpSerializerMetadataFactory),
             Arc::new(TcpServerEvents::new(app.clone())),
             app.states.clone(),
             my_logger::LOGGER.clone(),
