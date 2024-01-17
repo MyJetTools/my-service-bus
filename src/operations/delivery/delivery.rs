@@ -170,7 +170,7 @@ mod tests {
         subscriber::TopicQueueType,
     };
     use my_service_bus::shared::protobuf_models::MessageProtobufModel;
-    use my_service_bus::tcp_contracts::{MySbSerializerMetadata, MySbTcpContract};
+    use my_service_bus::tcp_contracts::{MySbSerializerState, MySbTcpContract};
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
     use crate::{
@@ -323,7 +323,7 @@ mod tests {
 
         let packet = result_packets.remove(0);
 
-        let meta_data = MySbSerializerMetadata::new(version.tcp_protocol_version.get_value());
+        let meta_data = MySbSerializerState::new(version.tcp_protocol_version.get_value());
 
         let packet =
             my_service_bus::tcp_contracts::tcp_serializers::convert_from_raw(packet, &meta_data)

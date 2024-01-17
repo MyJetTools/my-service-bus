@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
-use my_service_bus::tcp_contracts::{MySbSerializerMetadata, MySbTcpContract, MySbTcpSerializer};
-use my_tcp_sockets::tcp_connection::TcpSocketConnection;
+use my_service_bus::tcp_contracts::{MySbTcpConnection, MySbTcpContract};
 
 use crate::sessions::TcpConnectionData;
 use crate::{app::AppContext, operations};
@@ -12,9 +11,7 @@ use super::error::MySbSocketError;
 pub async fn handle(
     app: &Arc<AppContext>,
     tcp_contract: MySbTcpContract,
-    connection: &Arc<
-        TcpSocketConnection<MySbTcpContract, MySbTcpSerializer, MySbSerializerMetadata>,
-    >,
+    connection: &Arc<MySbTcpConnection>,
 ) -> Result<(), MySbSocketError> {
     match tcp_contract {
         MySbTcpContract::Ping {} => {

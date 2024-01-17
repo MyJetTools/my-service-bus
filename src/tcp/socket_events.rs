@@ -4,7 +4,7 @@ use my_tcp_sockets::SocketEventCallback;
 use std::sync::Arc;
 
 use my_service_bus::tcp_contracts::{
-    MySbSerializerMetadata, MySbTcpConnection, MySbTcpContract, MySbTcpSerializer,
+    MySbSerializerState, MySbTcpConnection, MySbTcpContract, MySbTcpSerializer,
 };
 
 use crate::app::AppContext;
@@ -20,7 +20,7 @@ impl TcpServerEvents {
 }
 
 #[async_trait]
-impl SocketEventCallback<MySbTcpContract, MySbTcpSerializer, MySbSerializerMetadata>
+impl SocketEventCallback<MySbTcpContract, MySbTcpSerializer, MySbSerializerState>
     for TcpServerEvents
 {
     async fn connected(&self, _connection: Arc<MySbTcpConnection>) {
