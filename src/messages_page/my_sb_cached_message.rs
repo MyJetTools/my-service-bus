@@ -1,4 +1,5 @@
 use my_service_bus::abstractions::MessageId;
+use rust_extensions::sorted_vec::EntityWithKey;
 
 use super::MySbMessageContent;
 
@@ -42,5 +43,14 @@ impl MySbCachedMessage {
 impl Into<MySbCachedMessage> for MySbMessageContent {
     fn into(self) -> MySbCachedMessage {
         MySbCachedMessage::Loaded(self)
+    }
+}
+
+impl EntityWithKey<MessageId> for MySbCachedMessage {
+    fn get_key(&self) -> &MessageId {
+        match self {
+            MySbCachedMessage::Loaded(msg) => &msg.id,
+            MySbCachedMessage::Missing(id) => id,
+        }
     }
 }

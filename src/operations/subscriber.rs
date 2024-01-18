@@ -35,7 +35,7 @@ pub async fn subscribe_to_queue(
     let mut topic_data = topic.get_access().await;
 
     let topic_queue = topic_data.queues.add_queue_if_not_exists(
-        topic.topic_id.to_string(),
+        topic.topic_id.clone(),
         queue_id,
         queue_type.clone(),
     );
@@ -47,7 +47,7 @@ pub async fn subscribe_to_queue(
     let kicked_subscriber_result = topic_queue.subscribers.subscribe(
         subscriber_id,
         topic.topic_id.to_string(),
-        topic_queue.queue_id.to_string(),
+        topic_queue.queue_id.clone(),
         session.clone(),
     );
 

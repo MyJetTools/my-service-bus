@@ -10,14 +10,18 @@ impl ActiveSubPages {
     }
 
     pub fn add_if_not_exists(&mut self, sub_page_id: SubPageId) {
-        if self.has_sub_page(sub_page_id) {
-            return;
-        }
+        let index = self.pages.binary_search_by(|itm| itm.cmp(&sub_page_id));
 
-        self.pages.push(sub_page_id);
+        match index {
+            Ok(_) => {}
+            Err(index) => {
+                self.pages.insert(index, sub_page_id);
+            }
+        }
     }
 
-    pub fn has_sub_page(&self, page_id: SubPageId) -> bool {
-        self.pages.contains(&page_id)
+    pub fn has_sub_page(&self, sub_page_id: SubPageId) -> bool {
+        let index = self.pages.binary_search_by(|itm| itm.cmp(&sub_page_id));
+        index.is_ok()
     }
 }

@@ -14,12 +14,12 @@ use crate::queues::{TopicQueue, TopicQueuesList};
 use crate::sessions::SessionId;
 use crate::utils::MinMessageIdCalculator;
 
-use super::{TopicPublishers, TopicStatistics};
+use super::{TopicId, TopicPublishers, TopicStatistics};
 
 const BADGE_HIGHLIGHT_TIME_OUT: u8 = 2;
 
 pub struct TopicInner {
-    pub topic_id: String,
+    pub topic_id: TopicId,
     pub message_id: MessageId,
     pub queues: TopicQueuesList,
     pub statistics: TopicStatistics,
@@ -30,7 +30,7 @@ pub struct TopicInner {
 }
 
 impl TopicInner {
-    pub fn new(topic_id: String, message_id: i64, persist: bool) -> Self {
+    pub fn new(topic_id: TopicId, message_id: i64, persist: bool) -> Self {
         Self {
             topic_id,
             message_id: message_id.into(),
@@ -153,7 +153,10 @@ impl TopicInner {
                     .as_positive_or_zero()
                     > queue_gc_timeout
                 {
-                    println!("Detected DeleteOnDisconnect queue {}/{} with 0 subscribers. Last disconnect since {:?}", self.topic_id, topic_queue.queue_id, topic_queue.subscribers.last_unsubscribe);
+                    println!("Detected DeleteOnDisconnect queue {}/{} with 0 subscribers. Last disconnect since {:?}", 
+                    self.topic_id.as_str(),
+                     topic_queue.queue_id.as_str(), 
+                     topic_queue.subscribers.last_unsubscribe);
 
                     if queues_to_delete.is_none() {
                         queues_to_delete = Some(Vec::new());
@@ -179,7 +182,7 @@ impl TopicInner {
     pub fn get_topic_size_metrics(&self) -> SizeMetrics {
         let mut result = SizeMetrics::new(self.avg_size.get());
 
-        for sub_page in self.pages.sub_pages.values() {
+        for sub_page in self.pages.sub_pages.iter() {
             let metrics = sub_page.get_size_metrics();
             result.append_without_avg(&metrics);
         }
@@ -229,10 +232,10 @@ mod tests {
 
     #[test]
     fn test_we_deliver_then_persist_then_gc_message() {
-        let mut topic_inner = super::TopicInner::new("test".to_string(), 0, true);
+        let mut topic_inner = super::TopicInner::new("test".into(), 0, true);
 
         topic_inner.queues.add_queue_if_not_exists(
-            "test".to_string(),
+            "test".into(),
             "test".to_string(),
             TopicQueueType::DeleteOnDisconnect,
         );

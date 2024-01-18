@@ -5,17 +5,18 @@ use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::sub_page::SubPageId;
 
 use rust_extensions::date_time::DateTimeAsMicroseconds;
+use rust_extensions::sorted_vec::EntityWithStrKey;
 use tokio::sync::Mutex;
 
 use crate::messages_page::{MessagesToPersistBucket, MySbMessageContent, SizeMetrics};
 use crate::queue_subscribers::DeadSubscriber;
 
 use super::topic_data_access::TopicDataAccess;
-use super::TopicInner;
 use super::TopicSnapshot;
+use super::{TopicId, TopicInner};
 
 pub struct Topic {
-    pub topic_id: String,
+    pub topic_id: TopicId,
     inner: Mutex<TopicInner>,
     pub restore_page_lock: Mutex<DateTimeAsMicroseconds>,
     pub immediately_persist_is_charged: AtomicBool,
@@ -23,8 +24,9 @@ pub struct Topic {
 
 impl Topic {
     pub fn new(topic_id: String, message_id: i64, persist: bool) -> Self {
+        let topic_id = TopicId::new(topic_id);
         Self {
-            topic_id: topic_id.to_string(),
+            topic_id: topic_id.clone(),
             inner: Mutex::new(TopicInner::new(topic_id, message_id, persist)),
             restore_page_lock: Mutex::new(DateTimeAsMicroseconds::now()),
             immediately_persist_is_charged: AtomicBool::new(false),
@@ -108,5 +110,11 @@ impl Topic {
     pub async fn update_persist(&self, persist: bool) {
         let mut write_access = self.get_access().await;
         write_access.persist = persist;
+    }
+}
+
+impl EntityWithStrKey for Topic {
+    fn get_key(&self) -> &str {
+        self.topic_id.as_str()
     }
 }

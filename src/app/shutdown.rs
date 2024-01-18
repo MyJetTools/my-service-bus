@@ -14,13 +14,17 @@ async fn empty_persistence_queues(app: Arc<AppContext>) {
         while metrics.persist_size > 0 {
             println!(
                 "Topic {} has {} messages to persist. Doing Force Persist",
-                topic.topic_id, metrics.persist_size
+                topic.topic_id.as_str(),
+                metrics.persist_size
             );
 
             crate::operations::persist_topic_messages(&app, &topic).await;
         }
 
-        println!("Topic {} has no messages to persist.", topic.topic_id);
+        println!(
+            "Topic {} has no messages to persist.",
+            topic.topic_id.as_str()
+        );
     }
 }
 

@@ -31,8 +31,8 @@ pub async fn init(app: Arc<AppContext>) {
 
             let mut topic_data = topic.get_access().await;
             topic_data.queues.restore(
-                topic.topic_id.to_string(),
-                queue.queue_id.to_string(),
+                topic.topic_id.clone(),
+                queue.queue_id.into(),
                 queue.queue_type,
                 queue_with_intervals,
             );

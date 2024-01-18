@@ -1,9 +1,12 @@
 use std::{sync::Arc, time::Duration};
 
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
-use rust_extensions::date_time::DateTimeAsMicroseconds;
+use rust_extensions::{date_time::DateTimeAsMicroseconds, sorted_vec::EntityWithKey};
 
-use crate::{queues::DeliveryBucket, sessions::MyServiceBusSession};
+use crate::{
+    queues::{DeliveryBucket, QueueId},
+    sessions::MyServiceBusSession,
+};
 
 use super::{SubscriberId, SubscriberMetrics};
 #[derive(Debug)]
@@ -39,7 +42,7 @@ impl QueueSubscriberDeliveryState {
 
 pub struct QueueSubscriber {
     pub topic_id: String,
-    pub queue_id: String,
+    pub queue_id: QueueId,
     pub subscribed: DateTimeAsMicroseconds,
     pub metrics: SubscriberMetrics,
     pub delivery_state: QueueSubscriberDeliveryState,
@@ -57,12 +60,12 @@ impl QueueSubscriber {
     pub fn new(
         id: SubscriberId,
         topic_id: String,
-        queue_id: String,
+        queue_id: QueueId,
         session: Arc<MyServiceBusSession>,
     ) -> Self {
         Self {
             topic_id: topic_id.to_string(),
-            queue_id: queue_id.to_string(),
+            queue_id: queue_id.clone(),
             subscribed: DateTimeAsMicroseconds::now(),
             metrics: SubscriberMetrics::new(id, session.id, topic_id, queue_id),
             delivery_state: QueueSubscriberDeliveryState::ReadyToDeliver,
@@ -189,5 +192,11 @@ impl QueueSubscriber {
             self.metrics
                 .set_not_delivered_statistic(amount as i32, delivery_duration);
         }
+    }
+}
+
+impl EntityWithKey<i64> for QueueSubscriber {
+    fn get_key(&self) -> &i64 {
+        &self.id
     }
 }

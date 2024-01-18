@@ -4,6 +4,7 @@ use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{
     metric_data::{MetricOneSecond, MetricsHistory},
+    queues::QueueId,
     sessions::SessionId,
 };
 
@@ -16,7 +17,7 @@ pub const DELIVERY_STATE_ON_DELIVERY: u8 = 2;
 #[derive(Clone)]
 pub struct SubscriberMetrics {
     pub topic_id: String,
-    pub queue_id: String,
+    pub queue_id: QueueId,
     pub start_delivery_time: DateTimeAsMicroseconds,
     pub delivered_amount: MetricOneSecond,
     pub delivery_microseconds: MetricOneSecond,
@@ -34,7 +35,7 @@ impl SubscriberMetrics {
         subscriber_id: SubscriberId,
         session_id: SessionId,
         topic_id: String,
-        queue_id: String,
+        queue_id: QueueId,
     ) -> Self {
         Self {
             subscriber_id,

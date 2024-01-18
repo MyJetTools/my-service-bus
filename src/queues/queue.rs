@@ -3,18 +3,19 @@ use my_service_bus::abstractions::{
     subscriber::TopicQueueType,
     MessageId,
 };
+use rust_extensions::sorted_vec::EntityWithStrKey;
 use tokio::sync::Mutex;
 
 use crate::{
     queue_subscribers::{SubscriberId, SubscribersList},
-    topics::TopicQueueSnapshot,
+    topics::{TopicId, TopicQueueSnapshot},
 };
 
-use super::delivery_attempts::DeliveryAttempts;
+use super::{delivery_attempts::DeliveryAttempts, QueueId};
 
 pub struct TopicQueue {
-    pub topic_id: String,
-    pub queue_id: String,
+    pub topic_id: TopicId,
+    pub queue_id: QueueId,
     pub queue: QueueWithIntervals,
     pub subscribers: SubscribersList,
     pub delivery_attempts: DeliveryAttempts,
@@ -23,8 +24,14 @@ pub struct TopicQueue {
     pub delivery_lock: Mutex<usize>,
 }
 
+impl EntityWithStrKey for TopicQueue {
+    fn get_key(&self) -> &str {
+        self.queue_id.as_str()
+    }
+}
+
 impl TopicQueue {
-    pub fn new(topic_id: String, queue_id: String, queue_type: TopicQueueType) -> Self {
+    pub fn new(topic_id: TopicId, queue_id: QueueId, queue_type: TopicQueueType) -> Self {
         Self {
             topic_id,
             queue_id,
@@ -37,8 +44,8 @@ impl TopicQueue {
     }
 
     pub fn restore(
-        topic_id: String,
-        queue_id: String,
+        topic_id: TopicId,
+        queue_id: QueueId,
         queue_type: TopicQueueType,
         queue: QueueWithIntervals,
     ) -> Self {
@@ -116,59 +123,7 @@ impl TopicQueue {
 
         self.queue.reset(intervals);
     }
-    /*
-    pub fn mark_not_delivered(&mut self, delivery_bucket: &DeliveryBucket) {
-        self.process_not_delivered(&delivery_bucket.ids);
-    }
 
-
-       pub fn confirmed_delivered(
-           &mut self,
-           confirmed_messages: &QueueWithIntervals,
-           subscriber_id: SubscriberId,
-       ) -> Result<(), OperationFailResult> {
-
-                  let subscriber = self.subscribers.get_by_id_mut(subscriber_id);
-
-                  if subscriber.is_none() {
-                      return Err(OperationFailResult::SubscriberNotFound { id: subscriber_id });
-                  }
-
-                  let subscriber = subscriber.unwrap();
-
-                  let messages_bucket = subscriber.reset_delivery();
-
-                  if messages_bucket.is_none() {
-                      println!(
-                          "{}/{} confirmed_delivered: No messages on delivery at subscriber {}",
-                          self.topic_id,
-                          self.queue_id,
-                          subscriber_id.get_value()
-                      );
-
-                      return Ok(());
-                  };
-
-                  let messages_bucket = messages_bucket.unwrap();
-
-                  if messages_bucket.ids.len() == 0 {
-                      println!(
-                          "{}/{} confirmed_delivered: No messages on delivery at subscriber {}",
-                          self.topic_id,
-                          self.queue_id,
-                          subscriber_id.get_value()
-                      );
-
-                      return Ok(());
-                  };
-
-           subscriber.update_delivery_time(messages_bucket.ids.len() as usize, true);
-
-           self.process_delivered(&messages_bucket.ids);
-
-           Ok(())
-       }
-    */
     pub fn confirm_delivered(&mut self, delivered_ids: &QueueWithIntervals) {
         for msg_id in delivered_ids {
             self.delivery_attempts.reset(msg_id.into());
@@ -176,93 +131,12 @@ impl TopicQueue {
     }
 
     pub fn confirm_non_delivered(&mut self, ids: &QueueWithIntervals) {
-        /*
-               let subscriber = self.subscribers.get_by_id_mut(subscriber_id);
-
-               if subscriber.is_none() {
-                   return Err(OperationFailResult::SubscriberNotFound { id: subscriber_id });
-               }
-
-               let subscriber = subscriber.unwrap();
-
-               let messages_bucket = subscriber.reset_delivery();
-
-               let messages_bucket = messages_bucket.unwrap();
-
-               subscriber.update_delivery_time(messages_bucket.ids.len() as usize, false);
-        */
         self.queue.merge_with(ids);
 
         for msg_id in ids {
             self.delivery_attempts.add(msg_id.into());
         }
     }
-
-    /*
-    pub fn confirmed_some_delivered(
-        &mut self,
-        subscriber_id: SubscriberId,
-        delivered: QueueWithIntervals,
-    ) -> Result<(), OperationFailResult> {
-        let subscriber = self.subscribers.get_by_id_mut(subscriber_id);
-
-        if subscriber.is_none() {
-            return Err(OperationFailResult::SubscriberNotFound { id: subscriber_id });
-        }
-
-        let subscriber = subscriber.unwrap();
-
-        let delivery_bucket = subscriber.reset_delivery();
-
-        if delivery_bucket.is_none() {
-            println!(
-                "{}/{} confirmed_some_delivered: No messages on delivery at subscriber {}",
-                self.topic_id,
-                self.queue_id,
-                subscriber_id.get_value()
-            );
-
-            return Ok(());
-        };
-
-        let mut delivery_bucket = delivery_bucket.unwrap();
-
-        //Remove delivered and what remains - is not delivered
-        delivery_bucket.confirmed(&delivered);
-
-        subscriber.update_delivery_time(delivery_bucket.confirmed, false);
-
-        if delivery_bucket.ids.len() > 0 {
-            self.process_not_delivered(&delivery_bucket.ids);
-        } else {
-            self.process_delivered(&delivered);
-        }
-
-        Ok(())
-    }
-
-
-    pub fn intermediary_confirmed(
-        &mut self,
-        subscriber_id: SubscriberId,
-        confirmed: QueueWithIntervals,
-    ) -> Result<(), OperationFailResult> {
-        let subscriber = self.subscribers.get_by_id_mut(subscriber_id);
-
-        if subscriber.is_none() {
-            return Err(OperationFailResult::SubscriberNotFound { id: subscriber_id });
-        }
-
-        let subscriber = subscriber.unwrap();
-
-        if confirmed.len() > 0 {
-            subscriber.intermediary_confirmed(&confirmed);
-            self.process_delivered(&confirmed);
-        }
-
-        return Ok(());
-    }
-     */
 
     pub fn get_messages_on_delivery(
         &self,

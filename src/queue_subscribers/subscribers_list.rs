@@ -1,9 +1,10 @@
-use std::{collections::BTreeMap, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use my_service_bus::abstractions::{subscriber::TopicQueueType, MessageId};
-use rust_extensions::date_time::DateTimeAsMicroseconds;
+use rust_extensions::{date_time::DateTimeAsMicroseconds, sorted_vec::SortedVec};
 
 use crate::{
+    queues::QueueId,
     sessions::{MyServiceBusSession, SessionId},
     utils::*,
 };
@@ -11,7 +12,7 @@ use crate::{
 use super::{QueueSubscriber, SubscriberId};
 
 pub enum SubscribersData {
-    MultiSubscribers(BTreeMap<i64, QueueSubscriber>),
+    MultiSubscribers(SortedVec<i64, QueueSubscriber>),
     SingleSubscriber(Option<QueueSubscriber>),
 }
 
@@ -43,12 +44,12 @@ impl SubscribersList {
         match queue_type {
             TopicQueueType::Permanent => Self {
                 snapshot_id: 0,
-                data: SubscribersData::MultiSubscribers(BTreeMap::new()),
+                data: SubscribersData::MultiSubscribers(SortedVec::new()),
                 last_unsubscribe,
             },
             TopicQueueType::DeleteOnDisconnect => Self {
                 snapshot_id: 0,
-                data: SubscribersData::MultiSubscribers(BTreeMap::new()),
+                data: SubscribersData::MultiSubscribers(SortedVec::new()),
                 last_unsubscribe,
             },
             TopicQueueType::PermanentWithSingleConnection => Self {
@@ -63,7 +64,7 @@ impl SubscribersList {
         match &self.data {
             SubscribersData::MultiSubscribers(subscribers) => {
                 let mut result = 0;
-                for subscriber in subscribers.values() {
+                for subscriber in subscribers.iter() {
                     result += subscriber.get_on_delivery_amount();
                 }
 
@@ -86,7 +87,7 @@ impl SubscribersList {
                     return None;
                 }
 
-                return Some(hash_map.values().collect());
+                return Some(hash_map.iter().collect());
             }
             SubscribersData::SingleSubscriber(single) => {
                 let subscriber = single.as_ref()?;
@@ -100,7 +101,7 @@ impl SubscribersList {
             SubscribersData::MultiSubscribers(subscribers) => {
                 let mut min_message_id_calculator = MinMessageIdCalculator::new();
 
-                for subscriber in subscribers.values() {
+                for subscriber in subscribers.iter() {
                     min_message_id_calculator.add(subscriber.get_min_message_id());
                 }
 
@@ -118,7 +119,7 @@ impl SubscribersList {
     ) -> Option<(SubscriberId, Arc<MyServiceBusSession>)> {
         match &mut self.data {
             SubscribersData::MultiSubscribers(state) => {
-                for subscriber in state.values_mut() {
+                for subscriber in state.iter_mut() {
                     if subscriber.rent_me() {
                         return Some((subscriber.id, subscriber.session.clone()));
                     }
@@ -186,7 +187,7 @@ impl SubscribersList {
     fn check_that_we_has_already_subscriber_for_that_session(&self, session_id: SessionId) -> bool {
         match &self.data {
             SubscribersData::MultiSubscribers(hash_map) => {
-                for subscriber in hash_map.values() {
+                for subscriber in hash_map.iter() {
                     if subscriber.session.id.is_eq_to(session_id) {
                         return false;
                     }
@@ -209,29 +210,31 @@ impl SubscribersList {
         &mut self,
         subscriber_id: SubscriberId,
         topic_id: String,
-        queue_id: String,
+        queue_id: QueueId,
         session: Arc<MyServiceBusSession>,
     ) -> Option<QueueSubscriber> {
         if !self.check_that_we_has_already_subscriber_for_that_session(session.id) {
             panic!(
                 "Somehow we subscribe second time to the same queue {}/{} the same session_id {} for the new subscriber. Most probably there is a bug on the client",
-                topic_id, queue_id, subscriber_id.get_value()
+                topic_id, queue_id.as_str(), subscriber_id.get_value()
             );
         }
         self.snapshot_id += 1;
 
         match &mut self.data {
             SubscribersData::MultiSubscribers(hash_map) => {
-                if hash_map.contains_key(&subscriber_id) {
+                if hash_map.contains(&subscriber_id) {
                     panic!(
                         "Somehow we generated the same ID {} for the new subscriber {}/{}",
-                        subscriber_id, topic_id, queue_id
+                        subscriber_id,
+                        topic_id,
+                        queue_id.as_str()
                     );
                 }
 
                 let subscriber = QueueSubscriber::new(subscriber_id, topic_id, queue_id, session);
 
-                hash_map.insert(subscriber_id.get_value(), subscriber);
+                hash_map.insert_or_replace(subscriber);
 
                 return None;
             }
@@ -240,7 +243,9 @@ impl SubscribersList {
                     if subscriber.id.equals_to(subscriber_id) {
                         panic!(
                             "Somehow we generated the same ID {} for the new subscriber {}/{}",
-                            subscriber_id, topic_id, queue_id
+                            subscriber_id,
+                            topic_id,
+                            queue_id.as_str()
                         );
                     }
                 }
@@ -275,7 +280,7 @@ impl SubscribersList {
     pub fn one_second_tick(&mut self) {
         match &mut self.data {
             SubscribersData::MultiSubscribers(hash_map) => {
-                for queue_subscriber in hash_map.values_mut() {
+                for queue_subscriber in hash_map.iter_mut() {
                     queue_subscriber.metrics.one_second_tick()
                 }
             }
@@ -290,7 +295,7 @@ impl SubscribersList {
     fn resolve_subscriber_id_by_session_id(&self, session_id: SessionId) -> Option<SubscriberId> {
         match &self.data {
             SubscribersData::MultiSubscribers(hash_map) => {
-                for sub in hash_map.values() {
+                for sub in hash_map.iter() {
                     if sub.session.id.is_eq_to(session_id) {
                         return Some(sub.id);
                     }
@@ -346,7 +351,7 @@ impl SubscribersList {
             SubscribersData::MultiSubscribers(subscribers) => {
                 let mut result = None;
 
-                for subscriber in subscribers.values() {
+                for subscriber in subscribers.iter() {
                     if let Some(duration) = subscriber.is_dead_on_delivery(max_delivery_duration) {
                         if result.is_none() {
                             result = Some(Vec::new());

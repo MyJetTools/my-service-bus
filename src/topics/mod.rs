@@ -19,3 +19,5 @@ mod reusable_topics_list;
 pub use reusable_topics_list::*;
 mod atomic_snapshot_id;
 pub use atomic_snapshot_id::*;
+mod topic_id;
+pub use topic_id::*;

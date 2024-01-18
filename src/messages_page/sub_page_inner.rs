@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
 use my_service_bus::shared::sub_page::{SizeAndAmount, SubPageId};
 use rust_extensions::date_time::{AtomicDateTimeAsMicroseconds, DateTimeAsMicroseconds};
+use rust_extensions::sorted_vec::SortedVec;
 
 use super::{MySbCachedMessage, MySbMessageContent, SizeMetrics};
 
@@ -31,7 +32,7 @@ impl<'s> GetMessageResult<'s> {
 
 pub struct SubPageInner {
     pub sub_page_id: SubPageId,
-    pub messages: BTreeMap<i64, MySbCachedMessage>,
+    pub messages: SortedVec<MessageId, MySbCachedMessage>,
     pub created: DateTimeAsMicroseconds,
     pub last_accessed: AtomicDateTimeAsMicroseconds,
     size_and_amount: SizeAndAmount,
@@ -43,7 +44,7 @@ impl SubPageInner {
         let created = DateTimeAsMicroseconds::now();
         Self {
             sub_page_id,
-            messages: BTreeMap::new(),
+            messages: SortedVec::new(),
             created,
             size_and_amount: SizeAndAmount::new(),
             to_persist: QueueWithIntervals::new(),
@@ -51,15 +52,20 @@ impl SubPageInner {
         }
     }
 
-    pub fn restore(sub_page_id: SubPageId, messages: BTreeMap<i64, MySbCachedMessage>) -> Self {
+    pub fn restore(sub_page_id: SubPageId, src: BTreeMap<i64, MySbCachedMessage>) -> Self {
         let mut size_and_amount = SizeAndAmount::new();
 
-        for msg in messages.values() {
-            if let MySbCachedMessage::Loaded(msg) = msg {
+        let created = DateTimeAsMicroseconds::now();
+
+        let mut messages = SortedVec::new_with_capacity(src.len());
+
+        for (_, msg) in src {
+            if let MySbCachedMessage::Loaded(msg) = &msg {
                 size_and_amount.added(msg.content.len());
             }
+            messages.insert_or_replace(msg);
         }
-        let created = DateTimeAsMicroseconds::now();
+
         Self {
             sub_page_id,
             messages,
@@ -109,7 +115,9 @@ impl SubPageInner {
             self.to_persist.enqueue(message_id.get_value());
         }
 
-        if let Some(old_message) = self.messages.insert(message_id.get_value(), message) {
+        let (_, old_message) = self.messages.insert_or_replace(message);
+
+        if let Some(old_message) = old_message {
             self.size_and_amount.removed(old_message.get_content_size());
             return Some(old_message);
         }
@@ -118,7 +126,7 @@ impl SubPageInner {
     }
 
     pub fn get_message(&self, msg_id: MessageId) -> GetMessageResult {
-        if let Some(msg) = self.messages.get(msg_id.as_ref()) {
+        if let Some(msg) = self.messages.get(&msg_id) {
             match msg {
                 MySbCachedMessage::Loaded(msg) => GetMessageResult::Message(msg),
                 MySbCachedMessage::Missing(_) => GetMessageResult::Missing,
@@ -130,9 +138,10 @@ impl SubPageInner {
 
     pub fn gc_messages(&mut self, min_message_id: MessageId) {
         let mut to_gc = Vec::new();
-        for msg_id in self.messages.keys() {
-            if self.message_can_be_gc(*msg_id, min_message_id) {
-                to_gc.push(*msg_id);
+        for msg in self.messages.iter() {
+            let msg_id = msg.get_message_id();
+            if self.message_can_be_gc(msg_id, min_message_id) {
+                to_gc.push(msg_id);
             } else {
                 break;
             }
@@ -143,7 +152,7 @@ impl SubPageInner {
         }
     }
 
-    fn remove_message(&mut self, msg_id: i64) -> usize {
+    fn remove_message(&mut self, msg_id: MessageId) -> usize {
         if let Some(msg) = self.messages.remove(&msg_id) {
             let freed_size = msg.get_content_size();
             self.size_and_amount.removed(freed_size);
@@ -163,6 +172,7 @@ impl SubPageInner {
 
         let mut result = Vec::with_capacity(self.get_messages_to_persist_amount());
         for message_id in &self.to_persist {
+            let message_id = MessageId::new(message_id);
             if let Some(msg) = self.messages.get(&message_id) {
                 if let MySbCachedMessage::Loaded(msg) = msg {
                     result.push(transform(msg));
@@ -198,8 +208,9 @@ impl SubPageInner {
             return true;
         }
 
-        for msg_id in self.messages.keys() {
-            if !self.message_can_be_gc(*msg_id, min_message_id) {
+        for msg in self.messages.iter() {
+            let msg_id = msg.get_message_id();
+            if !self.message_can_be_gc(msg_id, min_message_id) {
                 return false;
             }
         }
@@ -207,12 +218,12 @@ impl SubPageInner {
         true
     }
 
-    fn message_can_be_gc(&self, msg_id: i64, min_message_id: MessageId) -> bool {
-        if self.to_persist.has_message(msg_id) {
+    fn message_can_be_gc(&self, msg_id: MessageId, min_message_id: MessageId) -> bool {
+        if self.to_persist.has_message(msg_id.get_value()) {
             return false;
         }
 
-        msg_id < min_message_id.get_value()
+        msg_id.get_value() < min_message_id.get_value()
     }
 }
 

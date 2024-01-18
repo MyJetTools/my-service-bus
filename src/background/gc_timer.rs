@@ -60,7 +60,7 @@ impl MyTimerTick for GcTimer {
                 for queue_id in removed_queues {
                     self.app
                         .prometheus
-                        .queue_is_deleted(&topic.topic_id, queue_id);
+                        .queue_is_deleted(topic.topic_id.as_str(), queue_id);
                 }
             }
         }

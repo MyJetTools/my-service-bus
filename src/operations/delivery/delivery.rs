@@ -295,8 +295,8 @@ mod tests {
             queue_with_intervals.enqueue(2);
 
             topic_data.queues.restore(
-                TOPIC_NAME.to_string(),
-                QUEUE_NAME.to_string(),
+                TOPIC_NAME.into(),
+                QUEUE_NAME.into(),
                 TopicQueueType::Permanent,
                 queue_with_intervals,
             );

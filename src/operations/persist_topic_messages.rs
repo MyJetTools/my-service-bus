@@ -19,12 +19,12 @@ pub async fn persist_topic_messages(app: &Arc<AppContext>, topic: &Arc<Topic>) {
 
         if app.settings.persist_compressed {
             app.messages_pages_repo
-                .save_messages(&topic.topic_id, bucket.get())
+                .save_messages(topic.topic_id.as_str(), bucket.get())
                 .await
                 .unwrap();
         } else {
             app.messages_pages_repo
-                .save_messages_uncompressed(&topic.topic_id, bucket.get())
+                .save_messages_uncompressed(topic.topic_id.as_str(), bucket.get())
                 .await
                 .unwrap();
         }

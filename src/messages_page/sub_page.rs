@@ -2,6 +2,7 @@ use super::{GetMessageResult, MissingSubPageInner, MySbMessageContent, SizeMetri
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
 use my_service_bus::shared::sub_page::SubPageId;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
+use rust_extensions::sorted_vec::EntityWithKey;
 
 pub enum SubPage {
     SubPage(SubPageInner),
@@ -79,7 +80,7 @@ impl SubPage {
 
     pub fn is_empty(&self) -> bool {
         match self {
-            SubPage::SubPage(inner) => inner.messages.is_empty(),
+            SubPage::SubPage(inner) => inner.messages.len() == 0,
             SubPage::AllMessagesMissing(_) => true,
         }
     }
@@ -103,6 +104,15 @@ impl SubPage {
                 let min_message_sub_page_id: SubPageId = min_message_id.into();
                 inner.sub_page_id.get_value() < min_message_sub_page_id.get_value()
             }
+        }
+    }
+}
+
+impl EntityWithKey<i64> for SubPage {
+    fn get_key(&self) -> &i64 {
+        match self {
+            SubPage::SubPage(inner) => inner.sub_page_id.as_ref(),
+            SubPage::AllMessagesMissing(inner) => inner.sub_page_id.as_ref(),
         }
     }
 }

@@ -1,20 +1,25 @@
 use my_service_bus::abstractions::{
     queue_with_intervals::QueueWithIntervals, subscriber::TopicQueueType,
 };
+use rust_extensions::sorted_vec::SortedVecWithStrKey;
 
-use crate::{queue_subscribers::QueueSubscriber, sessions::SessionId, topics::TopicQueueSnapshot};
+use crate::{
+    queue_subscribers::QueueSubscriber,
+    sessions::SessionId,
+    topics::{TopicId, TopicQueueSnapshot},
+};
 
-use super::queue::TopicQueue;
+use super::{queue::TopicQueue, QueueId};
 
 pub struct TopicQueuesList {
-    queues: Vec<TopicQueue>,
+    queues: SortedVecWithStrKey<TopicQueue>,
     snapshot_id: usize,
 }
 
 impl TopicQueuesList {
     pub fn new() -> Self {
         TopicQueuesList {
-            queues: Vec::new(),
+            queues: SortedVecWithStrKey::new(),
             snapshot_id: 0,
         }
     }
@@ -23,78 +28,55 @@ impl TopicQueuesList {
         self.snapshot_id
     }
 
-    fn has_the_queue(&self, queue_id: &str) -> bool {
-        for queue in &self.queues {
-            if queue.queue_id == queue_id {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     pub fn get(&self, queue_id: &str) -> Option<&TopicQueue> {
-        for queue in &self.queues {
-            if queue.queue_id == queue_id {
-                return Some(queue);
-            }
-        }
-
-        return None;
+        self.queues.get(queue_id)
     }
 
     pub fn get_mut(&mut self, queue_id: &str) -> Option<&mut TopicQueue> {
-        for queue in &mut self.queues {
-            if queue.queue_id == queue_id {
-                return Some(queue);
-            }
-        }
-
-        return None;
+        self.queues.get_mut(queue_id)
     }
 
     pub fn add_queue_if_not_exists(
         &mut self,
-        topic_id: String,
+        topic_id: TopicId,
         queue_id: String,
         queue_type: TopicQueueType,
     ) -> &mut TopicQueue {
-        if !self.has_the_queue(queue_id.as_str()) {
-            let queue = TopicQueue::new(topic_id, queue_id.to_string(), queue_type);
+        let index = match self.queues.insert_or_update(queue_id.as_str()) {
+            rust_extensions::sorted_vec::InsertOrUpdateEntry::Insert(entry) => {
+                entry.insert_and_get_index(TopicQueue::new(topic_id, queue_id.into(), queue_type))
+            }
+            rust_extensions::sorted_vec::InsertOrUpdateEntry::Update(entry) => {
+                entry.item.update_queue_type(queue_type);
+                entry.index
+            }
+        };
 
-            self.queues.push(queue);
+        self.snapshot_id += 1;
 
-            self.snapshot_id += 1;
-        }
-
-        let result = self.get_mut(queue_id.as_str()).unwrap();
-
-        result.update_queue_type(queue_type);
-
-        return result;
+        return self.queues.get_by_index_mut(index).unwrap();
     }
 
     pub fn restore(
         &mut self,
-        topic_id: String,
-        queue_id: String,
+        topic_id: TopicId,
+        queue_id: QueueId,
         queue_type: TopicQueueType,
         queue: QueueWithIntervals,
     ) -> &TopicQueue {
-        let topic_queue = TopicQueue::restore(topic_id, queue_id.to_string(), queue_type, queue);
+        let topic_queue = TopicQueue::restore(topic_id, queue_id, queue_type, queue);
 
-        self.queues.push(topic_queue);
+        let (index, _) = self.queues.insert_or_replace(topic_queue);
 
         self.snapshot_id += 1;
 
-        return self.get(queue_id.as_str()).unwrap();
+        self.queues.get_by_index(index).unwrap()
     }
 
     pub fn remove(&mut self, queue_id: &str) -> Option<TopicQueue> {
-        let index = self.queues.iter().position(|x| x.queue_id == queue_id)?;
-        let result = self.queues.remove(index);
+        let removed = self.queues.remove(queue_id);
         self.snapshot_id += 1;
-        Some(result)
+        removed
     }
 
     pub fn get_all(&self) -> impl Iterator<Item = &TopicQueue> {

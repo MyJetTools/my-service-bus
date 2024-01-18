@@ -3,28 +3,29 @@ use std::collections::BTreeMap;
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::{page_id::PageId, sub_page::SubPageId};
+use rust_extensions::sorted_vec::{GetMutOrCreateEntry, SortedVec};
 
 use super::{ActiveSubPages, MySbMessageContent, PageSizeMetrics, SubPage, SubPageInner};
 
 pub struct MessagesPageList {
-    pub sub_pages: BTreeMap<i64, SubPage>,
+    pub sub_pages: SortedVec<i64, SubPage>,
 }
 
 impl MessagesPageList {
     pub fn new() -> Self {
         Self {
-            sub_pages: BTreeMap::new(),
+            sub_pages: SortedVec::new(),
         }
     }
 
     pub fn get_or_create_mut(&mut self, sub_page_id: SubPageId) -> &mut SubPage {
-        if !self.sub_pages.contains_key(sub_page_id.as_ref()) {
-            let sub_page = SubPageInner::new(sub_page_id);
-            self.sub_pages
-                .insert(sub_page_id.get_value(), sub_page.into());
+        match self.sub_pages.get_mut_or_create(sub_page_id.as_ref()) {
+            GetMutOrCreateEntry::GetMut(item) => return item,
+            GetMutOrCreateEntry::Create(entry) => {
+                let sub_page = SubPageInner::new(sub_page_id);
+                entry.insert_and_get_value_mut(sub_page.into())
+            }
         }
-
-        self.sub_pages.get_mut(sub_page_id.as_ref()).unwrap()
     }
 
     pub fn get(&self, sub_page_id: SubPageId) -> Option<&SubPage> {
@@ -32,8 +33,7 @@ impl MessagesPageList {
     }
 
     pub fn restore_sub_page(&mut self, sub_page: SubPage) {
-        self.sub_pages
-            .insert(sub_page.get_id().get_value(), sub_page);
+        self.sub_pages.insert_or_replace(sub_page);
     }
 
     pub fn delete_sub_page(&mut self, sub_page_id: SubPageId) {
@@ -57,7 +57,7 @@ impl MessagesPageList {
     pub fn gc_messages(&mut self, min_message_id: MessageId, active_sub_pages: &ActiveSubPages) {
         let mut pages_to_gc = Vec::new();
 
-        for sub_page in self.sub_pages.values_mut() {
+        for sub_page in self.sub_pages.iter_mut() {
             sub_page.gc_messages(min_message_id);
 
             if sub_page.is_empty() {
@@ -79,7 +79,7 @@ impl MessagesPageList {
     ) -> Vec<SubPageId> {
         let mut result = Vec::new();
 
-        for sub_page in self.sub_pages.values() {
+        for sub_page in self.sub_pages.iter() {
             let sub_page_id = sub_page.get_id();
             if !active_pages.has_sub_page(sub_page_id) {
                 if sub_page.is_ready_to_be_gc(min_message_id) {
@@ -96,7 +96,7 @@ impl MessagesPageList {
         result: &mut Vec<(SubPageId, Vec<TResult>)>,
         transform: impl Fn(&MySbMessageContent) -> TResult,
     ) {
-        for sub_page in self.sub_pages.values() {
+        for sub_page in self.sub_pages.iter() {
             sub_page.get_messages_to_persist(result, &transform)
         }
     }
@@ -104,7 +104,7 @@ impl MessagesPageList {
     pub fn get_page_size_metrics(&self) -> BTreeMap<i64, PageSizeMetrics> {
         let mut result: BTreeMap<i64, PageSizeMetrics> = BTreeMap::new();
 
-        for sub_page in self.sub_pages.values() {
+        for sub_page in self.sub_pages.iter() {
             let page_id: PageId = sub_page.get_id().into();
             let size_metrics = sub_page.get_size_metrics();
 

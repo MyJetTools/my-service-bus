@@ -172,8 +172,8 @@ fn get_delivery_bucket(
     if subscriber.is_none() {
         println!(
             "{}/{} Can not find subscriber {} to confirm '{}' delivery",
-            topic_queue.topic_id,
-            topic_queue.queue_id,
+            topic_queue.topic_id.as_str(),
+            topic_queue.queue_id.as_str(),
             subscriber_id.get_value(),
             if positive { "positive" } else { "negative" }
         );
@@ -192,8 +192,8 @@ fn get_delivery_bucket(
         } else {
             println!(
                 "{}/{} No messages on delivery at subscriber {}",
-                topic_queue.topic_id,
-                topic_queue.queue_id,
+                topic_queue.topic_id.as_str(),
+                topic_queue.queue_id.as_str(),
                 subscriber_id.get_value()
             );
         }
@@ -202,8 +202,8 @@ fn get_delivery_bucket(
         if delivery_bucket.is_none() {
             println!(
                 "{}/{}: No messages basket on delivery at subscriber {}",
-                topic_queue.topic_id,
-                topic_queue.queue_id,
+                topic_queue.topic_id.as_str(),
+                topic_queue.queue_id.as_str(),
                 subscriber_id.get_value()
             );
         };

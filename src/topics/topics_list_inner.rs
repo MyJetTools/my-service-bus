@@ -1,20 +1,20 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::validators::InvalidTopicName;
+use rust_extensions::sorted_vec::SortedVecOfArcWithStrKey;
 
 use super::{ReusableTopicsList, Topic};
 
 pub struct TopicListInner {
-    topics: HashMap<String, Arc<Topic>>,
+    topics: SortedVecOfArcWithStrKey<Topic>,
     snapshot_id: usize,
 }
 
 impl TopicListInner {
     pub fn new() -> Self {
         Self {
-            topics: HashMap::new(),
+            topics: SortedVecOfArcWithStrKey::new(),
             snapshot_id: 0,
         }
     }
@@ -25,7 +25,7 @@ impl TopicListInner {
 
     pub fn fill_with_topics(&self, dest: &mut ReusableTopicsList) {
         dest.clean(self.topics.len());
-        for topic in self.topics.values() {
+        for topic in self.topics.iter() {
             dest.push(topic.clone());
         }
 
@@ -33,7 +33,7 @@ impl TopicListInner {
     }
     pub fn get_all(&self) -> Vec<Arc<Topic>> {
         let mut result = Vec::with_capacity(self.topics.len());
-        for topic in self.topics.values() {
+        for topic in self.topics.iter() {
             result.push(topic.clone())
         }
 
@@ -49,24 +49,24 @@ impl TopicListInner {
         topic_id: &str,
         persist: bool,
     ) -> Result<Arc<Topic>, InvalidTopicName> {
-        if !self.topics.contains_key(topic_id) {
-            my_service_bus::shared::validators::validate_topic_name(topic_id)?;
+        match self.topics.get_or_create(topic_id) {
+            rust_extensions::sorted_vec::GetOrCreateEntry::Get(item) => Ok(item.clone()),
+            rust_extensions::sorted_vec::GetOrCreateEntry::Create(entry) => {
+                my_service_bus::shared::validators::validate_topic_name(topic_id)?;
 
-            let topic = Topic::new(topic_id.to_string(), 0, persist);
-            let topic = Arc::new(topic);
-            self.topics.insert(topic_id.to_string(), topic.clone());
-            self.snapshot_id += 1;
-            return Ok(topic);
+                let topic = Topic::new(topic_id.to_string(), 0, persist);
+                let topic = Arc::new(topic);
+                let result = entry.insert_and_get_value(topic);
+                self.snapshot_id += 1;
+                return Ok(result.clone());
+            }
         }
-
-        let result = self.topics.get(topic_id).unwrap().clone();
-        return Ok(result);
     }
 
     pub fn restore(&mut self, topic_id: &str, message_id: MessageId, persist: bool) -> Arc<Topic> {
         let topic = Topic::new(topic_id.to_string(), message_id.get_value(), persist);
         let result = Arc::new(topic);
-        self.topics.insert(topic_id.to_string(), result.clone());
+        self.topics.insert_or_replace(result.clone());
 
         self.snapshot_id += 1;
         return result;
