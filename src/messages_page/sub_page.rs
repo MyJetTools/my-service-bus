@@ -48,6 +48,15 @@ impl SubPage {
             }
         }
     }
+    #[cfg(test)]
+    pub fn unwrap_all_messages_with_content(&self) -> Vec<MySbMessageContent> {
+        match self {
+            SubPage::SubPage(itm) => itm.get_all_messages_as_vec(),
+            SubPage::AllMessagesMissing(_) => {
+                panic!("Trying to unwrap messages from archived missing page");
+            }
+        }
+    }
 
     pub fn get_messages_to_persist<TResult>(
         &self,

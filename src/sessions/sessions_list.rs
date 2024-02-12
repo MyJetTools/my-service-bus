@@ -71,12 +71,18 @@ impl SessionsList {
     }
 
     #[cfg(test)]
-    pub async fn add_test(&self, data: super::TestConnectionData) -> Arc<MyServiceBusSession> {
+    pub async fn add_test(
+        &self,
+        session_id: SessionId,
+        ip: impl Into<rust_extensions::StrOrString<'static>>,
+    ) -> Arc<MyServiceBusSession> {
+        use crate::sessions::TestConnectionData;
+
         let mut write_access = self.data.write().await;
 
         let session = MyServiceBusSession::new(
             write_access.get_next_session_id(),
-            SessionConnection::Test(Arc::new(data)),
+            SessionConnection::Test(Arc::new(TestConnectionData::new(session_id, ip))),
         );
 
         let session = Arc::new(session);

@@ -93,6 +93,22 @@ impl SubPageInner {
         self.last_accessed.update(now);
     }
 
+    #[cfg(test)]
+    pub fn get_all_messages_as_vec(&self) -> Vec<MySbMessageContent> {
+        let mut result = Vec::new();
+
+        for itm in self.messages.iter() {
+            match itm {
+                MySbCachedMessage::Loaded(content) => {
+                    result.push(content.clone());
+                }
+                MySbCachedMessage::Missing(_) => {}
+            }
+        }
+
+        result
+    }
+
     pub fn add_message(
         &mut self,
         message: MySbCachedMessage,

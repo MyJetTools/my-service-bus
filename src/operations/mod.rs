@@ -27,5 +27,5 @@ mod restore_topic;
 pub use restore_topic::*;
 mod update_topic_persist;
 pub use update_topic_persist::*;
-//mod gc_message_pages;
+mod gc_message_pages;
 //pub use gc_message_pages::*;

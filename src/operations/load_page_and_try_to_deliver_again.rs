@@ -4,6 +4,8 @@ use my_service_bus::shared::sub_page::SubPageId;
 
 use crate::app::AppContext;
 
+use super::delivery::Delivery;
+
 pub fn load_page_and_try_to_deliver_again(
     app: &Arc<AppContext>,
     topic: Arc<crate::topics::Topic>,
@@ -31,6 +33,6 @@ pub fn load_page_and_try_to_deliver_again(
             topic_data.pages.restore_sub_page(sub_page);
         }
 
-        crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
+        app.try_to_deliver_to_subscribers(&topic, &mut topic_data);
     });
 }

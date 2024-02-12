@@ -1,30 +1,81 @@
-pub fn gc_message_pages(topic_data: &mut TopicData) {
-    let active_pages = topic_data.get_active_sub_pages();
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
 
-    let sub_pages_to_gc = topic_data.get_sub_pages_to_gc(&active_pages);
+    use my_service_bus::{
+        abstractions::{publisher::MessageToPublish, subscriber::TopicQueueType, SbMessageHeaders},
+        shared::sub_page::SubPageId,
+    };
 
-    if let Some(sub_pages_to_gc) = sub_pages_to_gc {
-        for sub_page_to_gc in sub_pages_to_gc {
-            let (_sub_page, _page) = topic_data.pages.gc_if_possible(sub_page_to_gc);
+    use crate::settings::SettingsModel;
 
-            #[cfg(test)]
-            {
-                if let Some(sub_page) = _sub_page {
-                    println!(
-                        "SubPage {} is GCed for topic: {}",
-                        sub_page.sub_page_id.get_value(),
-                        topic_data.topic_id.as_str()
-                    );
-                }
+    #[tokio::test]
+    async fn test_that_we_do_not_gc_messages_which_are_on_delivery() {
+        const TOPIC_NAME: &str = "test-topic";
+        const QUEUE_NAME: &str = "test-queue";
+        const DELIVERY_SIZE: usize = 16;
 
-                if let Some(page) = _page {
-                    println!(
-                        "Page {} is GCed for topic: {}",
-                        page.page_id.get_value(),
-                        topic_data.topic_id.as_str()
-                    );
-                }
-            }
+        let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
+
+        let app = Arc::new(crate::app::AppContext::new(settings).await);
+
+        let session = app.sessions.add_test(13.into(), "127.0.0.1").await;
+
+        let topic = crate::operations::publisher::create_topic_if_not_exists(
+            &app,
+            Some(session.id),
+            TOPIC_NAME,
+        )
+        .await
+        .unwrap();
+
+        let subscriber_id = crate::operations::subscriber::subscribe_to_queue(
+            &app,
+            TOPIC_NAME.to_string(),
+            QUEUE_NAME.to_string(),
+            TopicQueueType::PermanentWithSingleConnection,
+            &session,
+        )
+        .await
+        .unwrap();
+
+        let msg1 = MessageToPublish {
+            headers: SbMessageHeaders::new(),
+            content: vec![0u8, 1u8, 2u8],
+        };
+
+        let msg2 = MessageToPublish {
+            headers: SbMessageHeaders::new(),
+            content: vec![3u8, 4u8, 5u8],
+        };
+
+        crate::operations::publisher::publish(
+            &app,
+            TOPIC_NAME,
+            vec![msg1, msg2],
+            false,
+            session.id,
+        )
+        .await
+        .unwrap();
+
+        {
+            let mut data = topic.get_access().await;
+
+            data.gc_messages();
+            data.gc_pages();
+
+            let queue = data.queues.get(QUEUE_NAME).unwrap();
+
+            let subscriber = queue.subscribers.get_by_id(subscriber_id).unwrap();
+
+            assert_eq!(2, subscriber.get_messages_amount_on_delivery());
+
+            let sub_page = data.pages.get(SubPageId::new(0)).unwrap();
+
+            let messages = sub_page.unwrap_all_messages_with_content();
+
+            assert_eq!(messages.len(), 2);
         }
     }
 }

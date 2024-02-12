@@ -24,7 +24,6 @@ pub struct SessionMetrics {
     pub id: SessionId,
     pub connection_metrics: ConnectionMetricsSnapshot,
     pub tcp_protocol_version: Option<i32>,
-
     pub session_type: SessionType,
 }
 
@@ -113,6 +112,15 @@ impl MyServiceBusSession {
         }
     }
 
+    #[cfg(test)]
+    pub fn is_disconnected(&self) -> bool {
+        match &self.connection {
+            SessionConnection::Tcp(itm) => itm.connection.is_connected(),
+            SessionConnection::Http(itm) => itm.is_connected(),
+            SessionConnection::Test(itm) => itm.is_connected(),
+        }
+    }
+
     pub async fn disconnect(&self) -> bool {
         match &self.connection {
             SessionConnection::Tcp(data) => {
@@ -122,21 +130,7 @@ impl MyServiceBusSession {
                 return data.disconnect();
             }
             #[cfg(test)]
-            SessionConnection::Test(connection) => {
-                let result = connection
-                    .connected
-                    .load(std::sync::atomic::Ordering::SeqCst);
-
-                if result == false {
-                    return false;
-                }
-
-                connection
-                    .connected
-                    .store(false, std::sync::atomic::Ordering::SeqCst);
-
-                return true;
-            }
+            SessionConnection::Test(connection) => return connection.disconnect(),
         }
     }
 }

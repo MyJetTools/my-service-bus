@@ -6,6 +6,7 @@ use rust_extensions::{date_time::DateTimeAsMicroseconds, sorted_vec::EntityWithK
 use crate::{
     queues::{DeliveryBucket, QueueId},
     sessions::MyServiceBusSession,
+    topics::TopicId,
 };
 
 use super::{SubscriberId, SubscriberMetrics};
@@ -59,7 +60,7 @@ pub struct QueueSubscriber {
 impl QueueSubscriber {
     pub fn new(
         id: SubscriberId,
-        topic_id: String,
+        topic_id: TopicId,
         queue_id: QueueId,
         session: Arc<MyServiceBusSession>,
     ) -> Self {
@@ -149,6 +150,14 @@ impl QueueSubscriber {
             QueueSubscriberDeliveryState::ReadyToDeliver => None,
             QueueSubscriberDeliveryState::Rented => None,
             QueueSubscriberDeliveryState::OnDelivery(state) => Some(state.bucket.ids.clone()),
+        }
+    }
+
+    pub fn get_messages_amount_on_delivery(&self) -> usize {
+        match &self.delivery_state {
+            QueueSubscriberDeliveryState::ReadyToDeliver => 0,
+            QueueSubscriberDeliveryState::Rented => 0,
+            QueueSubscriberDeliveryState::OnDelivery(state) => state.bucket.ids.queue_size(),
         }
     }
 

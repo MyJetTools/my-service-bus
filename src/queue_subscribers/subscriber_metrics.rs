@@ -6,6 +6,7 @@ use crate::{
     metric_data::{MetricOneSecond, MetricsHistory},
     queues::QueueId,
     sessions::SessionId,
+    topics::TopicId,
 };
 
 use super::SubscriberId;
@@ -16,7 +17,7 @@ pub const DELIVERY_STATE_ON_DELIVERY: u8 = 2;
 
 #[derive(Clone)]
 pub struct SubscriberMetrics {
-    pub topic_id: String,
+    pub topic_id: TopicId,
     pub queue_id: QueueId,
     pub start_delivery_time: DateTimeAsMicroseconds,
     pub delivered_amount: MetricOneSecond,
@@ -34,7 +35,7 @@ impl SubscriberMetrics {
     pub fn new(
         subscriber_id: SubscriberId,
         session_id: SessionId,
-        topic_id: String,
+        topic_id: TopicId,
         queue_id: QueueId,
     ) -> Self {
         Self {

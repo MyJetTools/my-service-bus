@@ -43,7 +43,7 @@ impl SessionConnection {
             },
             SessionConnection::Http(data) => data.ip.to_string(),
             #[cfg(test)]
-            SessionConnection::Test(connection) => connection.ip.to_string(),
+            SessionConnection::Test(connection) => connection.ip.as_str().to_string(),
         }
     }
 

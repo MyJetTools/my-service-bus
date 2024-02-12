@@ -8,7 +8,7 @@ use crate::{
     queues::{DeliveryBucket, TopicQueue},
 };
 
-use super::OperationFailResult;
+use super::{delivery::Delivery, OperationFailResult};
 
 pub async fn all_confirmed(
     app: &Arc<AppContext>,
@@ -44,7 +44,7 @@ pub async fn all_confirmed(
         }
     }
 
-    super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_access);
+    app.try_to_deliver_to_subscribers(&topic, &mut topic_access);
 
     Ok(())
 }
@@ -79,7 +79,7 @@ pub async fn all_fail(
         }
     }
 
-    super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
+    app.try_to_deliver_to_subscribers(&topic, &mut topic_data);
 
     Ok(())
 }
@@ -121,7 +121,7 @@ pub async fn intermediary_confirm(
         topic_queue.confirm_delivered(&confirmed);
     }
 
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
+    app.try_to_deliver_to_subscribers(&topic, &mut topic_data);
 
     Ok(())
 }
@@ -157,7 +157,7 @@ pub async fn some_messages_are_confirmed(
         }
     }
 
-    super::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
+    app.try_to_deliver_to_subscribers(&topic, &mut topic_data);
 
     Ok(())
 }

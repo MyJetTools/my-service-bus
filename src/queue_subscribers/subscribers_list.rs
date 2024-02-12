@@ -6,6 +6,7 @@ use rust_extensions::{date_time::DateTimeAsMicroseconds, sorted_vec::SortedVec};
 use crate::{
     queues::QueueId,
     sessions::{MyServiceBusSession, SessionId},
+    topics::TopicId,
     utils::*,
 };
 
@@ -209,14 +210,14 @@ impl SubscribersList {
     pub fn subscribe(
         &mut self,
         subscriber_id: SubscriberId,
-        topic_id: String,
+        topic_id: TopicId,
         queue_id: QueueId,
         session: Arc<MyServiceBusSession>,
     ) -> Option<QueueSubscriber> {
         if !self.check_that_we_has_already_subscriber_for_that_session(session.id) {
             panic!(
                 "Somehow we subscribe second time to the same queue {}/{} the same session_id {} for the new subscriber. Most probably there is a bug on the client",
-                topic_id, queue_id.as_str(), subscriber_id.get_value()
+                topic_id.as_str(), queue_id.as_str(), subscriber_id.get_value()
             );
         }
         self.snapshot_id += 1;
@@ -227,7 +228,7 @@ impl SubscribersList {
                     panic!(
                         "Somehow we generated the same ID {} for the new subscriber {}/{}",
                         subscriber_id,
-                        topic_id,
+                        topic_id.as_str(),
                         queue_id.as_str()
                     );
                 }
@@ -244,7 +245,7 @@ impl SubscribersList {
                         panic!(
                             "Somehow we generated the same ID {} for the new subscriber {}/{}",
                             subscriber_id,
-                            topic_id,
+                            topic_id.as_str(),
                             queue_id.as_str()
                         );
                     }

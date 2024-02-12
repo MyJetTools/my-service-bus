@@ -49,6 +49,11 @@ impl HttpConnectionData {
     }
 
     pub fn disconnect(&self) -> bool {
-        self.connected.swap(false, Ordering::SeqCst)
+        self.connected.swap(false, Ordering::Relaxed)
+    }
+
+    #[cfg(test)]
+    pub fn is_connected(&self) -> bool {
+        self.connected.load(Ordering::Relaxed)
     }
 }
