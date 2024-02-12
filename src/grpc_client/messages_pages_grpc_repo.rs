@@ -183,7 +183,7 @@ impl MessagesPagesGrpcRepo {
             .unwrap();
     }
 
-    pub async fn restore_topic(&self, topic_id: &str) -> bool {
+    pub async fn restore_topic(&self, topic_id: &str) -> Option<MessageId> {
         let mut grpc_client = self.create_grpc_service();
 
         let result = grpc_client
@@ -195,10 +195,10 @@ impl MessagesPagesGrpcRepo {
 
         let result = result.into_inner();
         if !result.result {
-            return false;
+            return None;
         }
 
-        todo!("Something is removed here")
+        Some(result.message_id.into())
     }
 }
 

@@ -95,13 +95,12 @@ impl MessagesPagesRepo {
         }
     }
 
-    pub async fn restore_topic(&self, topic_id: &str) -> bool {
+    pub async fn restore_topic(&self, topic_id: &str) -> Option<MessageId> {
         match self {
             MessagesPagesRepo::Grpc(repo) => repo.restore_topic(topic_id).await,
             #[cfg(test)]
             MessagesPagesRepo::Mock(_) => {
-                println!("Restore topic topic {} is invoked", topic_id);
-                return true;
+                panic!("Restore topic topic {} is invoked", topic_id);
             }
         }
     }
