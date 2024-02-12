@@ -15,6 +15,10 @@ impl SubscriberId {
     pub fn equals_to(&self, other: SubscriberId) -> bool {
         self.0 == other.0
     }
+
+    pub fn as_ref(&self) -> &i64 {
+        &self.0
+    }
 }
 
 impl Display for SubscriberId {

@@ -110,5 +110,19 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         app.clone(),
     )));
 
+    //Subscribers
+
+    controllers.register_post_action(Arc::new(
+        super::subscribers_controller::SubscribeAction::new(app.clone()),
+    ));
+
+    controllers.register_post_action(Arc::new(
+        super::subscribers_controller::ConfirmDeliveryAction::new(app.clone()),
+    ));
+
+    controllers.register_post_action(Arc::new(
+        super::subscribers_controller::AwaitDeliveryAction::new(app.clone()),
+    ));
+
     controllers
 }

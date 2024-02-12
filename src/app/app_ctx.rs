@@ -5,7 +5,6 @@ use tokio::sync::RwLock;
 
 use crate::{
     grpc_client::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo},
-    operations::delivery::Delivery,
     queue_subscribers::SubscriberIdGenerator,
     sessions::SessionsList,
     settings::SettingsModel,
@@ -86,6 +85,10 @@ impl AppContext {
 
         *write_access = None;
     }
+
+    pub fn get_max_delivery_size(&self) -> usize {
+        self.settings.max_delivery_size
+    }
 }
 
 impl ApplicationStates for AppContext {
@@ -95,25 +98,5 @@ impl ApplicationStates for AppContext {
 
     fn is_shutting_down(&self) -> bool {
         self.states.is_shutting_down()
-    }
-}
-
-impl Delivery for Arc<AppContext> {
-    fn get_max_delivery_size(&self) -> usize {
-        self.settings.max_delivery_size
-    }
-
-    fn load_page_and_try_to_deliver_again(
-        &self,
-        topic: Arc<crate::topics::Topic>,
-        sub_page_id: my_service_bus::shared::sub_page::SubPageId,
-        delete_page: bool,
-    ) {
-        crate::operations::load_page_and_try_to_deliver_again(
-            self,
-            topic,
-            sub_page_id,
-            delete_page,
-        );
     }
 }

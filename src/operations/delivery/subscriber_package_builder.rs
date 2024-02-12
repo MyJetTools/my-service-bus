@@ -1,118 +1,125 @@
 use std::sync::Arc;
 
-use my_service_bus::abstractions::SbMessageHeaders;
-use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MyServiceBusMessage};
+use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
+use my_service_bus::tcp_contracts::{MySbTcpContract, PacketProtVer};
 
-use my_service_bus::tcp_contracts::{
-    delivery_package_builder::DeliverTcpPacketBuilder, MySbTcpContract,
-};
-use rust_extensions::ShortString;
-
+use crate::http::controllers::MessageToDeliverHttpContract;
+use crate::queues::QueueId;
 use crate::{
     messages_page::MySbMessageContent, queue_subscribers::SubscriberId,
     sessions::MyServiceBusSession, topics::Topic,
 };
 
-pub struct PacketToSendWrapper<'s> {
-    pub attempt: i32,
-    pub inner: &'s MySbMessageContent,
-}
+use super::{SubscriberHttpPackageBuilder, SubscriberTcpPackageBuilder};
 
-impl<'s> MyServiceBusMessage for PacketToSendWrapper<'s> {
-    fn get_id(&self) -> my_service_bus::abstractions::MessageId {
-        self.inner.id
-    }
-
-    fn get_attempt_no(&self) -> i32 {
-        self.attempt
-    }
-
-    fn get_headers(&self) -> &SbMessageHeaders {
-        &self.inner.headers
-    }
-
-    fn get_content(&self) -> &[u8] {
-        self.inner.content.as_slice()
-    }
-}
-
-pub enum SendNewMessagesResult {
-    Send {
-        session: Arc<MyServiceBusSession>,
-        tcp_contract: MySbTcpContract,
-        queue_id: ShortString,
-        messages_on_delivery: QueueWithIntervals,
-    },
-    NothingToSend {
-        queue_id: ShortString,
-    },
+pub enum SubscriberPackageBuilderInner {
+    Tcp(Option<SubscriberTcpPackageBuilder>),
+    Http(Option<SubscriberHttpPackageBuilder>),
 }
 
 pub struct SubscriberPackageBuilder {
     pub topic: Arc<Topic>,
-    pub queue_id: ShortString,
+    pub queue_id: QueueId,
     pub subscriber_id: SubscriberId,
-    tcp_builder: DeliverTcpPacketBuilder,
-    data_size: usize,
-    session: Arc<MyServiceBusSession>,
-    messages_on_delivery: QueueWithIntervals,
+    pub session: Arc<MyServiceBusSession>,
+    inner: SubscriberPackageBuilderInner,
+    pub messages_on_delivery: QueueWithIntervals,
 }
 
 impl SubscriberPackageBuilder {
-    pub fn new(
+    pub fn create_tcp(
         topic: Arc<Topic>,
-        queue_id: ShortString,
+        queue_id: QueueId,
         subscriber_id: SubscriberId,
         session: Arc<MyServiceBusSession>,
+        protocol_ver: PacketProtVer,
     ) -> Self {
-        let tcp_builder = DeliverTcpPacketBuilder::new(
-            topic.topic_id.as_str(),
-            queue_id.as_str(),
-            subscriber_id.get_value(),
-            session.get_message_to_delivery_protocol_version(),
-        );
+        let inner = SubscriberPackageBuilderInner::Tcp(Some(SubscriberTcpPackageBuilder::new(
+            &topic,
+            &queue_id,
+            subscriber_id,
+            protocol_ver,
+        )));
+
         Self {
             topic,
             queue_id,
-            tcp_builder,
             subscriber_id,
-            data_size: 0,
+            inner,
+            session,
+            messages_on_delivery: QueueWithIntervals::new(),
+        }
+    }
+
+    pub fn create_http(
+        topic: Arc<Topic>,
+        queue_id: QueueId,
+        subscriber_id: SubscriberId,
+        session: Arc<MyServiceBusSession>,
+    ) -> Self {
+        let inner = SubscriberPackageBuilderInner::Http(Some(SubscriberHttpPackageBuilder::new()));
+
+        Self {
+            topic,
+            queue_id,
+            subscriber_id,
+            inner,
             session,
             messages_on_delivery: QueueWithIntervals::new(),
         }
     }
 
     pub fn get_data_size(&self) -> usize {
-        self.data_size
+        match &self.inner {
+            SubscriberPackageBuilderInner::Tcp(builder) => {
+                builder.as_ref().unwrap().get_data_size()
+            }
+            SubscriberPackageBuilderInner::Http(builder) => {
+                builder.as_ref().unwrap().get_data_size()
+            }
+        }
     }
 
     pub fn add_message(&mut self, msg: &MySbMessageContent, attempt_no: i32) {
-        self.data_size += msg.content.len();
-
         let message_id = msg.id.get_value();
 
-        let msg = PacketToSendWrapper {
-            attempt: attempt_no,
-            inner: msg,
-        };
-        self.tcp_builder.append_packet(&msg);
+        match &mut self.inner {
+            SubscriberPackageBuilderInner::Tcp(builder) => {
+                builder.as_mut().unwrap().add_message(msg, attempt_no);
+            }
+            SubscriberPackageBuilderInner::Http(builder) => {
+                builder.as_mut().unwrap().add_message(msg, attempt_no);
+            }
+        }
+
         self.messages_on_delivery.enqueue(message_id);
     }
 
-    pub fn get_result(self) -> SendNewMessagesResult {
-        if self.data_size == 0 {
-            return SendNewMessagesResult::NothingToSend {
-                queue_id: self.queue_id,
-            };
+    pub fn has_something_to_send(&self) -> bool {
+        self.get_data_size() > 0
+    }
+
+    pub fn get_tcp_result(&mut self) -> MySbTcpContract {
+        match &mut self.inner {
+            SubscriberPackageBuilderInner::Tcp(builder) => {
+                let builder = builder.take().unwrap();
+                builder.get_result()
+            }
+            SubscriberPackageBuilderInner::Http(_) => {
+                panic!("Cannot get tcp result from http package builder");
+            }
         }
+    }
 
-        let tcp_contract = self.tcp_builder.get_result();
-
-        SendNewMessagesResult::Send {
-            tcp_contract,
-            session: self.session,
-            queue_id: self.queue_id,
-            messages_on_delivery: self.messages_on_delivery,
+    pub fn get_http_result(&mut self) -> Vec<MessageToDeliverHttpContract> {
+        match &mut self.inner {
+            SubscriberPackageBuilderInner::Tcp(_) => {
+                panic!("Cannot get http result from tcp package builder");
+            }
+            SubscriberPackageBuilderInner::Http(builder) => {
+                let builder = builder.take().unwrap();
+                builder.get_result()
+            }
         }
     }
 }

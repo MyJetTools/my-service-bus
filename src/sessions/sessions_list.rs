@@ -4,8 +4,8 @@ use my_tcp_sockets::ConnectionId;
 use tokio::sync::RwLock;
 
 use super::{
-    sessions_list_data::SessionsListData, HttpConnectionData, MyServiceBusSession,
-    SessionConnection, TcpConnectionData,
+    http::*, sessions_list_data::SessionsListData, MyServiceBusSession, SessionConnection,
+    TcpConnectionData,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -129,8 +129,19 @@ impl SessionsList {
     }
 
     pub async fn one_second_tick(&self) {
-        let read_access = self.data.read().await;
-        read_access.one_second_tick();
+        let http_sessions = {
+            let read_access = self.data.read().await;
+            read_access.get_http_sessions()
+        };
+
+        for http_session in http_sessions {
+            match &http_session.connection {
+                SessionConnection::Http(data) => {
+                    data.one_second_tick().await;
+                }
+                _ => {}
+            }
+        }
     }
 
     pub async fn remove_and_disconnect_expired_http_sessions(

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use my_http_server::macros::http_route;
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput};
 
-use crate::{app::AppContext, sessions::HttpConnectionData};
+use crate::{app::AppContext, sessions::http::*};
 
 use super::models::{GreetingInputModel, GreetingJsonResult};
 

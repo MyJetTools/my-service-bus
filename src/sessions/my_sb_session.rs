@@ -1,7 +1,16 @@
-use my_service_bus::tcp_contracts::PacketProtVer;
+use std::sync::Arc;
+
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-use super::{ConnectionMetricsSnapshot, SessionConnection, SessionId};
+use crate::{
+    operations::delivery::SubscriberPackageBuilder, queue_subscribers::SubscriberId,
+    queues::QueueId, topics::Topic,
+};
+
+use super::{
+    http::{HttpDeliveryPackage, MessageToDeliverResult},
+    ConnectionMetricsSnapshot, SessionConnection, SessionId,
+};
 
 pub enum SessionType {
     Tcp,
@@ -73,19 +82,21 @@ impl MyServiceBusSession {
         }
     }
 
-    pub fn get_message_to_delivery_protocol_version(&self) -> PacketProtVer {
-        match &self.connection {
-            SessionConnection::Tcp(data) => data.get_messages_to_deliver_protocol_version(),
-            SessionConnection::Http(_) => {
-                panic!("Protocol version is not applicable for HTTP Protocol")
-            }
-            #[cfg(test)]
-            SessionConnection::Test(_) => PacketProtVer {
-                tcp_protocol_version: 3.into(),
-                packet_version: 0,
-            },
-        }
-    }
+    /*
+       pub fn get_message_to_delivery_protocol_version(&self) -> PacketProtVer {
+           match &self.connection {
+               SessionConnection::Tcp(data) => data.get_messages_to_deliver_protocol_version(),
+               SessionConnection::Http(_) => {
+                   panic!("Protocol version is not applicable for HTTP Protocol")
+               }
+               #[cfg(test)]
+               SessionConnection::Test(_) => PacketProtVer {
+                   tcp_protocol_version: 3.into(),
+                   packet_version: 0,
+               },
+           }
+       }
+    */
 
     pub async fn get_metrics(&self) -> SessionMetrics {
         let (connection_metrics, session_type) = match &self.connection {
@@ -112,6 +123,59 @@ impl MyServiceBusSession {
         }
     }
 
+    pub async fn deliver_messages(mut package_builder: SubscriberPackageBuilder) {
+        let session = package_builder.session.clone();
+        match &session.connection {
+            crate::sessions::SessionConnection::Tcp(data) => {
+                let tcp_contract = package_builder.get_tcp_result();
+                let connection = data.connection.clone();
+
+                connection.send(&tcp_contract).await;
+            }
+            crate::sessions::SessionConnection::Http(data) => {
+                let messages = package_builder.get_http_result();
+
+                data.send_messages(
+                    package_builder.topic.topic_id.clone(),
+                    package_builder.queue_id.clone(),
+                    package_builder.subscriber_id.clone(),
+                    messages,
+                )
+                .await;
+            }
+            #[cfg(test)]
+            crate::sessions::SessionConnection::Test(data) => {
+                let messages = package_builder.get_http_result();
+
+                data.send_messages(
+                    package_builder.topic.topic_id.clone(),
+                    package_builder.queue_id.clone(),
+                    package_builder.subscriber_id.clone(),
+                    messages,
+                )
+                .await;
+            }
+        }
+
+        /*
+        tokio::spawn(async move {
+            match &session.connection {
+                crate::sessions::SessionConnection::Tcp(data) => {
+                    let send_new_messages = package_builder.unwrap_tcp_result();
+                    data.connection.send(&send_new_messages.tcp_contract).await;
+                }
+                crate::sessions::SessionConnection::Http(data) => {
+                    data.send_packet(tcp_packet).await;
+                }
+                #[cfg(test)]
+                crate::sessions::SessionConnection::Test(data) => {
+                    data.send_packet(tcp_packet).await;
+                }
+            }
+        });
+         */
+    }
+
     #[cfg(test)]
     pub fn is_disconnected(&self) -> bool {
         match &self.connection {
@@ -131,6 +195,55 @@ impl MyServiceBusSession {
             }
             #[cfg(test)]
             SessionConnection::Test(connection) => return connection.disconnect(),
+        }
+    }
+
+    pub async fn get_long_pool_messages(&self) -> Result<Option<HttpDeliveryPackage>, String> {
+        match &self.connection {
+            SessionConnection::Tcp(_) => {
+                panic!("Bug. we do not have long pool messages with Tcp connection");
+            }
+            SessionConnection::Http(data) => match data.get_messages_to_deliver().await {
+                MessageToDeliverResult::Package(package) => Ok(Some(package)),
+                MessageToDeliverResult::Awaiter(awaiter) => {
+                    return awaiter.get_result().await;
+                }
+            },
+
+            #[cfg(test)]
+            SessionConnection::Test(_) => {
+                panic!("Bug. we do not have long pool messages with Test connection");
+            }
+        }
+    }
+
+    pub fn create_delivery_builder(
+        session: &Arc<Self>,
+        topic: Arc<Topic>,
+        queue_id: QueueId,
+        subscriber_id: SubscriberId,
+    ) -> SubscriberPackageBuilder {
+        match &session.connection {
+            SessionConnection::Tcp(data) => SubscriberPackageBuilder::create_tcp(
+                topic,
+                queue_id,
+                subscriber_id,
+                session.clone(),
+                data.get_messages_to_deliver_protocol_version(),
+            ),
+            SessionConnection::Http(_) => SubscriberPackageBuilder::create_http(
+                topic,
+                queue_id,
+                subscriber_id,
+                session.clone(),
+            ),
+            #[cfg(test)]
+            SessionConnection::Test(_) => SubscriberPackageBuilder::create_http(
+                topic,
+                queue_id,
+                subscriber_id,
+                session.clone(),
+            ),
         }
     }
 }

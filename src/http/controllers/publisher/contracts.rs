@@ -5,6 +5,8 @@ use my_service_bus::abstractions::SbMessageHeaders;
 use rust_extensions::base64::FromBase64;
 use serde::{Deserialize, Serialize};
 
+use crate::http::controllers::MessageKeyValueJsonModel;
+
 #[derive(MyHttpInput)]
 pub struct PublishMessageHttpInput {
     #[http_query(name="topicId"; description = "Id of topic")]
@@ -12,12 +14,6 @@ pub struct PublishMessageHttpInput {
 
     #[http_body(description = "Base64 encoded messages")]
     pub messages: Vec<MessageToPublishJsonModel>,
-}
-
-#[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
-pub struct MessageKeyValueJsonModel {
-    pub key: String,
-    pub value: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]

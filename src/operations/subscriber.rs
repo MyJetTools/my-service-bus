@@ -10,7 +10,7 @@ use crate::{
     sessions::MyServiceBusSession,
 };
 
-use super::{delivery::Delivery, OperationFailResult};
+use super::OperationFailResult;
 
 pub async fn subscribe_to_queue(
     app: &Arc<AppContext>,
@@ -87,7 +87,10 @@ pub async fn subscribe_to_queue(
         );
     }
 
-    app.try_to_deliver_to_subscribers(&topic, &mut topic_data);
+    #[cfg(test)]
+    crate::operations::delivery::try_to_deliver_to_subscribers(app, &topic, &mut topic_data).await;
+    #[cfg(not(test))]
+    crate::operations::delivery::try_to_deliver_to_subscribers(app, &topic, &mut topic_data);
 
     Ok(subscriber_id)
 }

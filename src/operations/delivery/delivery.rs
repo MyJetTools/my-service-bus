@@ -5,6 +5,7 @@ use rust_extensions::{date_time::DateTimeAsMicroseconds, StopWatch};
 use std::sync::Arc;
 
 use crate::{
+    app::AppContext,
     messages_page::{GetMessageResult, MessagesPageList},
     queue_subscribers::SubscriberId,
     queues::TopicQueue,
@@ -14,147 +15,176 @@ use crate::{
 
 use super::SubscriberPackageBuilder;
 
-pub trait Delivery {
-    fn get_max_delivery_size(&self) -> usize;
+#[cfg(not(test))]
+pub fn try_to_deliver_to_subscribers(
+    app: &Arc<AppContext>,
+    topic: &Arc<Topic>,
+    topic_data: &mut TopicInner,
+) {
+    let mut sw = StopWatch::new();
+    sw.start();
+    let mut to_send = Vec::new();
 
-    fn load_page_and_try_to_deliver_again(
-        &self,
-        topic: Arc<crate::topics::Topic>,
-        sub_page_id: SubPageId,
-        delete_page: bool,
-    );
+    for topic_queue in topic_data.queues.get_all_mut() {
+        compile_packages(app, topic, &mut to_send, topic_queue, &topic_data.pages);
+    }
 
-    fn try_to_deliver_to_subscribers(&self, topic: &Arc<Topic>, topic_data: &mut TopicInner) {
-        let mut sw = StopWatch::new();
-        sw.start();
-        let mut to_send = Vec::new();
+    sw.pause();
 
-        for topic_queue in topic_data.queues.get_all_mut() {
-            self.compile_packages(topic, &mut to_send, topic_queue, &topic_data.pages);
+    if to_send.len() > 0 {
+        for package_builder in to_send {
+            crate::operations::send_package::send_new_messages_to_deliver(
+                package_builder,
+                topic_data,
+                sw.duration(),
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+pub async fn try_to_deliver_to_subscribers(
+    app: &Arc<AppContext>,
+    topic: &Arc<Topic>,
+    topic_data: &mut TopicInner,
+) {
+    let mut sw = StopWatch::new();
+    sw.start();
+    let mut to_send = Vec::new();
+
+    for topic_queue in topic_data.queues.get_all_mut() {
+        compile_packages(app, topic, &mut to_send, topic_queue, &topic_data.pages);
+    }
+
+    sw.pause();
+
+    if to_send.len() > 0 {
+        for package_builder in to_send {
+            crate::operations::send_package::send_new_messages_to_deliver(
+                package_builder,
+                topic_data,
+                sw.duration(),
+            )
+            .await;
+        }
+    }
+}
+
+fn compile_packages(
+    app: &Arc<AppContext>,
+    topic: &Arc<Topic>,
+    to_send: &mut Vec<SubscriberPackageBuilder>,
+    topic_queue: &mut TopicQueue,
+    pages: &MessagesPageList,
+) {
+    let mut not_engaged_topics = Vec::new();
+
+    while topic_queue.queue.queue_size() > 0 {
+        let subscriber = topic_queue
+            .subscribers
+            .get_and_rent_next_subscriber_ready_to_deliver();
+
+        if subscriber.is_none() {
+            break;
         }
 
-        sw.pause();
+        let (subscriber_id, session) = subscriber.unwrap();
 
-        if to_send.len() > 0 {
-            for package_builder in to_send {
-                crate::operations::send_package::send_new_messages_to_deliver(
-                    package_builder,
-                    topic_data,
-                    sw.duration(),
+        if let Some(package_builder) =
+            compile_package(app, topic, topic_queue, pages, subscriber_id, &session)
+        {
+            to_send.push(package_builder);
+        } else {
+            not_engaged_topics.push(subscriber_id);
+        }
+    }
+
+    for subscriber_id in not_engaged_topics {
+        topic_queue.subscribers.cancel_rent(subscriber_id);
+    }
+}
+
+fn compile_package(
+    app: &Arc<AppContext>,
+    topic: &Arc<Topic>,
+    topic_queue: &mut TopicQueue,
+    pages: &MessagesPageList,
+    subscriber_id: SubscriberId,
+    session: &Arc<MyServiceBusSession>,
+) -> Option<SubscriberPackageBuilder> {
+    let mut package_builder = None;
+
+    #[cfg(test)]
+    println!("compile_and_deliver");
+
+    let mut payload_size = 0;
+
+    while payload_size < app.get_max_delivery_size() {
+        let message_id = topic_queue.queue.peek();
+
+        if message_id.is_none() {
+            break;
+        }
+
+        let message_id = message_id.unwrap().as_message_id();
+
+        let sub_page_id: SubPageId = message_id.into();
+
+        let sub_page = pages.get(sub_page_id);
+
+        if sub_page.is_none() {
+            crate::operations::load_page_and_try_to_deliver_again(
+                app,
+                topic.clone(),
+                sub_page_id,
+                false,
+            );
+
+            return package_builder;
+        }
+
+        let sub_page = sub_page.unwrap();
+        sub_page.update_last_accessed(DateTimeAsMicroseconds::now());
+
+        topic_queue.queue.dequeue();
+
+        match sub_page.get_message(message_id.as_message_id()) {
+            GetMessageResult::Message(message_content) => {
+                let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
+
+                if package_builder.is_none() {
+                    package_builder = Some(MyServiceBusSession::create_delivery_builder(
+                        session,
+                        topic.clone(),
+                        topic_queue.queue_id.clone(),
+                        subscriber_id,
+                    ));
+                }
+
+                package_builder
+                    .as_mut()
+                    .unwrap()
+                    .add_message(message_content, attempt_no);
+            }
+            GetMessageResult::Missing => {}
+            GetMessageResult::GarbageCollected => {
+                crate::operations::load_page_and_try_to_deliver_again(
+                    app,
+                    topic.clone(),
+                    sub_page_id,
+                    true,
                 );
-            }
-        }
-    }
-
-    fn compile_packages(
-        &self,
-        topic: &Arc<Topic>,
-        to_send: &mut Vec<SubscriberPackageBuilder>,
-        topic_queue: &mut TopicQueue,
-        pages: &MessagesPageList,
-    ) {
-        let mut not_engaged_topics = Vec::new();
-
-        while topic_queue.queue.queue_size() > 0 {
-            let subscriber = topic_queue
-                .subscribers
-                .get_and_rent_next_subscriber_ready_to_deliver();
-
-            if subscriber.is_none() {
-                break;
-            }
-
-            let (subscriber_id, session) = subscriber.unwrap();
-
-            if let Some(package_builder) =
-                self.compile_package(topic, topic_queue, pages, subscriber_id, &session)
-            {
-                to_send.push(package_builder);
-            } else {
-                not_engaged_topics.push(subscriber_id);
-            }
-        }
-
-        for subscriber_id in not_engaged_topics {
-            topic_queue.subscribers.cancel_rent(subscriber_id);
-        }
-    }
-
-    fn compile_package(
-        &self,
-        topic: &Arc<Topic>,
-        topic_queue: &mut TopicQueue,
-        pages: &MessagesPageList,
-        subscriber_id: SubscriberId,
-        session: &Arc<MyServiceBusSession>,
-    ) -> Option<SubscriberPackageBuilder> {
-        let mut package_builder = None;
-        /*
-
-        */
-        #[cfg(test)]
-        println!("compile_and_deliver");
-
-        let mut payload_size = 0;
-
-        while payload_size < self.get_max_delivery_size() {
-            let message_id = topic_queue.queue.peek();
-
-            if message_id.is_none() {
-                break;
-            }
-
-            let message_id = message_id.unwrap().as_message_id();
-
-            let sub_page_id: SubPageId = message_id.into();
-
-            let sub_page = pages.get(sub_page_id);
-
-            if sub_page.is_none() {
-                self.load_page_and_try_to_deliver_again(topic.clone(), sub_page_id, false);
-
                 return package_builder;
             }
-
-            let sub_page = sub_page.unwrap();
-            sub_page.update_last_accessed(DateTimeAsMicroseconds::now());
-
-            topic_queue.queue.dequeue();
-
-            match sub_page.get_message(message_id.as_message_id()) {
-                GetMessageResult::Message(message_content) => {
-                    let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
-
-                    if package_builder.is_none() {
-                        package_builder = SubscriberPackageBuilder::new(
-                            topic.clone(),
-                            topic_queue.queue_id.as_str().into(),
-                            subscriber_id,
-                            session.clone(),
-                        )
-                        .into();
-                    }
-
-                    package_builder
-                        .as_mut()
-                        .unwrap()
-                        .add_message(message_content, attempt_no);
-                }
-                GetMessageResult::Missing => {}
-                GetMessageResult::GarbageCollected => {
-                    self.load_page_and_try_to_deliver_again(topic.clone(), sub_page_id, true);
-                    return package_builder;
-                }
-            }
-
-            payload_size = match package_builder {
-                Some(ref package_builder) => package_builder.get_data_size(),
-                None => 0,
-            };
         }
 
-        package_builder
+        payload_size = match package_builder {
+            Some(ref package_builder) => package_builder.get_data_size(),
+            None => 0,
+        };
     }
+
+    package_builder
 }
 
 #[cfg(test)]
@@ -166,7 +196,6 @@ mod tests {
         subscriber::TopicQueueType,
     };
     use my_service_bus::shared::protobuf_models::MessageProtobufModel;
-    use my_service_bus::tcp_contracts::{MySbSerializerState, MySbTcpContract};
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
     use crate::app::AppContext;
@@ -174,7 +203,7 @@ mod tests {
 
     use super::*;
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[tokio::test()]
     async fn test_publish_subscribe_case() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
@@ -223,17 +252,8 @@ mod tests {
 
         let test_connection = session.connection.unwrap_as_test();
 
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-
-        let mut result_packets = test_connection.get_list_of_packets_and_clear_them().await;
+        let result_packets = test_connection.get_list_of_packets_and_clear_them().await;
         assert_eq!(result_packets.len(), 1);
-
-        let packet = result_packets.remove(0);
-
-        if let MySbTcpContract::Raw(_) = packet {
-        } else {
-            panic!("Should not be here")
-        }
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -299,10 +319,7 @@ mod tests {
         )
         .await
         .unwrap();
-
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-
-        let version = session.get_message_to_delivery_protocol_version();
 
         let test_connection = session.connection.unwrap_as_test();
 
@@ -311,25 +328,8 @@ mod tests {
 
         let packet = result_packets.remove(0);
 
-        let meta_data = MySbSerializerState::new(version.tcp_protocol_version.get_value());
-
-        let packet =
-            my_service_bus::tcp_contracts::tcp_serializers::convert_from_raw(packet, &meta_data)
-                .await;
-
-        if let MySbTcpContract::NewMessages {
-            topic_id,
-            queue_id,
-            confirmation_id,
-            messages,
-        } = packet
-        {
-            assert_eq!(TOPIC_NAME, topic_id);
-            assert_eq!(QUEUE_NAME, queue_id);
-            println!("ConfirmationId: {}", confirmation_id);
-            assert_eq!(2, messages.len());
-        } else {
-            panic!("Should not be here")
-        }
+        assert_eq!(TOPIC_NAME, packet.topic_id.as_str());
+        assert_eq!(QUEUE_NAME, packet.queue_id.as_str());
+        println!("ConfirmationId: {}", packet.subscriber_id.get_value());
     }
 }

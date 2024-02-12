@@ -1,5 +1,5 @@
 mod connection_metrics;
-mod http_connection_data;
+
 mod my_sb_session;
 mod session_connection;
 mod sessions_list;
@@ -11,10 +11,11 @@ pub use my_sb_session::MyServiceBusSession;
 
 pub use sessions_list::{SessionId, SessionsList};
 
-pub use connection_metrics::{ConnectionMetrics, ConnectionMetricsSnapshot};
-pub use http_connection_data::HttpConnectionData;
+pub use connection_metrics::*;
+
 pub use session_connection::SessionConnection;
 pub use tcp_connection_data::TcpConnectionData;
 
 #[cfg(test)]
 pub use test_connection_data::TestConnectionData;
+pub mod http;

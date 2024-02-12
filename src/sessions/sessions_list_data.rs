@@ -27,6 +27,10 @@ impl SessionsListData {
             http_sessions: BTreeMap::new(),
         }
     }
+
+    pub fn get_http_sessions(&self) -> Vec<Arc<MyServiceBusSession>> {
+        self.http_sessions.values().cloned().collect()
+    }
     pub fn get_next_session_id(&mut self) -> SessionId {
         let result = self.current_session_id;
         self.current_session_id += 1;
@@ -120,14 +124,6 @@ impl SessionsListData {
         }
 
         return (self.snapshot_id, sessions_result);
-    }
-
-    pub fn one_second_tick(&self) {
-        for session in self.http_sessions.values() {
-            if let super::SessionConnection::Http(data) = &session.connection {
-                data.one_second_tick();
-            }
-        }
     }
 
     pub fn remove_and_disconnect_expired_http_sessions(

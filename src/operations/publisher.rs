@@ -4,7 +4,7 @@ use my_service_bus::abstractions::publisher::MessageToPublish;
 
 use crate::{app::AppContext, sessions::SessionId, topics::Topic};
 
-use super::{delivery::Delivery, OperationFailResult};
+use super::OperationFailResult;
 
 pub async fn create_topic_if_not_exists(
     app: &Arc<AppContext>,
@@ -69,6 +69,9 @@ pub async fn publish(
         }
     }
 
-    app.try_to_deliver_to_subscribers(&topic, &mut topic_data);
+    #[cfg(test)]
+    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data).await;
+    #[cfg(not(test))]
+    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
     Ok(())
 }

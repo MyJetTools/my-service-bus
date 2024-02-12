@@ -1,27 +1,8 @@
-use std::sync::Arc;
-
 use crate::{sessions::MyServiceBusSession, topics::TopicInner};
 
-use super::delivery::{SendNewMessagesResult, SubscriberPackageBuilder};
+use super::delivery::SubscriberPackageBuilder;
 
-pub fn send_package(
-    session: Arc<MyServiceBusSession>,
-    tcp_packet: my_service_bus::tcp_contracts::MySbTcpContract,
-) {
-    let _handle = tokio::spawn(async move {
-        match &session.connection {
-            crate::sessions::SessionConnection::Tcp(data) => {
-                data.connection.send(&tcp_packet).await;
-            }
-            #[cfg(test)]
-            crate::sessions::SessionConnection::Test(data) => {
-                data.send_packet(tcp_packet).await;
-            }
-            crate::sessions::SessionConnection::Http(_) => todo!("Not supported yet"),
-        }
-    });
-}
-
+#[cfg(not(test))]
 pub fn send_new_messages_to_deliver(
     builder: SubscriberPackageBuilder,
     topic_data: &mut TopicInner,
@@ -29,26 +10,45 @@ pub fn send_new_messages_to_deliver(
 ) {
     let subscriber_id = builder.subscriber_id;
 
-    match builder.get_result() {
-        SendNewMessagesResult::Send {
-            session,
-            tcp_contract,
-            queue_id,
-            messages_on_delivery,
-        } => {
-            if let Some(queue) = topic_data.queues.get_mut(queue_id.as_str()) {
-                if let Some(subscriber) = queue.subscribers.get_by_id_mut(subscriber_id) {
-                    subscriber.set_messages_on_delivery(messages_on_delivery, compilation_duration);
-                    send_package(session, tcp_contract);
-                    subscriber.metrics.set_started_delivery();
-                }
+    if let Some(queue) = topic_data.queues.get_mut(builder.queue_id.as_str()) {
+        if let Some(subscriber) = queue.subscribers.get_by_id_mut(subscriber_id) {
+            if builder.has_something_to_send() {
+                subscriber.set_messages_on_delivery(
+                    builder.messages_on_delivery.clone(),
+                    compilation_duration,
+                );
+
+                subscriber.metrics.set_started_delivery();
+
+                tokio::spawn(MyServiceBusSession::deliver_messages(builder));
+            } else {
+                subscriber.cancel_the_rent();
             }
         }
-        SendNewMessagesResult::NothingToSend { queue_id } => {
-            if let Some(queue) = topic_data.queues.get_mut(queue_id.as_str()) {
-                if let Some(subscriber) = queue.subscribers.get_by_id_mut(subscriber_id) {
-                    subscriber.cancel_the_rent();
-                }
+    }
+}
+
+#[cfg(test)]
+pub async fn send_new_messages_to_deliver(
+    builder: SubscriberPackageBuilder,
+    topic_data: &mut TopicInner,
+    compilation_duration: std::time::Duration,
+) {
+    let subscriber_id = builder.subscriber_id;
+
+    if let Some(queue) = topic_data.queues.get_mut(builder.queue_id.as_str()) {
+        if let Some(subscriber) = queue.subscribers.get_by_id_mut(subscriber_id) {
+            if builder.has_something_to_send() {
+                subscriber.set_messages_on_delivery(
+                    builder.messages_on_delivery.clone(),
+                    compilation_duration,
+                );
+
+                subscriber.metrics.set_started_delivery();
+
+                MyServiceBusSession::deliver_messages(builder).await;
+            } else {
+                subscriber.cancel_the_rent();
             }
         }
     }

@@ -1,8 +1,9 @@
 #[cfg(test)]
 use std::sync::Arc;
 
-use super::{HttpConnectionData, TcpConnectionData};
+use super::TcpConnectionData;
 
+use super::http::*;
 pub enum SessionConnection {
     Tcp(TcpConnectionData),
     Http(HttpConnectionData),
