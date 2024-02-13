@@ -10,9 +10,7 @@ pub async fn gc_http_connections(app: &AppContext) {
         .remove_and_disconnect_expired_http_sessions(inactive_session_timeout)
         .await;
 
-    if let Some(disconnected_sessions) = disconnected_sessions {
-        for disconnected_session in disconnected_sessions {
-            crate::operations::sessions::disconnect(app, disconnected_session.as_ref()).await;
-        }
+    for disconnected_session in disconnected_sessions {
+        crate::operations::sessions::disconnect(app, disconnected_session).await;
     }
 }

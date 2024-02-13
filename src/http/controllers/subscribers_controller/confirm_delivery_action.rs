@@ -32,9 +32,9 @@ async fn handle_request(
     input_data: ConfirmDeliveryHttpModel,
     ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let session = ctx.get_http_session(&action.app).await?;
+    let http_session = ctx.get_http_session(&action.app).await?;
 
-    session.connection.unwrap_as_http().ping();
+    http_session.ping();
 
     if let Some(confirmations) = input_data.confirmation {
         for confirmation in confirmations {

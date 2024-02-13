@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{app::AppContext, sessions::MyServiceBusSession};
 
 use rust_extensions::date_time::DateTimeAsMicroseconds;
@@ -25,38 +27,37 @@ pub struct SessionJsonResult {
 }
 
 impl SessionJsonResult {
-    pub async fn new(session: &MyServiceBusSession) -> Self {
+    pub async fn new(session: &Arc<dyn MyServiceBusSession + Send + Sync + 'static>) -> Self {
         let now = DateTimeAsMicroseconds::now();
 
-        let session_metrics_data = session.get_metrics().await;
+        let session_metrics = session.get_metrics();
 
-        let session_type = if let Some(prot_ver) = session_metrics_data.tcp_protocol_version {
-            format!(
-                "{}[{}]",
-                session_metrics_data.session_type.as_string(),
-                prot_ver
-            )
+        let session_type = if let Some(prot_ver) = session_metrics.tcp_protocol_version {
+            format!("{}[{}]", session.get_session_type().as_str(), prot_ver)
         } else {
-            session_metrics_data.session_type.as_string().to_string()
+            session.get_session_type().as_str().to_string()
         };
 
+        let name_and_version = session.get_name_and_version();
+
         Self {
-            id: session_metrics_data.id.get_value(),
-            ip: session_metrics_data.ip,
+            id: session.get_session_id().get_value(),
+            ip: session_metrics.ip,
             session_type,
-            name: session_metrics_data.name.clone(),
-            version: session_metrics_data.version,
+            name: name_and_version.name,
+            version: name_and_version.version,
             connected: rust_extensions::duration_utils::duration_to_string(
-                now.duration_since(session.connected).as_positive_or_zero(),
-            ),
-            last_incoming: rust_extensions::duration_utils::duration_to_string(
-                now.duration_since(session_metrics_data.connection_metrics.last_incoming_moment)
+                now.duration_since(session_metrics.connected)
                     .as_positive_or_zero(),
             ),
-            read_size: session_metrics_data.connection_metrics.read,
-            written_size: session_metrics_data.connection_metrics.written,
-            read_per_sec: session_metrics_data.connection_metrics.read_per_sec,
-            written_per_sec: session_metrics_data.connection_metrics.written_per_sec,
+            last_incoming: rust_extensions::duration_utils::duration_to_string(
+                now.duration_since(session_metrics.connection_metrics.last_incoming_moment)
+                    .as_positive_or_zero(),
+            ),
+            read_size: session_metrics.connection_metrics.read,
+            written_size: session_metrics.connection_metrics.written,
+            read_per_sec: session_metrics.connection_metrics.read_per_sec,
+            written_per_sec: session_metrics.connection_metrics.written_per_sec,
         }
     }
 }
@@ -78,7 +79,7 @@ impl SessionsJsonResult {
         };
 
         for session in &all_sessions {
-            let session_json_model = SessionJsonResult::new(session.as_ref()).await;
+            let session_json_model = SessionJsonResult::new(session).await;
             result.items.push(session_json_model);
         }
 

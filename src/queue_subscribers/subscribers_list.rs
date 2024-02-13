@@ -19,7 +19,7 @@ pub enum SubscribersData {
 
 pub struct DeadSubscriber {
     pub subscriber_id: SubscriberId,
-    pub session: Arc<MyServiceBusSession>,
+    pub session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
     pub duration: Duration,
 }
 
@@ -117,7 +117,10 @@ impl SubscribersList {
 
     pub fn get_and_rent_next_subscriber_ready_to_deliver(
         &mut self,
-    ) -> Option<(SubscriberId, Arc<MyServiceBusSession>)> {
+    ) -> Option<(
+        SubscriberId,
+        Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
+    )> {
         match &mut self.data {
             SubscribersData::MultiSubscribers(state) => {
                 for subscriber in state.iter_mut() {
@@ -189,14 +192,14 @@ impl SubscribersList {
         match &self.data {
             SubscribersData::MultiSubscribers(hash_map) => {
                 for subscriber in hash_map.iter() {
-                    if subscriber.session.id.is_eq_to(session_id) {
+                    if subscriber.session.get_session_id() == session_id {
                         return false;
                     }
                 }
             }
             SubscribersData::SingleSubscriber(single_subscriber) => {
                 if let Some(subscriber) = single_subscriber {
-                    if subscriber.session.id.is_eq_to(session_id) {
+                    if subscriber.session.get_session_id() == session_id {
                         return false;
                     }
                 }
@@ -212,9 +215,9 @@ impl SubscribersList {
         subscriber_id: SubscriberId,
         topic_id: TopicId,
         queue_id: QueueId,
-        session: Arc<MyServiceBusSession>,
+        session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
     ) -> Option<QueueSubscriber> {
-        if !self.check_that_we_has_already_subscriber_for_that_session(session.id) {
+        if !self.check_that_we_has_already_subscriber_for_that_session(session.get_session_id()) {
             panic!(
                 "Somehow we subscribe second time to the same queue {}/{} the same session_id {} for the new subscriber. Most probably there is a bug on the client",
                 topic_id.as_str(), queue_id.as_str(), subscriber_id.get_value()
@@ -297,14 +300,14 @@ impl SubscribersList {
         match &self.data {
             SubscribersData::MultiSubscribers(hash_map) => {
                 for sub in hash_map.iter() {
-                    if sub.session.id.is_eq_to(session_id) {
+                    if sub.session.get_session_id() == session_id {
                         return Some(sub.id);
                     }
                 }
             }
             SubscribersData::SingleSubscriber(single) => {
                 if let Some(sub) = single {
-                    if sub.session.id.is_eq_to(session_id) {
+                    if sub.session.get_session_id() == session_id {
                         return Some(sub.id);
                     }
                 }

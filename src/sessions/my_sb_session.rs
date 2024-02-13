@@ -1,41 +1,54 @@
-use std::sync::Arc;
-
+use my_service_bus::tcp_contracts::PacketProtVer;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-use crate::{
-    operations::delivery::SubscriberPackageBuilder, queue_subscribers::SubscriberId,
-    queues::QueueId, topics::Topic,
-};
+use crate::operations::delivery::SubscriberPackageBuilder;
 
-use super::{
-    http::{HttpDeliveryPackage, MessageToDeliverResult},
-    ConnectionMetricsSnapshot, SessionConnection, SessionId,
-};
+use super::{ConnectionMetricsSnapshot, SessionId};
 
 pub enum SessionType {
-    Tcp,
+    Tcp(PacketProtVer),
     Http,
+    #[cfg(test)]
+    Test,
 }
 
 impl SessionType {
-    pub fn as_string(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         match self {
-            SessionType::Tcp => "tcp",
+            SessionType::Tcp(_) => "tcp",
             SessionType::Http => "http",
+            #[cfg(test)]
+            SessionType::Test => "test",
         }
     }
 }
 
 pub struct SessionMetrics {
-    pub name: String,
-    pub version: Option<String>,
     pub ip: String,
-    pub id: SessionId,
     pub connection_metrics: ConnectionMetricsSnapshot,
+    pub connected: DateTimeAsMicroseconds,
     pub tcp_protocol_version: Option<i32>,
-    pub session_type: SessionType,
 }
 
+pub struct SessionNameAndVersion {
+    pub name: String,
+    pub version: Option<String>,
+}
+
+#[async_trait::async_trait]
+pub trait MyServiceBusSession {
+    fn get_session_id(&self) -> SessionId;
+    fn get_name_and_version(&self) -> SessionNameAndVersion;
+    fn get_session_type(&self) -> SessionType;
+
+    fn get_metrics(&self) -> SessionMetrics;
+
+    async fn disconnect(&self) -> bool;
+
+    async fn send_messages_to_connection(&self, package_builder: SubscriberPackageBuilder);
+}
+
+/*
 pub struct MyServiceBusSession {
     pub id: SessionId,
     pub connection: SessionConnection,
@@ -81,22 +94,6 @@ impl MyServiceBusSession {
             SessionConnection::Test(_) => None,
         }
     }
-
-    /*
-       pub fn get_message_to_delivery_protocol_version(&self) -> PacketProtVer {
-           match &self.connection {
-               SessionConnection::Tcp(data) => data.get_messages_to_deliver_protocol_version(),
-               SessionConnection::Http(_) => {
-                   panic!("Protocol version is not applicable for HTTP Protocol")
-               }
-               #[cfg(test)]
-               SessionConnection::Test(_) => PacketProtVer {
-                   tcp_protocol_version: 3.into(),
-                   packet_version: 0,
-               },
-           }
-       }
-    */
 
     pub async fn get_metrics(&self) -> SessionMetrics {
         let (connection_metrics, session_type) = match &self.connection {
@@ -198,24 +195,7 @@ impl MyServiceBusSession {
         }
     }
 
-    pub async fn get_long_pool_messages(&self) -> Result<Option<HttpDeliveryPackage>, String> {
-        match &self.connection {
-            SessionConnection::Tcp(_) => {
-                panic!("Bug. we do not have long pool messages with Tcp connection");
-            }
-            SessionConnection::Http(data) => match data.get_messages_to_deliver().await {
-                MessageToDeliverResult::Package(package) => Ok(Some(package)),
-                MessageToDeliverResult::Awaiter(awaiter) => {
-                    return awaiter.get_result().await;
-                }
-            },
 
-            #[cfg(test)]
-            SessionConnection::Test(_) => {
-                panic!("Bug. we do not have long pool messages with Test connection");
-            }
-        }
-    }
 
     pub fn create_delivery_builder(
         session: &Arc<Self>,
@@ -247,3 +227,4 @@ impl MyServiceBusSession {
         }
     }
 }
+ */

@@ -1,4 +1,4 @@
-use crate::http::auth::GetSessionToken;
+use crate::{http::auth::GetSessionToken, sessions::MyServiceBusSession};
 
 use my_http_server::macros::http_route;
 use my_service_bus::abstractions::publisher::MessageToPublish;
@@ -38,7 +38,7 @@ async fn handle_request(
     http_input: PublishMessageHttpInput,
     ctx: &HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let session = ctx.get_http_session(&action.app).await?;
+    let http_session = ctx.get_http_session(&action.app).await?;
 
     let mut messages_to_publish = Vec::with_capacity(http_input.messages.len());
 
@@ -60,11 +60,9 @@ async fn handle_request(
         http_input.topic_id.as_str(),
         messages_to_publish,
         false,
-        session.id,
+        http_session.get_session_id(),
     )
     .await?;
-
-    let http_session = session.connection.unwrap_as_http();
 
     http_session.update_written_amount(content_size);
 

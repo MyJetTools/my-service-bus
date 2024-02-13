@@ -35,6 +35,6 @@ async fn handle_request(
     ctx: &HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
     let connection_data = ctx.get_http_session(&action.app).await?;
-    connection_data.connection.unwrap_as_http().ping();
+    connection_data.ping();
     HttpOutput::Empty.into_ok_result(true).into()
 }

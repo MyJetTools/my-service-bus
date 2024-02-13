@@ -11,6 +11,18 @@ pub struct ConnectionMetricsSnapshot {
     pub last_incoming_moment: DateTimeAsMicroseconds,
 }
 
+impl Default for ConnectionMetricsSnapshot {
+    fn default() -> Self {
+        Self {
+            read: 0,
+            written: 0,
+            read_per_sec: 0,
+            written_per_sec: 0,
+            last_incoming_moment: DateTimeAsMicroseconds::now(),
+        }
+    }
+}
+
 pub struct ConnectionMetrics {
     pub read: AtomicUsize,
     pub written: AtomicUsize,

@@ -35,11 +35,11 @@ async fn handle_request(
     match action
         .app
         .sessions
-        .get(input_data.connection_id.into())
+        .remove_by_session_id(input_data.connection_id.into())
         .await
     {
         Some(session) => {
-            session.disconnect().await;
+            crate::operations::sessions::disconnect(&action.app, session).await;
             HttpOutput::Empty.into_ok_result(true).into()
         }
         None => Err(HttpFailResult::as_not_found(

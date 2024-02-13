@@ -54,7 +54,7 @@ pub struct QueueSubscriber {
     pub delivery_compilation_duration: Duration,
 
     pub id: SubscriberId,
-    pub session: Arc<MyServiceBusSession>,
+    pub session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
 }
 
 impl QueueSubscriber {
@@ -62,13 +62,13 @@ impl QueueSubscriber {
         id: SubscriberId,
         topic_id: TopicId,
         queue_id: QueueId,
-        session: Arc<MyServiceBusSession>,
+        session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
     ) -> Self {
         Self {
             topic_id: topic_id.to_string(),
             queue_id: queue_id.clone(),
             subscribed: DateTimeAsMicroseconds::now(),
-            metrics: SubscriberMetrics::new(id, session.id, topic_id, queue_id),
+            metrics: SubscriberMetrics::new(id, session.get_session_id(), topic_id, queue_id),
             delivery_state: QueueSubscriberDeliveryState::ReadyToDeliver,
             last_delivered: DateTimeAsMicroseconds::now(),
             session,

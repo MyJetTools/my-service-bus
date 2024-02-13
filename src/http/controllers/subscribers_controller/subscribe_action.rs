@@ -32,9 +32,9 @@ async fn handle_request(
     input_data: SubscribeHttpInputModel,
     ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let session = ctx.get_http_session(&action.app).await?;
+    let http_session = ctx.get_http_session(&action.app).await?;
 
-    session.connection.unwrap_as_http().ping();
+    http_session.ping();
 
     let queue_type = input_data.get_queue_type();
     crate::operations::subscriber::subscribe_to_queue(
@@ -42,7 +42,7 @@ async fn handle_request(
         input_data.topic_id,
         input_data.queue_id,
         queue_type,
-        &session,
+        http_session,
     )
     .await?;
 

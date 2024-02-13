@@ -5,6 +5,7 @@ use my_service_bus::tcp_contracts::{MySbTcpContract, PacketProtVer};
 
 use crate::http::controllers::MessageToDeliverHttpContract;
 use crate::queues::QueueId;
+use crate::sessions::SessionType;
 use crate::{
     messages_page::MySbMessageContent, queue_subscribers::SubscriberId,
     sessions::MyServiceBusSession, topics::Topic,
@@ -21,17 +22,37 @@ pub struct SubscriberPackageBuilder {
     pub topic: Arc<Topic>,
     pub queue_id: QueueId,
     pub subscriber_id: SubscriberId,
-    pub session: Arc<MyServiceBusSession>,
+    pub session: Option<Arc<dyn MyServiceBusSession + Send + Sync + 'static>>,
     inner: SubscriberPackageBuilderInner,
     pub messages_on_delivery: QueueWithIntervals,
 }
 
 impl SubscriberPackageBuilder {
+    pub fn new(
+        session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
+        topic: Arc<Topic>,
+        queue_id: QueueId,
+        subscriber_id: SubscriberId,
+    ) -> Self {
+        match session.get_session_type() {
+            SessionType::Tcp(protocol_ver) => {
+                Self::create_tcp(topic, queue_id, subscriber_id, session, protocol_ver)
+            }
+            SessionType::Http => {
+                SubscriberPackageBuilder::create_http(topic, queue_id, subscriber_id, session)
+            }
+            #[cfg(test)]
+            SessionType::Test => {
+                SubscriberPackageBuilder::create_http(topic, queue_id, subscriber_id, session)
+            }
+        }
+    }
+
     pub fn create_tcp(
         topic: Arc<Topic>,
         queue_id: QueueId,
         subscriber_id: SubscriberId,
-        session: Arc<MyServiceBusSession>,
+        session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
         protocol_ver: PacketProtVer,
     ) -> Self {
         let inner = SubscriberPackageBuilderInner::Tcp(Some(SubscriberTcpPackageBuilder::new(
@@ -46,7 +67,7 @@ impl SubscriberPackageBuilder {
             queue_id,
             subscriber_id,
             inner,
-            session,
+            session: Some(session),
             messages_on_delivery: QueueWithIntervals::new(),
         }
     }
@@ -55,7 +76,7 @@ impl SubscriberPackageBuilder {
         topic: Arc<Topic>,
         queue_id: QueueId,
         subscriber_id: SubscriberId,
-        session: Arc<MyServiceBusSession>,
+        session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
     ) -> Self {
         let inner = SubscriberPackageBuilderInner::Http(Some(SubscriberHttpPackageBuilder::new()));
 
@@ -64,7 +85,7 @@ impl SubscriberPackageBuilder {
             queue_id,
             subscriber_id,
             inner,
-            session,
+            session: Some(session),
             messages_on_delivery: QueueWithIntervals::new(),
         }
     }
@@ -120,6 +141,22 @@ impl SubscriberPackageBuilder {
                 let builder = builder.take().unwrap();
                 builder.get_result()
             }
+        }
+    }
+
+    #[cfg(not(test))]
+    pub fn send_messages_to_connection(mut self) {
+        if let Some(session) = self.session.take() {
+            tokio::task::spawn(async move {
+                session.send_messages_to_connection(self).await;
+            });
+        }
+    }
+
+    #[cfg(test)]
+    pub async fn send_messages_to_connection(mut self) {
+        if let Some(session) = self.session.take() {
+            session.send_messages_to_connection(self).await;
         }
     }
 }

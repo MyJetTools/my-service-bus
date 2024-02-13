@@ -3,7 +3,7 @@ use std::sync::Arc;
 use my_http_server::macros::http_route;
 use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput};
 
-use crate::{app::AppContext, sessions::http::*};
+use crate::app::AppContext;
 
 use super::models::{GreetingInputModel, GreetingJsonResult};
 
@@ -38,13 +38,15 @@ async fn handle_request(
 ) -> Result<HttpOkResult, HttpFailResult> {
     let ip = ctx.request.get_ip().get_real_ip().to_string();
 
-    let id = uuid::Uuid::new_v4().to_string();
+    let session_key = action
+        .app
+        .sessions
+        .add_http(input_data.name, input_data.version, ip)
+        .await;
 
-    let data = HttpConnectionData::new(id.to_string(), input_data.name, input_data.version, ip);
-
-    action.app.sessions.add_http(data).await;
-
-    let result = GreetingJsonResult { session: id };
+    let result = GreetingJsonResult {
+        session: session_key.into_string(),
+    };
 
     HttpOutput::as_json(result).into_ok_result(true).into()
 }

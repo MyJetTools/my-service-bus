@@ -19,11 +19,11 @@ mod tests {
 
         let app = Arc::new(crate::app::AppContext::new(settings).await);
 
-        let session = app.sessions.add_test(13.into(), "127.0.0.1").await;
+        let session = app.sessions.add_test("127.0.0.1").await;
 
         let topic = crate::operations::publisher::create_topic_if_not_exists(
             &app,
-            Some(session.id),
+            Some(session.session_id),
             TOPIC_NAME,
         )
         .await
@@ -34,7 +34,7 @@ mod tests {
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,
-            &session,
+            session.clone(),
         )
         .await
         .unwrap();
@@ -54,7 +54,7 @@ mod tests {
             TOPIC_NAME,
             vec![msg1, msg2],
             false,
-            session.id,
+            session.session_id,
         )
         .await
         .unwrap();

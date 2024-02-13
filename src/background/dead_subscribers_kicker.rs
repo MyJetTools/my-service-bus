@@ -49,7 +49,7 @@ impl MyTimerTick for DeadSubscribersKickerTimer {
                         "Dead subscribers detector".to_string(),
                         format!(
                             "Kicking Connection {} with dead subscriber {}",
-                            dead_subscriber.session.id,
+                            dead_subscriber.session.get_session_id().get_value(),
                             dead_subscriber.subscriber_id.get_value()
                         ),
                         LogEventCtx::new().add("topicId", topic.topic_id.as_str()),

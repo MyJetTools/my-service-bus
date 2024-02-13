@@ -1,0 +1,24 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+package persistence;
+
+
+message GreetingGrpcRequest {
+    string AppName = 1;
+    string AppVersion = 2;
+}
+
+message GreetingGrpcResponse{
+    string SessionKey = 1;
+}
+  
+
+message PingGrpcRequest {
+    string SessionKey = 1;
+}
+
+service MyServiceBusMessagesPersistenceGrpcService {
+    rpc Greeting(GreetingGrpcRequest) returns (GreetingGrpcResponse);
+    rpc Ping(PingGrpcRequest) returns (google.protobuf.Empty);
+ }
+ 

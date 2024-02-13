@@ -17,7 +17,7 @@ pub async fn subscribe_to_queue(
     topic_id: String,
     queue_id: String,
     queue_type: TopicQueueType,
-    session: &Arc<MyServiceBusSession>,
+    session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
 ) -> Result<SubscriberId, OperationFailResult> {
     let topic = {
         let topic = app.topic_list.get(topic_id.as_str()).await;
@@ -46,11 +46,13 @@ pub async fn subscribe_to_queue(
 
     topic_queue.update_queue_type(queue_type);
 
+    let session_id = session.get_session_id();
+
     let kicked_subscriber_result = topic_queue.subscribers.subscribe(
         subscriber_id,
         topic.topic_id.clone(),
         topic_queue.queue_id.clone(),
-        session.clone(),
+        session,
     );
 
     if let Some(kicked_subscriber) = kicked_subscriber_result {
@@ -71,7 +73,7 @@ pub async fn subscribe_to_queue(
                         .get_messages_amount_on_delivery()
                         .to_string(),
                 )
-                .add("sessionId", session.id.get_value().to_string()),
+                .add("sessionId", session_id.get_value().to_string()),
         );
 
         remove_subscriber(topic_queue, kicked_subscriber);
@@ -83,7 +85,7 @@ pub async fn subscribe_to_queue(
                 .add("topicId", topic_queue.queue_id.as_str())
                 .add("queueId", topic_queue.queue_id.as_str())
                 .add("subscriberId", subscriber_id.get_value().to_string())
-                .add("sessionId", session.id.get_value().to_string()),
+                .add("sessionId", session_id.get_value().to_string()),
         );
     }
 
@@ -123,11 +125,11 @@ mod tests {
 
         let app = Arc::new(crate::app::AppContext::new(settings).await);
 
-        let session = app.sessions.add_test(13.into(), "127.0.0.1").await;
+        let session = app.sessions.add_test("127.0.0.1").await;
 
         let topic = crate::operations::publisher::create_topic_if_not_exists(
             &app,
-            Some(session.id),
+            Some(session.session_id),
             TOPIC_NAME,
         )
         .await
@@ -138,7 +140,7 @@ mod tests {
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,
-            &session,
+            session.clone(),
         )
         .await
         .unwrap();
@@ -158,24 +160,23 @@ mod tests {
             TOPIC_NAME,
             vec![msg1, msg2],
             false,
-            session.id,
+            session.session_id,
         )
         .await
         .unwrap();
 
-        let session2 = app.sessions.add_test(14.into(), "127.0.0.1").await;
+        let session2 = app.sessions.add_test("127.0.0.1").await;
 
         let subscriber_id_2 = crate::operations::subscriber::subscribe_to_queue(
             &app,
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,
-            &session2,
+            session2.clone(),
         )
         .await
         .unwrap();
 
-        assert_eq!(true, session.is_disconnected());
         {
             let data = topic.get_access().await;
             let queue = data.queues.get(QUEUE_NAME).unwrap();

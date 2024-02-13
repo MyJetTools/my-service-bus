@@ -8,7 +8,7 @@ use my_service_bus::{
     tcp_contracts::{MySbSerializerState, MySbTcpConnection, MySbTcpContract, MySbTcpSerializer},
 };
 
-use crate::{app::AppContext, operations, sessions::TcpConnectionData};
+use crate::{app::AppContext, operations};
 
 use super::error::MySbSocketError;
 
@@ -55,12 +55,12 @@ impl TcpServerEvents {
 
                 self.app
                     .sessions
-                    .add_tcp(TcpConnectionData::new(
+                    .add_tcp(
                         connection.clone(),
                         connection_name.unwrap(),
                         version,
                         protocol_version,
-                    ))
+                    )
                     .await;
 
                 Ok(())
@@ -74,7 +74,7 @@ impl TcpServerEvents {
                 if let Some(session_id) = self
                     .app
                     .sessions
-                    .resolve_session_id_by_tcp_connection_id(connection.id)
+                    .get_session_id_by_tcp_connection_id(connection.id)
                     .await
                 {
                     let result = operations::publisher::publish(
@@ -111,14 +111,14 @@ impl TcpServerEvents {
                 queue_id,
                 queue_type,
             } => {
-                if let Some(session) = &self
+                if let Some(session) = self
                     .app
                     .sessions
-                    .get_by_tcp_connection_id(connection.id)
+                    .get_tcp_session_by_connection_id(connection.id)
                     .await
                 {
                     operations::subscriber::subscribe_to_queue(
-                        &self.app, topic_id, queue_id, queue_type, &session,
+                        &self.app, topic_id, queue_id, queue_type, session,
                     )
                     .await?;
                 }
@@ -152,15 +152,15 @@ impl TcpServerEvents {
                 Ok(())
             }
             MySbTcpContract::CreateTopicIfNotExists { topic_id } => {
-                if let Some(session) = &self
+                if let Some(session) = self
                     .app
                     .sessions
-                    .get_by_tcp_connection_id(connection.id)
+                    .get_session_id_by_tcp_connection_id(connection.id)
                     .await
                 {
                     operations::publisher::create_topic_if_not_exists(
                         &self.app,
-                        Some(session.id),
+                        Some(session),
                         topic_id.as_str(),
                     )
                     .await?;
@@ -193,10 +193,10 @@ impl TcpServerEvents {
                     if let Some(session) = &self
                         .app
                         .sessions
-                        .get_by_tcp_connection_id(connection.id)
+                        .get_tcp_session_by_connection_id(connection.id)
                         .await
                     {
-                        session.update_tcp_delivery_packet_version(*version as u8)
+                        session.update_deliver_message_packet_version(*version as u8)
                     }
                 }
 
@@ -264,7 +264,7 @@ impl SocketEventCallback<MySbTcpContract, MySbTcpSerializer, MySbSerializerState
     async fn disconnected(&self, connection: Arc<MySbTcpConnection>) {
         self.app.prometheus.mark_new_tcp_disconnection();
         if let Some(session) = self.app.sessions.remove_tcp(connection.id).await {
-            crate::operations::sessions::disconnect(self.app.as_ref(), session.as_ref()).await;
+            crate::operations::sessions::disconnect(self.app.as_ref(), session).await;
         }
     }
 

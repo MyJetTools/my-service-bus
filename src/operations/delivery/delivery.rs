@@ -110,7 +110,7 @@ fn compile_package(
     topic_queue: &mut TopicQueue,
     pages: &MessagesPageList,
     subscriber_id: SubscriberId,
-    session: &Arc<MyServiceBusSession>,
+    session: &Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
 ) -> Option<SubscriberPackageBuilder> {
     let mut package_builder = None;
 
@@ -153,12 +153,20 @@ fn compile_package(
                 let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
 
                 if package_builder.is_none() {
+                    package_builder = Some(SubscriberPackageBuilder::new(
+                        session.clone(),
+                        topic.clone(),
+                        topic_queue.queue_id.clone(),
+                        subscriber_id,
+                    ));
+
+                    /*
                     package_builder = Some(MyServiceBusSession::create_delivery_builder(
                         session,
                         topic.clone(),
                         topic_queue.queue_id.clone(),
                         subscriber_id,
-                    ));
+                    )); */
                 }
 
                 package_builder
@@ -199,7 +207,7 @@ mod tests {
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
     use crate::app::AppContext;
-    use crate::{sessions::SessionId, settings::SettingsModel};
+    use crate::settings::SettingsModel;
 
     use super::*;
 
@@ -207,18 +215,17 @@ mod tests {
     async fn test_publish_subscribe_case() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
-        let session_id: SessionId = SessionId::new(13);
         const DELIVERY_SIZE: usize = 16;
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
 
         let app = Arc::new(AppContext::new(settings).await);
 
-        let session = app.sessions.add_test(session_id, "127.0.0.1").await;
+        let test_session = app.sessions.add_test("127.0.0.1").await;
 
         crate::operations::publisher::create_topic_if_not_exists(
             &app,
-            Some(session.id),
+            Some(test_session.session_id),
             TOPIC_NAME,
         )
         .await
@@ -229,7 +236,7 @@ mod tests {
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::Permanent,
-            &session,
+            test_session.clone(),
         )
         .await
         .unwrap();
@@ -246,13 +253,17 @@ mod tests {
 
         let messages = vec![msg1, msg2];
 
-        crate::operations::publisher::publish(&app, TOPIC_NAME, messages, false, session.id)
-            .await
-            .unwrap();
+        crate::operations::publisher::publish(
+            &app,
+            TOPIC_NAME,
+            messages,
+            false,
+            test_session.session_id,
+        )
+        .await
+        .unwrap();
 
-        let test_connection = session.connection.unwrap_as_test();
-
-        let result_packets = test_connection.get_list_of_packets_and_clear_them().await;
+        let result_packets = test_session.get_list_of_packets_and_clear_them().await;
         assert_eq!(result_packets.len(), 1);
     }
 
@@ -260,14 +271,13 @@ mod tests {
     async fn test_we_subscriber_and_deliver_persisted_messages() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
-        let session_id: SessionId = SessionId::new(13);
         const DELIVERY_SIZE: usize = 16;
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
 
         let app = Arc::new(AppContext::new(settings).await);
 
-        let session = app.sessions.add_test(session_id, "127.0.0.1").await;
+        let test_session = app.sessions.add_test("127.0.0.1").await;
 
         app.topic_list.restore(TOPIC_NAME, 3.into(), true).await;
 
@@ -315,15 +325,13 @@ mod tests {
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::Permanent,
-            &session,
+            test_session.clone(),
         )
         .await
         .unwrap();
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-        let test_connection = session.connection.unwrap_as_test();
-
-        let mut result_packets = test_connection.get_list_of_packets_and_clear_them().await;
+        let mut result_packets = test_session.get_list_of_packets_and_clear_them().await;
         assert_eq!(result_packets.len(), 1);
 
         let packet = result_packets.remove(0);

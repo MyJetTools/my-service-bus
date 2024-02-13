@@ -1,4 +1,4 @@
-use crate::{sessions::MyServiceBusSession, topics::TopicInner};
+use crate::topics::TopicInner;
 
 use super::delivery::SubscriberPackageBuilder;
 
@@ -20,7 +20,7 @@ pub fn send_new_messages_to_deliver(
 
                 subscriber.metrics.set_started_delivery();
 
-                tokio::spawn(MyServiceBusSession::deliver_messages(builder));
+                builder.send_messages_to_connection();
             } else {
                 subscriber.cancel_the_rent();
             }
@@ -46,7 +46,7 @@ pub async fn send_new_messages_to_deliver(
 
                 subscriber.metrics.set_started_delivery();
 
-                MyServiceBusSession::deliver_messages(builder).await;
+                builder.send_messages_to_connection().await;
             } else {
                 subscriber.cancel_the_rent();
             }

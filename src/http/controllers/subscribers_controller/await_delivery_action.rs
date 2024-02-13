@@ -32,7 +32,7 @@ async fn handle_request(
 ) -> Result<HttpOkResult, HttpFailResult> {
     let session = ctx.get_http_session(&action.app).await?;
 
-    session.connection.unwrap_as_http().ping();
+    session.ping();
 
     match session.get_long_pool_messages().await {
         Ok(messages) => match messages {

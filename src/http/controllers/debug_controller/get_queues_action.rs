@@ -52,7 +52,7 @@ async fn handle_request(
                 for subscriber in the_subscribers {
                     subscribers.push(QueueSubscriberDebugModel {
                         id: subscriber.id.get_value(),
-                        session_id: subscriber.session.id.get_value(),
+                        session_id: subscriber.session.get_session_id().get_value(),
                         subscribed: subscriber.subscribed.to_rfc3339(),
                         delivery_status: format!("{:?}", subscriber.delivery_state),
                         last_delivered: subscriber.last_delivered.to_rfc3339(),
