@@ -1,5 +1,5 @@
 use my_service_bus::shared::page_compressor::CompressedPageReaderError;
-use zip::result::ZipError;
+use my_service_bus::shared::zip::result::ZipError;
 
 #[derive(Debug)]
 pub enum PersistenceError {

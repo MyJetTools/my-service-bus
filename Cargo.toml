@@ -8,12 +8,12 @@ edition = "2021"
 
 [dependencies]
 
-my-service-bus = { tag = "1.0.4", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
+my-service-bus = { tag = "1.0.5", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
     "tcp_contracts",
     "shared",
 
 ] }
-my-http-server = { tag = "0.7.0", git = "https://github.com/MyJetTools/my-http-server.git", features = [
+my-http-server = { tag = "0.7.1", git = "https://github.com/MyJetTools/my-http-server.git", features = [
     "macros",
     "controllers",
     "static-files",
@@ -41,7 +41,6 @@ serde_json = "*"
 serde_derive = "*"
 serde_yaml = "*"
 base64 = "*"
-zip = "*"
 md5 = "*"
 anyhow = "*"
 futures-core = "*"
@@ -64,4 +63,4 @@ tikv-jemallocator = { version = "*", features = [
 ] }
 
 [build-dependencies]
-ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.0" }
+ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.1" }

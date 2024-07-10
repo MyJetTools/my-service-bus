@@ -14,9 +14,6 @@ pub struct SettingsModelYaml {
     #[serde(rename = "GrpcUrl")]
     pub persistence_grpc_url: String,
 
-    #[serde(rename = "EventuallyPersistenceDelay")]
-    pub eventually_persistence_delay: String,
-
     #[serde(rename = "QueueGcTimeout")]
     pub queue_gc_timeout: String,
 
@@ -47,9 +44,7 @@ pub struct SettingsModelYaml {
 
 pub struct SettingsModel {
     pub persistence_grpc_url: String,
-    pub eventually_persistence_delay: Duration,
     pub queue_gc_timeout: Duration,
-    pub debug_mode: bool,
 
     pub max_delivery_size: usize,
 
@@ -57,7 +52,6 @@ pub struct SettingsModel {
 
     pub auto_create_topic_on_publish: bool,
     pub auto_create_topic_on_subscribe: bool,
-    pub grpc_timeout: Duration,
     pub persist_timer_interval: Duration,
     pub persist_compressed: bool,
 }
@@ -98,14 +92,11 @@ impl SettingsModel {
     pub fn create_test_settings(max_delivery_size: usize) -> Self {
         Self {
             persistence_grpc_url: TEST_GRPC_URL.to_string(),
-            eventually_persistence_delay: Duration::from_secs(1),
             queue_gc_timeout: Duration::from_secs(1),
-            debug_mode: true,
             max_delivery_size,
             delivery_timeout: None,
             auto_create_topic_on_publish: true,
             auto_create_topic_on_subscribe: true,
-            grpc_timeout: Duration::from_secs(1),
             persist_timer_interval: Duration::from_secs(1),
             persist_compressed: false,
         }
@@ -149,11 +140,6 @@ impl Into<SettingsModel> for SettingsModelYaml {
         let queue_gc_timeout =
             rust_extensions::duration_utils::parse_duration(self.queue_gc_timeout.as_str())
                 .unwrap();
-
-        let eventually_persistence_delay = rust_extensions::duration_utils::parse_duration(
-            self.eventually_persistence_delay.as_str(),
-        )
-        .unwrap();
 
         let delivery_timeout = if let Some(src) = self.delivery_timeout {
             println!("Delivery timeout is set {}", src);
@@ -206,14 +192,11 @@ impl Into<SettingsModel> for SettingsModelYaml {
 
         SettingsModel {
             persistence_grpc_url: self.persistence_grpc_url,
-            debug_mode: self.debug_mode,
             queue_gc_timeout,
-            eventually_persistence_delay,
             max_delivery_size: self.max_delivery_size,
             delivery_timeout,
             auto_create_topic_on_publish,
             auto_create_topic_on_subscribe,
-            grpc_timeout: Duration::from_secs(self.grpc_timeout_secs),
             persist_timer_interval: Duration::from_str(&self.persist_timer_interval).unwrap(),
             persist_compressed: self.persist_compressed,
         }
