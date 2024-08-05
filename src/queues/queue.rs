@@ -21,7 +21,7 @@ pub struct TopicQueue {
     pub delivery_attempts: DeliveryAttempts,
     pub queue_type: TopicQueueType,
 
-    pub delivery_lock: Mutex<usize>,
+    pub debug: bool,
 }
 
 impl EntityWithStrKey for TopicQueue {
@@ -39,7 +39,7 @@ impl TopicQueue {
             subscribers: SubscribersList::new(queue_type),
             delivery_attempts: DeliveryAttempts::new(),
             queue_type,
-            delivery_lock: Mutex::new(0),
+            debug: std::env::var("DEBUG").is_ok(),
         }
     }
 
@@ -56,7 +56,7 @@ impl TopicQueue {
             subscribers: SubscribersList::new(queue_type),
             delivery_attempts: DeliveryAttempts::new(),
             queue_type,
-            delivery_lock: Mutex::new(0),
+            debug: std::env::var("DEBUG").is_ok(),
         }
     }
 
@@ -131,8 +131,24 @@ impl TopicQueue {
     }
 
     pub fn confirm_non_delivered(&mut self, ids: &QueueWithIntervals) {
+        if self.debug {
+            println!(
+                "{}. Got Not Delivered messages. Queue before:{:?}",
+                self.queue_id.as_str(),
+                self.queue.get_snapshot()
+            );
+
+            println!("Merging messages: {:?}", ids.get_snapshot());
+        }
         self.queue.merge_with(ids);
 
+        if self.debug {
+            println!(
+                "{}. Got Not Delivered messages. Queue before:{:?}",
+                self.queue_id.as_str(),
+                self.queue.get_snapshot()
+            );
+        }
         for msg_id in ids {
             self.delivery_attempts.add(msg_id.into());
         }
