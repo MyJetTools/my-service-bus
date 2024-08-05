@@ -44,7 +44,7 @@ impl TopicJsonContract {
 
         for (session_id, active) in topic_data.publishers.iter() {
             publishers.push(TopicPublisherJsonModel {
-                session_id: *session_id,
+                session_id: session_id.get_value(),
                 active: *active,
             });
         }
