@@ -209,8 +209,8 @@ fn get_delivery_bucket(
                 topic_queue.queue_id.as_str(),
                 subscriber_id.get_value()
             );
+            return None;
         }
-        return None;
     } else {
         if delivery_bucket.is_none() {
             println!(

@@ -42,7 +42,6 @@ impl QueueSubscriberDeliveryState {
 }
 
 pub struct QueueSubscriber {
-    pub topic_id: String,
     pub queue_id: QueueId,
     pub subscribed: DateTimeAsMicroseconds,
     pub metrics: SubscriberMetrics,
@@ -65,7 +64,6 @@ impl QueueSubscriber {
         session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
     ) -> Self {
         Self {
-            topic_id: topic_id.to_string(),
             queue_id: queue_id.clone(),
             subscribed: DateTimeAsMicroseconds::now(),
             metrics: SubscriberMetrics::new(id, session.get_session_id(), topic_id, queue_id),
@@ -99,6 +97,7 @@ impl QueueSubscriber {
     }
 
     pub fn cancel_the_rent(&mut self) {
+        println!("Cancel the rent");
         self.metrics.set_delivery_mode_as_ready_to_deliver();
         self.delivery_state = QueueSubscriberDeliveryState::ReadyToDeliver;
     }
@@ -136,6 +135,7 @@ impl QueueSubscriber {
                 inserted: DateTimeAsMicroseconds::now(),
             });
             self.metrics.set_delivery_mode_as_on_delivery();
+
             return;
         }
 

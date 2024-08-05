@@ -4,7 +4,6 @@ use my_service_bus::abstractions::{
     MessageId,
 };
 use rust_extensions::sorted_vec::EntityWithStrKey;
-use tokio::sync::Mutex;
 
 use crate::{
     queue_subscribers::{SubscriberId, SubscribersList},
