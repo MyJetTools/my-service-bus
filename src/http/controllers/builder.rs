@@ -1,20 +1,11 @@
 use std::sync::Arc;
 
-use my_http_server::controllers::{
-    ControllersAuthorization, ControllersMiddleware, RequiredClaims,
-};
+use my_http_server::controllers::ControllersMiddleware;
 
 use crate::app::AppContext;
 
 pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
-    let mut controllers = ControllersMiddleware::new(
-        ControllersAuthorization::BearerAuthentication {
-            global: false,
-            global_claims: RequiredClaims::no_claims(),
-        }
-        .into(),
-        None,
-    );
+    let mut controllers = ControllersMiddleware::new(None, None);
 
     controllers.register_post_action(Arc::new(super::topics_controller::CreateTopicAction::new(
         app.clone(),
