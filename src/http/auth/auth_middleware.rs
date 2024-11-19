@@ -23,14 +23,13 @@ impl HttpServerMiddleware for AuthMiddleware {
     async fn handle_request(
         &self,
         ctx: &mut HttpContext,
-        get_next: &mut HttpServerRequestFlow,
-    ) -> Result<HttpOkResult, HttpFailResult> {
+    ) -> Option<Result<HttpOkResult, HttpFailResult>> {
         if let Some(header) = ctx
             .request
             .get_headers()
             .try_get_case_insensitive(AUTH_HEADER)
         {
-            if let Some(last) = header.as_str()?.split(' ').last() {
+            if let Some(last) = header.as_str().unwrap().split(' ').last() {
                 let token = SessionToken {
                     session: last.to_string(),
                 };
@@ -38,6 +37,6 @@ impl HttpServerMiddleware for AuthMiddleware {
             }
         }
 
-        get_next.next(ctx).await
+        None
     }
 }
