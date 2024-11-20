@@ -8,7 +8,7 @@ edition = "2021"
 
 [dependencies]
 
-my-service-bus = { tag = "0.1.1", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
+my-service-bus = { tag = "1.1.1", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
     "tcp_contracts",
     "shared",
 
