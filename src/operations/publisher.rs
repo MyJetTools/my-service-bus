@@ -37,11 +37,11 @@ pub async fn publish(
         return Err(OperationFailResult::ShuttingDown);
     }
 
-    let topic = app.topic_list.get(topic_id).await;
+    let mut topic = app.topic_list.get(topic_id).await;
 
     if topic.is_none() {
         if app.settings.auto_create_topic_on_publish {
-            app.topic_list.add_if_not_exists(topic_id).await?;
+            topic = Some(app.topic_list.add_if_not_exists(topic_id).await?);
         } else {
             return Err(OperationFailResult::TopicNotFound {
                 topic_id: topic_id.to_string(),
