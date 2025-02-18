@@ -2,7 +2,7 @@ use my_service_bus::abstractions::MessageId;
 
 use crate::app::AppContext;
 
-use super::OperationFailResult;
+use super::super::OperationFailResult;
 
 pub async fn set_message_id(
     app: &AppContext,

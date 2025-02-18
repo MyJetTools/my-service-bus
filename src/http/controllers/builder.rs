@@ -50,6 +50,10 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         app.clone(),
     )));
 
+    controllers.register_post_action(Arc::new(super::queues::SetMaxMessagePerPayloadAction::new(
+        app.clone(),
+    )));
+
     controllers
         .register_delete_action(Arc::new(super::queues::DeleteQueueAction::new(app.clone())));
 
@@ -57,13 +61,6 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
 
     controllers.register_get_action(Arc::new(
         super::debug_controller::GetMinMessageIdAction::new(app.clone()),
-    ));
-
-    controllers.register_post_action(Arc::new(
-        super::debug_controller::EnableDebugModeAction::new(app.clone()),
-    ));
-    controllers.register_delete_action(Arc::new(
-        super::debug_controller::DisableDebugModeAction::new(app.clone()),
     ));
 
     controllers.register_get_action(Arc::new(

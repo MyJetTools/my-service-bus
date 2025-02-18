@@ -21,6 +21,7 @@ pub struct TopicQueue {
     pub queue_type: TopicQueueType,
 
     pub debug: bool,
+    pub max_messages_per_payload: Option<usize>,
 }
 
 impl EntityWithStrKey for TopicQueue {
@@ -39,6 +40,7 @@ impl TopicQueue {
             delivery_attempts: DeliveryAttempts::new(),
             queue_type,
             debug: std::env::var("DEBUG").is_ok(),
+            max_messages_per_payload: None,
         }
     }
 
@@ -56,6 +58,7 @@ impl TopicQueue {
             delivery_attempts: DeliveryAttempts::new(),
             queue_type,
             debug: std::env::var("DEBUG").is_ok(),
+            max_messages_per_payload: None,
         }
     }
 

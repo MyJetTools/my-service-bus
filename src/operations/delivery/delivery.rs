@@ -112,7 +112,7 @@ fn compile_package(
     subscriber_id: SubscriberId,
     session: &Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
 ) -> Option<SubscriberPackageBuilder> {
-    let mut package_builder = None;
+    let mut package_builder: Option<SubscriberPackageBuilder> = None;
 
     #[cfg(test)]
     println!("compile_and_deliver");
@@ -120,6 +120,14 @@ fn compile_package(
     let mut payload_size = 0;
 
     while payload_size < app.get_max_delivery_size() {
+        if let Some(max_messages_per_payload) = topic_queue.max_messages_per_payload {
+            if let Some(package_builder) = package_builder.as_ref() {
+                if package_builder.messages_on_delivery.queue_size() >= max_messages_per_payload {
+                    break;
+                }
+            }
+        }
+
         let message_id = topic_queue.queue.peek();
 
         if message_id.is_none() {

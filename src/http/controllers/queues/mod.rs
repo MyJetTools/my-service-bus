@@ -6,3 +6,5 @@ pub use contracts::*;
 pub use delete_queue_action::DeleteQueueAction;
 pub use get_list_of_queues_action::GetQueuesAction;
 pub use set_message_id_action::SetMessageIdAction;
+mod set_max_message_per_payload_action;
+pub use set_max_message_per_payload_action::*;

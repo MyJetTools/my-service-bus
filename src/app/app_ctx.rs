@@ -1,7 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
 use rust_extensions::{AppStates, ApplicationStates};
-use tokio::sync::RwLock;
 
 use crate::{
     grpc_client::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo},
@@ -16,12 +15,6 @@ use super::{prometheus_metrics::PrometheusMetrics, ImmediatelyPersistEventLoop};
 
 pub const APP_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-#[derive(Clone)]
-pub struct DebugTopicAndQueue {
-    pub topic_id: String,
-    pub queue_id: String,
-}
-
 pub struct AppContext {
     pub states: Arc<AppStates>,
     pub topic_list: TopicsList,
@@ -34,8 +27,6 @@ pub struct AppContext {
     pub prometheus: PrometheusMetrics,
 
     pub delivery_timeout: Duration,
-
-    pub debug_topic_and_queue: RwLock<Option<DebugTopicAndQueue>>,
 
     pub immediately_persist_event_loop: ImmediatelyPersistEventLoop,
 
@@ -64,26 +55,10 @@ impl AppContext {
             } else {
                 Duration::from_secs(30)
             },
-            debug_topic_and_queue: RwLock::new(None),
             immediately_persist_event_loop: ImmediatelyPersistEventLoop::new(),
             persistence_version: MultiThreadedShortString::new(),
             settings,
         }
-    }
-
-    pub async fn set_debug_topic_and_queue(&self, topic_id: &str, queue_id: &str) {
-        let mut write_access = self.debug_topic_and_queue.write().await;
-
-        *write_access = Some(DebugTopicAndQueue {
-            topic_id: topic_id.to_string(),
-            queue_id: queue_id.to_string(),
-        })
-    }
-
-    pub async fn disable_debug_topic_and_queue(&self) {
-        let mut write_access = self.debug_topic_and_queue.write().await;
-
-        *write_access = None;
     }
 
     pub fn get_max_delivery_size(&self) -> usize {
