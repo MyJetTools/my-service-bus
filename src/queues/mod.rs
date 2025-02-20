@@ -1,9 +1,7 @@
 mod delivery_bucket;
 mod queue;
-mod queue_data;
 
 mod delivery_attempts;
-mod queue_metrics;
 mod queues_list;
 
 pub use queue::TopicQueue;

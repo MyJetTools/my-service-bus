@@ -14,6 +14,8 @@ pub struct TopicQueueSubscriberJsonModel {
     pub active: u8,
     #[serde(rename = "deliveryState")]
     pub delivery_state: u8,
+    #[serde(rename = "deliveryStateStr")]
+    pub delivery_state_str: String,
     pub history: Vec<i32>,
 }
 
@@ -25,6 +27,7 @@ impl TopicQueueSubscriberJsonModel {
             queue_id: subscriber.queue_id.to_string(),
             active: subscriber.metrics.active,
             delivery_state: subscriber.delivery_state.to_u8(),
+            delivery_state_str: subscriber.delivery_state.to_string().to_string(),
             history: subscriber.metrics.delivery_history.get(),
         }
     }

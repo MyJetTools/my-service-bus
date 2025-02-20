@@ -2,14 +2,7 @@ use std::time::Duration;
 
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-use crate::{
-    metric_data::{MetricOneSecond, MetricsHistory},
-    queues::QueueId,
-    sessions::SessionId,
-    topics::TopicId,
-};
-
-use super::SubscriberId;
+use crate::metric_data::{MetricOneSecond, MetricsHistory};
 
 pub const DELIVERY_STATE_READY_TO_DELIVER: u8 = 0;
 pub const DELIVERY_STATE_RENTED: u8 = 1;
@@ -17,37 +10,23 @@ pub const DELIVERY_STATE_ON_DELIVERY: u8 = 2;
 
 #[derive(Clone)]
 pub struct SubscriberMetrics {
-    pub topic_id: TopicId,
-    pub queue_id: QueueId,
     pub start_delivery_time: DateTimeAsMicroseconds,
     pub delivered_amount: MetricOneSecond,
     pub delivery_microseconds: MetricOneSecond,
     pub active: u8,
     pub delivery_history: MetricsHistory,
 
-    pub session_id: SessionId,
-    pub subscriber_id: SubscriberId,
-
     pub delivery_mode: u8,
 }
 
 impl SubscriberMetrics {
-    pub fn new(
-        subscriber_id: SubscriberId,
-        session_id: SessionId,
-        topic_id: TopicId,
-        queue_id: QueueId,
-    ) -> Self {
+    pub fn new() -> Self {
         Self {
-            subscriber_id,
             start_delivery_time: DateTimeAsMicroseconds::now(),
             delivered_amount: MetricOneSecond::new(),
             delivery_microseconds: MetricOneSecond::new(),
             active: 0,
             delivery_history: MetricsHistory::new(),
-            session_id,
-            topic_id,
-            queue_id,
             delivery_mode: DELIVERY_STATE_READY_TO_DELIVER,
         }
     }

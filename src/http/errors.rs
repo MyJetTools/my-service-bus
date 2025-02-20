@@ -7,7 +7,3 @@ impl From<OperationFailResult> for HttpFailResult {
         Self::as_forbidden(Some(format!("{:?}", src)))
     }
 }
-
-pub trait AsHttpFailResult {
-    fn as_fail_result(self) -> HttpFailResult;
-}

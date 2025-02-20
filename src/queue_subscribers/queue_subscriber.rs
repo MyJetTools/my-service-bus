@@ -1,12 +1,11 @@
 use std::{sync::Arc, time::Duration};
 
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
-use rust_extensions::{date_time::DateTimeAsMicroseconds, sorted_vec::EntityWithKey};
+use rust_extensions::{date_time::DateTimeAsMicroseconds, sorted_vec::EntityWithKey, StrOrString};
 
 use crate::{
     queues::{DeliveryBucket, QueueId},
     sessions::MyServiceBusSession,
-    topics::TopicId,
 };
 
 use super::{SubscriberId, SubscriberMetrics};
@@ -18,23 +17,25 @@ pub struct OnDeliveryStateData {
 
 #[derive(Debug)]
 pub enum QueueSubscriberDeliveryState {
-    ReadyToDeliver,
+    Idle,
     Rented,
     OnDelivery(OnDeliveryStateData),
 }
 
 impl QueueSubscriberDeliveryState {
-    pub fn to_string(&self) -> &str {
+    pub fn to_string(&self) -> StrOrString<'static> {
         match self {
-            QueueSubscriberDeliveryState::ReadyToDeliver => "ReadyToDeliver",
-            QueueSubscriberDeliveryState::Rented => "Rented",
-            QueueSubscriberDeliveryState::OnDelivery(_) => "OnDelivery",
+            QueueSubscriberDeliveryState::Idle => "Idle".into(),
+            QueueSubscriberDeliveryState::Rented => "Rented".into(),
+            QueueSubscriberDeliveryState::OnDelivery(data) => {
+                format!("{:?}", data.bucket.ids.get_snapshot()).into()
+            }
         }
     }
 
     pub fn to_u8(&self) -> u8 {
         match self {
-            QueueSubscriberDeliveryState::ReadyToDeliver => 0,
+            QueueSubscriberDeliveryState::Idle => 0,
             QueueSubscriberDeliveryState::Rented => 1,
             QueueSubscriberDeliveryState::OnDelivery(_) => 2,
         }
@@ -59,15 +60,14 @@ pub struct QueueSubscriber {
 impl QueueSubscriber {
     pub fn new(
         id: SubscriberId,
-        topic_id: TopicId,
         queue_id: QueueId,
         session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
     ) -> Self {
         Self {
             queue_id: queue_id.clone(),
             subscribed: DateTimeAsMicroseconds::now(),
-            metrics: SubscriberMetrics::new(id, session.get_session_id(), topic_id, queue_id),
-            delivery_state: QueueSubscriberDeliveryState::ReadyToDeliver,
+            metrics: SubscriberMetrics::new(),
+            delivery_state: QueueSubscriberDeliveryState::Idle,
             last_delivered: DateTimeAsMicroseconds::now(),
             session,
             id,
@@ -77,7 +77,7 @@ impl QueueSubscriber {
     }
 
     pub fn rent_me(&mut self) -> bool {
-        if let QueueSubscriberDeliveryState::ReadyToDeliver = &self.delivery_state {
+        if let QueueSubscriberDeliveryState::Idle = &self.delivery_state {
             self.metrics.set_delivery_mode_as_rented();
             self.delivery_state = QueueSubscriberDeliveryState::Rented;
             return true;
@@ -88,7 +88,7 @@ impl QueueSubscriber {
 
     pub fn get_on_delivery_amount(&self) -> usize {
         match &self.delivery_state {
-            QueueSubscriberDeliveryState::ReadyToDeliver => 0,
+            QueueSubscriberDeliveryState::Idle => 0,
             QueueSubscriberDeliveryState::Rented => 0,
             QueueSubscriberDeliveryState::OnDelivery(on_delivery) => {
                 on_delivery.bucket.ids.queue_size()
@@ -99,12 +99,12 @@ impl QueueSubscriber {
     pub fn cancel_the_rent(&mut self) {
         println!("Cancel the rent");
         self.metrics.set_delivery_mode_as_ready_to_deliver();
-        self.delivery_state = QueueSubscriberDeliveryState::ReadyToDeliver;
+        self.delivery_state = QueueSubscriberDeliveryState::Idle;
     }
 
     pub fn reset_delivery(&mut self) -> Option<DeliveryBucket> {
         self.last_delivered = DateTimeAsMicroseconds::now();
-        let mut prev_delivery_state = QueueSubscriberDeliveryState::ReadyToDeliver;
+        let mut prev_delivery_state = QueueSubscriberDeliveryState::Idle;
 
         std::mem::swap(&mut prev_delivery_state, &mut self.delivery_state);
 
@@ -147,7 +147,7 @@ impl QueueSubscriber {
 
     pub fn get_messages_on_delivery(&self) -> Option<QueueWithIntervals> {
         match &self.delivery_state {
-            QueueSubscriberDeliveryState::ReadyToDeliver => None,
+            QueueSubscriberDeliveryState::Idle => None,
             QueueSubscriberDeliveryState::Rented => None,
             QueueSubscriberDeliveryState::OnDelivery(state) => Some(state.bucket.ids.clone()),
         }
@@ -155,7 +155,7 @@ impl QueueSubscriber {
 
     pub fn get_messages_amount_on_delivery(&self) -> usize {
         match &self.delivery_state {
-            QueueSubscriberDeliveryState::ReadyToDeliver => 0,
+            QueueSubscriberDeliveryState::Idle => 0,
             QueueSubscriberDeliveryState::Rented => 0,
             QueueSubscriberDeliveryState::OnDelivery(state) => state.bucket.ids.queue_size(),
         }
@@ -163,7 +163,7 @@ impl QueueSubscriber {
 
     pub fn is_dead_on_delivery(&self, max_delivery_duration: Duration) -> Option<Duration> {
         match &self.delivery_state {
-            QueueSubscriberDeliveryState::ReadyToDeliver => None,
+            QueueSubscriberDeliveryState::Idle => None,
             QueueSubscriberDeliveryState::Rented => None,
             QueueSubscriberDeliveryState::OnDelivery(state) => {
                 let now = DateTimeAsMicroseconds::now();

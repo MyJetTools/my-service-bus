@@ -142,7 +142,12 @@ impl TopicQueue {
 
             println!("Merging messages: {:?}", ids.get_snapshot());
         }
-        self.queue.merge_with(ids);
+
+        for msg_id in ids.iter() {
+            self.delivery_attempts.add(msg_id.into());
+        }
+
+        self.queue.merge(ids.clone());
 
         if self.debug {
             println!(
@@ -150,9 +155,6 @@ impl TopicQueue {
                 self.queue_id.as_str(),
                 self.queue.get_snapshot()
             );
-        }
-        for msg_id in ids {
-            self.delivery_attempts.add(msg_id.into());
         }
     }
 

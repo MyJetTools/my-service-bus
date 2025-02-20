@@ -3,7 +3,6 @@ use rust_extensions::date_time::{AtomicDateTimeAsMicroseconds, DateTimeAsMicrose
 
 pub struct MissingSubPageInner {
     pub sub_page_id: SubPageId,
-    pub created: DateTimeAsMicroseconds,
     pub last_accessed: AtomicDateTimeAsMicroseconds,
 }
 
@@ -12,7 +11,6 @@ impl MissingSubPageInner {
         let created = DateTimeAsMicroseconds::now();
         Self {
             sub_page_id,
-            created,
             last_accessed: AtomicDateTimeAsMicroseconds::new(created.unix_microseconds),
         }
     }

@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use my_tcp_sockets::socket_reader::ReadingTcpContractFail;
 
 use crate::operations::OperationFailResult;

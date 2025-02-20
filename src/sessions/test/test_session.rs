@@ -14,16 +14,16 @@ pub struct TestDeliveryMessage {
     pub topic_id: TopicId,
     pub queue_id: QueueId,
     pub subscriber_id: SubscriberId,
-    pub messages: Vec<MessageToDeliverHttpContract>,
+    pub _messages: Vec<MessageToDeliverHttpContract>,
 }
 
 pub struct MyServiceBusTestSession {
     pub session_id: SessionId,
-    pub ip: StrOrString<'static>,
+    pub _ip: StrOrString<'static>,
     connected: std::sync::atomic::AtomicBool,
     pub sent_packets: Mutex<Vec<TestDeliveryMessage>>,
     pub name: String,
-    pub version: Option<String>,
+    pub _version: Option<String>,
     pub connected_moment: DateTimeAsMicroseconds,
 }
 
@@ -31,11 +31,11 @@ impl MyServiceBusTestSession {
     pub fn new(session_id: SessionId, ip: impl Into<StrOrString<'static>>) -> Self {
         Self {
             session_id,
-            ip: ip.into(),
+            _ip: ip.into(),
             connected: std::sync::atomic::AtomicBool::new(true),
             sent_packets: Mutex::new(vec![]),
             name: "Test".to_string(),
-            version: None,
+            _version: None,
             connected_moment: DateTimeAsMicroseconds::now(),
         }
     }
@@ -88,7 +88,7 @@ impl MyServiceBusSession for MyServiceBusTestSession {
             topic_id: package_builder.topic.topic_id.clone(),
             queue_id: package_builder.queue_id.clone(),
             subscriber_id: package_builder.subscriber_id.clone(),
-            messages,
+            _messages: messages,
         });
     }
 }

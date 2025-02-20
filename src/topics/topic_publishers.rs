@@ -19,11 +19,13 @@ impl TopicPublishers {
         self.inner.push((session_id, value));
     }
 
-    pub fn has_session(&self, session_id: SessionId) -> bool {
-        self.inner
-            .iter()
-            .any(|x| x.0.get_value() == session_id.get_value())
-    }
+    /*
+       pub fn has_session(&self, session_id: SessionId) -> bool {
+           self.inner
+               .iter()
+               .any(|x| x.0.get_value() == session_id.get_value())
+       }
+    */
 
     pub fn one_second_tick(&mut self) {
         for value in &mut self.inner {

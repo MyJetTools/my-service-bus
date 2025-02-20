@@ -33,7 +33,6 @@ impl<'s> GetMessageResult<'s> {
 pub struct SubPageInner {
     pub sub_page_id: SubPageId,
     pub messages: SortedVec<MessageId, MySbCachedMessage>,
-    pub created: DateTimeAsMicroseconds,
     pub last_accessed: AtomicDateTimeAsMicroseconds,
     size_and_amount: SizeAndAmount,
     to_persist: QueueWithIntervals,
@@ -45,7 +44,6 @@ impl SubPageInner {
         Self {
             sub_page_id,
             messages: SortedVec::new(),
-            created,
             size_and_amount: SizeAndAmount::new(),
             to_persist: QueueWithIntervals::new(),
             last_accessed: AtomicDateTimeAsMicroseconds::new(created.unix_microseconds),
@@ -69,7 +67,6 @@ impl SubPageInner {
         Self {
             sub_page_id,
             messages,
-            created,
             size_and_amount,
             to_persist: QueueWithIntervals::new(),
             last_accessed: AtomicDateTimeAsMicroseconds::new(created.unix_microseconds),

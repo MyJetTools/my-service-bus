@@ -76,6 +76,7 @@ interface ISubscriberApiContract {
     queueId: string,
     active: number,
     deliveryState: number,
+    deliveryStateStr: string,
     history: number[],
 }
 

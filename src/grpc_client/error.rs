@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use my_service_bus::shared::page_compressor::CompressedPageReaderError;
 use my_service_bus::shared::zip::result::ZipError;
 

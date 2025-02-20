@@ -1,5 +1,5 @@
 use std::sync::{
-    atomic::{AtomicI32, AtomicU8, Ordering},
+    atomic::{AtomicU8, Ordering},
     Arc,
 };
 
@@ -18,7 +18,6 @@ pub struct MyServiceBusTcpSession {
     pub session_id: SessionId,
     pub name: String,
     pub version: Option<String>,
-    pub logged_send_error_on_disconnected: AtomicI32,
 }
 
 impl MyServiceBusTcpSession {
@@ -34,7 +33,6 @@ impl MyServiceBusTcpSession {
             connection,
             protocol_version: protocol_version,
             delivery_packet_version: AtomicU8::new(0),
-            logged_send_error_on_disconnected: AtomicI32::new(0),
             name,
             version,
         }

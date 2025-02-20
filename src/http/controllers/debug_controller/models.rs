@@ -12,6 +12,7 @@ pub struct MinMessageIdDebugModel {
     pub min_message_id: Option<i64>,
 }
 
+/*
 #[derive(Debug, MyHttpInput)]
 pub struct EnableDebugInputModel {
     #[http_query(name = "topicId"; description = "Id of topic")]
@@ -19,6 +20,7 @@ pub struct EnableDebugInputModel {
     #[http_query(name = "queueId"; description = "Id of queue")]
     pub queue_id: String,
 }
+ */
 
 #[derive(Debug, MyHttpInput)]
 pub struct GetOnDeliveryInputModel {

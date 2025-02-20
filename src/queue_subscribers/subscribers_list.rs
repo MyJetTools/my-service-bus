@@ -236,7 +236,7 @@ impl SubscribersList {
                     );
                 }
 
-                let subscriber = QueueSubscriber::new(subscriber_id, topic_id, queue_id, session);
+                let subscriber = QueueSubscriber::new(subscriber_id, queue_id, session);
 
                 hash_map.insert_or_replace(subscriber);
 
@@ -254,12 +254,8 @@ impl SubscribersList {
                     }
                 }
 
-                let mut old_subscriber = Some(QueueSubscriber::new(
-                    subscriber_id,
-                    topic_id,
-                    queue_id,
-                    session,
-                ));
+                let mut old_subscriber =
+                    Some(QueueSubscriber::new(subscriber_id, queue_id, session));
 
                 std::mem::swap(&mut old_subscriber, single);
 
@@ -350,20 +346,14 @@ impl SubscribersList {
     pub fn find_subscribers_dead_on_delivery(
         &self,
         max_delivery_duration: Duration,
-    ) -> Option<Vec<DeadSubscriber>> {
+    ) -> Vec<DeadSubscriber> {
         match &self.data {
             SubscribersData::MultiSubscribers(subscribers) => {
-                let mut result = None;
+                let mut result = vec![];
 
                 for subscriber in subscribers.iter() {
                     if let Some(duration) = subscriber.is_dead_on_delivery(max_delivery_duration) {
-                        if result.is_none() {
-                            result = Some(Vec::new());
-                        }
-
-                        if let Some(result) = &mut result {
-                            result.push(DeadSubscriber::new(subscriber, duration));
-                        }
+                        result.push(DeadSubscriber::new(subscriber, duration));
                     }
                 }
 
@@ -372,12 +362,12 @@ impl SubscribersList {
             SubscribersData::SingleSubscriber(state) => match state {
                 Some(subscriber) => {
                     if let Some(duration) = subscriber.is_dead_on_delivery(max_delivery_duration) {
-                        return Some(vec![DeadSubscriber::new(subscriber, duration)]);
+                        return vec![DeadSubscriber::new(subscriber, duration)];
                     }
 
-                    return None;
+                    return vec![];
                 }
-                None => return None,
+                None => return vec![],
             },
         }
     }

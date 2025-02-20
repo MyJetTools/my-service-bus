@@ -62,7 +62,7 @@ impl QueueIndex {
     pub fn get_queue_snapshot(topic_queue: &TopicQueue) -> Vec<Self> {
         let mut result = Vec::new();
 
-        for queue_index in topic_queue.queue.iterate_intervals() {
+        for queue_index in topic_queue.queue.get_intervals() {
             result.push(Self {
                 from_id: queue_index.from_id,
                 to_id: queue_index.to_id,

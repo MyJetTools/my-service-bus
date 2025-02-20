@@ -57,30 +57,20 @@ impl Topic {
     pub async fn find_subscribers_dead_on_delivery(
         &self,
         delivery_timeout_duration: Duration,
-    ) -> Option<Vec<DeadSubscriber>> {
-        let mut result = None;
+    ) -> Vec<DeadSubscriber> {
+        let mut result = vec![];
         let mut topic_data = self.inner.lock().await;
 
         for queue in topic_data.queues.get_all_mut() {
-            if let Some(dead_subscribers) = queue
+            let dead_subscribers = queue
                 .subscribers
-                .find_subscribers_dead_on_delivery(delivery_timeout_duration)
-            {
-                if result.is_none() {
-                    result = Some(Vec::new());
-                }
-
-                let result_mut = result.as_mut().unwrap();
-
+                .find_subscribers_dead_on_delivery(delivery_timeout_duration);
+            if dead_subscribers.len() > 0 {
                 for dead_subscriber in dead_subscribers {
-                    if result_mut
-                        .iter()
-                        .position(|itm: &DeadSubscriber| {
-                            itm.subscriber_id.equals_to(dead_subscriber.subscriber_id)
-                        })
-                        .is_none()
-                    {
-                        result_mut.push(dead_subscriber);
+                    if !result.iter().any(|itm: &DeadSubscriber| {
+                        itm.subscriber_id.equals_to(dead_subscriber.subscriber_id)
+                    }) {
+                        result.push(dead_subscriber);
                     }
                 }
             }

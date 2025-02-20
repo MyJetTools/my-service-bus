@@ -40,10 +40,11 @@ impl MyTimerTick for DeadSubscribersKickerTimer {
         let topics = self.get_reusable_topics_vec().await;
 
         for topic in topics.iter() {
-            if let Some(dead_subscribers) = topic
+            let dead_subscribers = topic
                 .find_subscribers_dead_on_delivery(self.app.delivery_timeout)
-                .await
-            {
+                .await;
+
+            if dead_subscribers.len() > 0 {
                 for dead_subscriber in dead_subscribers {
                     my_logger::LOGGER.write_info(
                         "Dead subscribers detector".to_string(),
@@ -52,7 +53,9 @@ impl MyTimerTick for DeadSubscribersKickerTimer {
                             dead_subscriber.session.get_session_id().get_value(),
                             dead_subscriber.subscriber_id.get_value()
                         ),
-                        LogEventCtx::new().add("topicId", topic.topic_id.as_str()),
+                        LogEventCtx::new()
+                            .add("topicId", topic.topic_id.as_str())
+                            .add("DeadTimeout", format!("{:?}", dead_subscriber.duration)),
                     );
 
                     dead_subscriber.session.disconnect().await;
