@@ -88,8 +88,15 @@ class HtmlTopics {
             let html = "";
 
             for (let itm of Iterators.getTopicPublishers(status, topic).sort((a, b) => a.session.name > b.session.name ? 1 : -1)) {
+
+                let env_info = "";
+
+                if (itm.session.envInfo) {
+                    env_info = itm.session.envInfo;
+                }
+
                 html += '<table class="table table-dark" style=" width:100%; box-shadow: 0 0 3px black;"><tr><td>' + HtmlMain.drawLed(itm.publisher.active > 0, 'green') + '<div style="margin-top: 10px;font-size: 12px;"><span class="badge badge-secondary">' + itm.session.id + '</span></div></td>' +
-                    '<td><b>' + itm.session.name + '</b><div>' + itm.session.version + '</div><div>' + itm.session.ip + '</div></td></tr></table>';
+                    '<td><b>' + itm.session.name + '</b><div>' + itm.session.version + '</div><div>' + env_info + '</div><div>' + itm.session.ip + '</div></td></tr></table>';
             }
 
 

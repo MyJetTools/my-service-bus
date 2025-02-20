@@ -62,6 +62,7 @@ impl MyServiceBusSession for MyServiceBusTestSession {
         SessionNameAndVersion {
             name: self.name.to_string(),
             version: None,
+            env_info: None,
         }
     }
 

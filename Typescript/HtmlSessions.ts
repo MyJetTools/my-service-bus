@@ -14,8 +14,14 @@ class HtmlSessions {
                 tp = `<span class="badge badge-warning">` + session.type + `</span>`
             }
 
+            let env_info = "";
+            if (session.envInfo) {
+                env_info = session.envInfo;
+            }
+
             result += '<tr class="filter-line"><td>' + session.id + '<div>' + tp + '</div></td>' +
                 '<td><b>' + session.name + '</b><div>' + session.version + '</div>' +
+                '<div>' + env_info + ' </div>' +
                 '<div><b>Ip:</b>' + session.ip + '</div>' +
 
                 '<div id="session-info-' + session.id + '">' + this.renderSessionData(session) + '</div>' +

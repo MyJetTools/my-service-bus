@@ -13,6 +13,8 @@ pub struct SessionJsonResult {
     pub session_type: String,
     pub ip: String,
     pub version: Option<String>,
+    #[serde(rename = "envInfo")]
+    pub env_info: Option<String>,
     pub connected: String,
     #[serde(rename = "lastIncoming")]
     pub last_incoming: String,
@@ -46,6 +48,7 @@ impl SessionJsonResult {
             session_type,
             name: name_and_version.name,
             version: name_and_version.version,
+            env_info: name_and_version.env_info,
             connected: rust_extensions::duration_utils::duration_to_string(
                 now.duration_since(session_metrics.connected)
                     .as_positive_or_zero(),

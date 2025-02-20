@@ -18,6 +18,7 @@ pub struct MyServiceBusTcpSession {
     pub session_id: SessionId,
     pub name: String,
     pub version: Option<String>,
+    pub env_info: Option<String>,
 }
 
 impl MyServiceBusTcpSession {
@@ -26,6 +27,7 @@ impl MyServiceBusTcpSession {
         connection: Arc<MySbTcpConnection>,
         name: String,
         version: Option<String>,
+        env_info: Option<String>,
         protocol_version: i32,
     ) -> Self {
         Self {
@@ -35,6 +37,7 @@ impl MyServiceBusTcpSession {
             delivery_packet_version: AtomicU8::new(0),
             name,
             version,
+            env_info,
         }
     }
 
@@ -74,6 +77,7 @@ impl MyServiceBusSession for MyServiceBusTcpSession {
         SessionNameAndVersion {
             name: self.name.to_string(),
             version: self.version.clone(),
+            env_info: self.env_info.clone(),
         }
     }
 

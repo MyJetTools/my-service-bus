@@ -14,6 +14,7 @@ interface ISession {
     version: string,
     name: string,
     connected: string,
+    envInfo: string,
     lastIncoming: string,
     readSize: number,
     writtenSize: number,

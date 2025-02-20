@@ -26,14 +26,21 @@ impl SessionsList {
         connection: Arc<MySbTcpConnection>,
         name: String,
         version: Option<String>,
+        env_info: Option<String>,
         protocol_version: i32,
     ) {
         let mut write_access = self.data.write().await;
 
         let session_id = write_access.get_next_session_id();
 
-        let session =
-            MyServiceBusTcpSession::new(session_id, connection, name, version, protocol_version);
+        let session = MyServiceBusTcpSession::new(
+            session_id,
+            connection,
+            name,
+            version,
+            env_info,
+            protocol_version,
+        );
         write_access.add_tcp(Arc::new(session));
     }
 

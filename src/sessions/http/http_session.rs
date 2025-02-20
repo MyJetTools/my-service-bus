@@ -119,6 +119,7 @@ impl MyServiceBusSession for MyServiceBusHttpSession {
         SessionNameAndVersion {
             name: self.name.to_string(),
             version: Some(self.version.to_string()),
+            env_info: None,
         }
     }
 

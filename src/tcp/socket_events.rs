@@ -42,12 +42,14 @@ impl TcpServerEvents {
                 );
                 let mut connection_name = None;
                 let mut version = None;
+                let mut env_info = None;
 
                 let mut no = 0;
                 for itm in name.split(";") {
                     match no {
                         0 => connection_name = Some(itm.to_string()),
                         1 => version = Some(itm.to_string()),
+                        2 => env_info = Some(itm.to_string()),
                         _ => {}
                     }
                     no += 1;
@@ -59,6 +61,7 @@ impl TcpServerEvents {
                         connection.clone(),
                         connection_name.unwrap(),
                         version,
+                        env_info,
                         protocol_version,
                     )
                     .await;

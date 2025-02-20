@@ -33,6 +33,7 @@ pub struct SessionMetrics {
 pub struct SessionNameAndVersion {
     pub name: String,
     pub version: Option<String>,
+    pub env_info: Option<String>,
 }
 
 #[async_trait::async_trait]
