@@ -27,7 +27,7 @@ impl TopicQueueSubscriberJsonModel {
             queue_id: subscriber.queue_id.to_string(),
             active: subscriber.metrics.active,
             delivery_state: subscriber.delivery_state.to_u8(),
-            delivery_state_str: subscriber.delivery_state.to_string().to_string(),
+            delivery_state_str: subscriber.delivery_state.as_str().to_string(),
             history: subscriber.metrics.delivery_history.get(),
         }
     }

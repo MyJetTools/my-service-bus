@@ -12,7 +12,7 @@ use super::{SubscriberId, SubscriberMetrics};
 #[derive(Debug)]
 pub struct OnDeliveryStateData {
     pub bucket: DeliveryBucket,
-    inserted: DateTimeAsMicroseconds,
+    last_update: DateTimeAsMicroseconds,
 }
 
 #[derive(Debug)]
@@ -23,12 +23,15 @@ pub enum QueueSubscriberDeliveryState {
 }
 
 impl QueueSubscriberDeliveryState {
-    pub fn to_string(&self) -> StrOrString<'static> {
+    pub fn as_str(&self) -> StrOrString<'static> {
         match self {
             QueueSubscriberDeliveryState::Idle => "Idle".into(),
             QueueSubscriberDeliveryState::Rented => "Rented".into(),
             QueueSubscriberDeliveryState::OnDelivery(data) => {
-                format!("{:?}", data.bucket.ids.get_snapshot()).into()
+                let now = DateTimeAsMicroseconds::now();
+
+                let duration = now - data.last_update;
+                format!("{:?} {:?}", duration, data.bucket.ids.get_snapshot()).into()
             }
         }
     }
@@ -120,6 +123,7 @@ impl QueueSubscriber {
     pub fn intermediary_confirmed(&mut self, queue: &QueueWithIntervals) {
         if let QueueSubscriberDeliveryState::OnDelivery(state) = &mut self.delivery_state {
             state.bucket.confirmed(queue);
+            state.last_update = DateTimeAsMicroseconds::now();
         }
     }
 
@@ -132,7 +136,7 @@ impl QueueSubscriber {
         if let QueueSubscriberDeliveryState::Rented = &self.delivery_state {
             self.delivery_state = QueueSubscriberDeliveryState::OnDelivery(OnDeliveryStateData {
                 bucket: DeliveryBucket::new(messages),
-                inserted: DateTimeAsMicroseconds::now(),
+                last_update: DateTimeAsMicroseconds::now(),
             });
             self.metrics.set_delivery_mode_as_on_delivery();
 
@@ -141,7 +145,7 @@ impl QueueSubscriber {
 
         panic!(
             "We are setting messages on delivery but previous state is '{}'. Previous state must be 'Rented'",
-            self.delivery_state.to_string()
+            self.delivery_state.as_str()
         );
     }
 
@@ -167,7 +171,7 @@ impl QueueSubscriber {
             QueueSubscriberDeliveryState::Rented => None,
             QueueSubscriberDeliveryState::OnDelivery(state) => {
                 let now = DateTimeAsMicroseconds::now();
-                let duration = now.duration_since(state.inserted).as_positive_or_zero();
+                let duration = now.duration_since(state.last_update).as_positive_or_zero();
                 if duration > max_delivery_duration {
                     return Some(duration);
                 }
