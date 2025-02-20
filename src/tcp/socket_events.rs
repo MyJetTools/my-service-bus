@@ -211,7 +211,6 @@ impl TcpServerEvents {
                 queue_id,
                 confirmation_id,
             } => {
-                println!("Confirm all fail packet");
                 operations::delivery_confirmation::all_fail(
                     &self.app,
                     topic_id.as_str(),
