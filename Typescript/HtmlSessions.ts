@@ -16,7 +16,7 @@ class HtmlSessions {
 
             let env_info = "";
             if (session.envInfo) {
-                env_info = session.envInfo;
+                env_info = `<div><span class="badge badge-light">${session.envInfo}</span></div>`;
             }
 
             result += '<tr class="filter-line"><td>' + session.id + '<div>' + tp + '</div></td>' +

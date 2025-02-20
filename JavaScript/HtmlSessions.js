@@ -15,7 +15,7 @@ var HtmlSessions = /** @class */ (function () {
             }
             var env_info = "";
             if (session.envInfo) {
-                env_info = session.envInfo;
+                env_info = "<div><span class=\"badge badge-light\">".concat(session.envInfo, "</span></div>");
             }
             result += '<tr class="filter-line"><td>' + session.id + '<div>' + tp + '</div></td>' +
                 '<td><b>' + session.name + '</b><div>' + session.version + '</div>' +

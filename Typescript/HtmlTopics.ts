@@ -92,7 +92,7 @@ class HtmlTopics {
                 let env_info = "";
 
                 if (itm.session.envInfo) {
-                    env_info = itm.session.envInfo;
+                    env_info = `<div><span class="badge badge-light">${itm.session.envInfo}</span></div>`;
                 }
 
                 html += '<table class="table table-dark" style=" width:100%; box-shadow: 0 0 3px black;"><tr><td>' + HtmlMain.drawLed(itm.publisher.active > 0, 'green') + '<div style="margin-top: 10px;font-size: 12px;"><span class="badge badge-secondary">' + itm.session.id + '</span></div></td>' +
