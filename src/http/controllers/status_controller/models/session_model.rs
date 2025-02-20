@@ -12,8 +12,10 @@ pub struct SessionJsonResult {
     #[serde(rename = "type")]
     pub session_type: String,
     pub ip: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "envInfo")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub env_info: Option<String>,
     pub connected: String,
     #[serde(rename = "lastIncoming")]
