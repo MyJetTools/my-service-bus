@@ -34,7 +34,7 @@ class HtmlTopics {
         if (topic.persist) {
             persist = '<div>Persist queue:<span style="color:' + queuesizeColor + '">' + topic.persistSize + '</span></div>'
         } else {
-            persist = '<div>Persist: <span style="color:blue">disabled</span></div>'
+            persist = '<div>Persist: <span style="color:red"><b>disabled</b></span></div>'
         }
 
         return '<div>MsgId:' + Utils.highlightPageOfMessageId(topic.messageId.toString()) + '</div>' +
