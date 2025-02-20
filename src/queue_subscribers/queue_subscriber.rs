@@ -31,7 +31,7 @@ impl QueueSubscriberDeliveryState {
                 let now = DateTimeAsMicroseconds::now();
 
                 let duration = now - data.last_update;
-                format!("{:?} {:?}", duration, data.bucket.ids.get_snapshot()).into()
+                format!("{:?} {:?}", duration, data.bucket.ids.len()).into()
             }
         }
     }
