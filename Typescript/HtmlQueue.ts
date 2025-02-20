@@ -84,9 +84,9 @@ class HtmlQueue {
                 <td>${HtmlMain.drawLed(itm.subscriber.active > 0, 'blue')}<div style="margin-top: 10px;font-size: 12px;"><span class="badge badge-secondary">${itm.session.id}</span></div>
                 <div style="margin-top: 10px;font-size: 12px;"><span class="badge ${subscriber_badge}">${itm.subscriber.id}</span></div></td>
                 <td>
-                <table style:"width: 100%;"><tr style="background-color: transparent;"><td style="text-align:left">
+                <table style="width: 100%;"><tr style="background-color: transparent;"><td style="text-align:left;padding: 0;">
                 <div style="font-size:10px; color:white">${itm.session.name}</div><div style="font-size:10px; color:white">${itm.session.version}</div><div style="font-size:10px; color:white">${itm.session.ip}</div></td>
-                <td style="text-align:right"><span class="badge ${subscriber_badge}">${itm.subscriber.deliveryStateStr}</span></td></tr></table>
+                <td style="text-align:right;padding: 0;"><span class="badge ${subscriber_badge}">${itm.subscriber.deliveryStateStr}</span></td></tr></table>
                 ${HtmlGraph.renderGraph(itm.subscriber.history, c => Utils.format_duration(c), c => Math.abs(c), c => c < 0)}</td></tr></table>`;
         }
 
