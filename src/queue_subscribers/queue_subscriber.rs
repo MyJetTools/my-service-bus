@@ -15,6 +15,12 @@ pub struct OnDeliveryStateData {
     last_update: DateTimeAsMicroseconds,
 }
 
+impl OnDeliveryStateData {
+    pub fn get_duration_since_last_update(&self, now: DateTimeAsMicroseconds) -> Duration {
+        now.duration_since(self.last_update).as_positive_or_zero()
+    }
+}
+
 #[derive(Debug)]
 pub enum QueueSubscriberDeliveryState {
     Idle,
@@ -105,7 +111,7 @@ impl QueueSubscriber {
         self.delivery_state = QueueSubscriberDeliveryState::Idle;
     }
 
-    pub fn reset_delivery(&mut self) -> Option<DeliveryBucket> {
+    pub fn reset_delivery(&mut self) -> Option<OnDeliveryStateData> {
         self.last_delivered = DateTimeAsMicroseconds::now();
         let mut prev_delivery_state = QueueSubscriberDeliveryState::Idle;
 
@@ -113,8 +119,7 @@ impl QueueSubscriber {
 
         self.metrics.set_delivery_mode_as_ready_to_deliver();
         if let QueueSubscriberDeliveryState::OnDelivery(state) = prev_delivery_state {
-            self.last_delivered_amount = state.bucket.to_be_confirmed.queue_size();
-            return Some(state.bucket);
+            return Some(state);
         }
 
         return None;
@@ -214,11 +219,12 @@ impl QueueSubscriber {
     }
 
     //todo!("TechDebt: We does not call it with intermediary confirmed messages");
-    pub fn update_delivery_time(&mut self, amount: usize, positive: bool) {
-        let delivery_duration = DateTimeAsMicroseconds::now()
-            .duration_since(self.metrics.start_delivery_time)
-            .as_positive_or_zero();
-
+    pub fn update_delivery_time(
+        &mut self,
+        amount: usize,
+        delivery_duration: Duration,
+        positive: bool,
+    ) {
         if delivery_duration.is_zero() {
             println!(
                 "Delivery duration is zero. This is a bug. Please report it. (update_delivery_time)"

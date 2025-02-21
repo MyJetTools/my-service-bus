@@ -100,8 +100,8 @@ pub async fn subscribe_to_queue(
 pub fn remove_subscriber(queue: &mut TopicQueue, mut subscriber: QueueSubscriber) {
     let messages = subscriber.reset_delivery();
 
-    if let Some(delivery_bucket) = &messages {
-        queue.confirm_non_delivered(&delivery_bucket.to_be_confirmed);
+    if let Some(delivery_state_data) = &messages {
+        queue.confirm_non_delivered(&delivery_state_data.bucket.to_be_confirmed);
     }
 }
 

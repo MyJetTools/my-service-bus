@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
+use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{
     app::AppContext,
@@ -205,10 +206,13 @@ fn get_delivery_bucket(
 
     let mut delivery_bucket = subscriber.reset_delivery();
 
-    if let Some(delivery_bucket) = &mut delivery_bucket {
-        let delivery_amount = delivery_bucket.to_be_confirmed.queue_size();
+    if let Some(delivery_state) = &mut delivery_bucket {
+        let delivery_amount = delivery_state.bucket.to_be_confirmed.queue_size();
+
+        let now = DateTimeAsMicroseconds::now();
+        let delivery_duration = delivery_state.get_duration_since_last_update(now);
         if delivery_amount > 0 {
-            subscriber.update_delivery_time(delivery_amount, positive);
+            subscriber.update_delivery_time(delivery_amount, delivery_duration, positive);
         } else {
             println!(
                 "{}/{} No messages on delivery at subscriber {}",
@@ -229,5 +233,5 @@ fn get_delivery_bucket(
         };
     }
 
-    delivery_bucket
+    delivery_bucket.map(|state| state.bucket)
 }

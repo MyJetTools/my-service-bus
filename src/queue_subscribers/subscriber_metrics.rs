@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-use rust_extensions::date_time::DateTimeAsMicroseconds;
-
 use crate::metric_data::{MetricOneSecond, MetricsHistory};
 
 pub const DELIVERY_STATE_READY_TO_DELIVER: u8 = 0;
@@ -10,7 +8,6 @@ pub const DELIVERY_STATE_ON_DELIVERY: u8 = 2;
 
 #[derive(Clone)]
 pub struct SubscriberMetrics {
-    pub start_delivery_time: DateTimeAsMicroseconds,
     pub delivered_amount: MetricOneSecond,
     pub delivery_microseconds: MetricOneSecond,
     pub active: u8,
@@ -22,7 +19,6 @@ pub struct SubscriberMetrics {
 impl SubscriberMetrics {
     pub fn new() -> Self {
         Self {
-            start_delivery_time: DateTimeAsMicroseconds::now(),
             delivered_amount: MetricOneSecond::new(),
             delivery_microseconds: MetricOneSecond::new(),
             active: 0,
@@ -74,7 +70,6 @@ impl SubscriberMetrics {
     }
 
     pub fn set_started_delivery(&mut self) {
-        self.start_delivery_time = DateTimeAsMicroseconds::now();
         self.active = 2;
         self.delivery_mode = DELIVERY_STATE_ON_DELIVERY;
     }
