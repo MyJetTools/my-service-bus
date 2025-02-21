@@ -101,7 +101,7 @@ pub fn remove_subscriber(queue: &mut TopicQueue, mut subscriber: QueueSubscriber
     let messages = subscriber.reset_delivery();
 
     if let Some(delivery_bucket) = &messages {
-        queue.confirm_non_delivered(&delivery_bucket.ids);
+        queue.confirm_non_delivered(&delivery_bucket.to_be_confirmed);
     }
 }
 

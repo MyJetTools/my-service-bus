@@ -31,7 +31,7 @@ impl QueueSubscriberDeliveryState {
                 let now = DateTimeAsMicroseconds::now();
 
                 let duration = now - data.last_update;
-                format!("{:?} {:?}", duration, data.bucket.ids.len()).into()
+                format!("{:?} {:?}", duration, data.bucket.to_be_confirmed.len()).into()
             }
         }
     }
@@ -94,7 +94,7 @@ impl QueueSubscriber {
             QueueSubscriberDeliveryState::Idle => 0,
             QueueSubscriberDeliveryState::Rented => 0,
             QueueSubscriberDeliveryState::OnDelivery(on_delivery) => {
-                on_delivery.bucket.ids.queue_size()
+                on_delivery.bucket.to_be_confirmed.queue_size()
             }
         }
     }
@@ -113,18 +113,41 @@ impl QueueSubscriber {
 
         self.metrics.set_delivery_mode_as_ready_to_deliver();
         if let QueueSubscriberDeliveryState::OnDelivery(state) = prev_delivery_state {
-            self.last_delivered_amount = state.bucket.ids.queue_size();
+            self.last_delivered_amount = state.bucket.to_be_confirmed.queue_size();
             return Some(state.bucket);
         }
 
         return None;
     }
 
-    pub fn intermediary_confirmed(&mut self, queue: &QueueWithIntervals) {
+    pub fn intermediary_confirmed(
+        &mut self,
+        confirmed_ids: &QueueWithIntervals,
+    ) -> Option<IntermediaryConfirmedResult> {
         if let QueueSubscriberDeliveryState::OnDelivery(state) = &mut self.delivery_state {
-            state.bucket.confirmed(queue);
-            state.last_update = DateTimeAsMicroseconds::now();
+            let confirmed_amount = confirmed_ids.len() - state.bucket.confirmed.len();
+
+            let confirmed_amount = if confirmed_amount > 0 {
+                confirmed_amount as usize
+            } else {
+                0
+            };
+
+            state.bucket.confirmed(confirmed_ids);
+
+            let now = DateTimeAsMicroseconds::now();
+            let confirm_duration = state.last_update - now;
+
+            state.last_update = now;
+
+            return IntermediaryConfirmedResult {
+                confirm_duration: confirm_duration.as_positive_or_zero(),
+                confirmed_amount,
+            }
+            .into();
         }
+
+        None
     }
 
     pub fn set_messages_on_delivery(
@@ -153,7 +176,9 @@ impl QueueSubscriber {
         match &self.delivery_state {
             QueueSubscriberDeliveryState::Idle => None,
             QueueSubscriberDeliveryState::Rented => None,
-            QueueSubscriberDeliveryState::OnDelivery(state) => Some(state.bucket.ids.clone()),
+            QueueSubscriberDeliveryState::OnDelivery(state) => {
+                Some(state.bucket.to_be_confirmed.clone())
+            }
         }
     }
 
@@ -161,7 +186,9 @@ impl QueueSubscriber {
         match &self.delivery_state {
             QueueSubscriberDeliveryState::Idle => 0,
             QueueSubscriberDeliveryState::Rented => 0,
-            QueueSubscriberDeliveryState::OnDelivery(state) => state.bucket.ids.queue_size(),
+            QueueSubscriberDeliveryState::OnDelivery(state) => {
+                state.bucket.to_be_confirmed.queue_size()
+            }
         }
     }
 
@@ -212,4 +239,9 @@ impl EntityWithKey<i64> for QueueSubscriber {
     fn get_key(&self) -> &i64 {
         &self.id
     }
+}
+
+pub struct IntermediaryConfirmedResult {
+    pub confirm_duration: Duration,
+    pub confirmed_amount: usize,
 }
