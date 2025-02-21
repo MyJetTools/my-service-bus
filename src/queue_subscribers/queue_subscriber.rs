@@ -127,8 +127,6 @@ impl QueueSubscriber {
         if let QueueSubscriberDeliveryState::OnDelivery(state) = &mut self.delivery_state {
             let confirmed_amount = confirmed_ids.len() - state.bucket.confirmed.len();
 
-            println!("ConfirmedAmount: {}", confirmed_amount);
-
             let confirmed_amount = if confirmed_amount > 0 {
                 confirmed_amount as usize
             } else {
@@ -138,8 +136,7 @@ impl QueueSubscriber {
             state.bucket.confirmed(confirmed_ids);
 
             let now = DateTimeAsMicroseconds::now();
-            let confirm_duration = state.last_update - now;
-            println!("Confirmed duration: {:?}", confirm_duration);
+            let confirm_duration = now - state.last_update;
 
             state.last_update = now;
 
