@@ -25,7 +25,7 @@ impl SubPage {
         }
     }
 
-    pub fn get_message(&self, msg_id: MessageId) -> GetMessageResult {
+    pub fn get_message<'s>(&'s self, msg_id: MessageId) -> GetMessageResult<'s> {
         match self {
             SubPage::SubPage(inner) => inner.get_message(msg_id),
             SubPage::AllMessagesMissing(_) => GetMessageResult::Missing,

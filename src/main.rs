@@ -4,6 +4,7 @@ use background::{
     DeadSubscribersKickerTimer, GcTimer, ImmediatelyPersistEventLoop, MetricsTimer,
     PersistTopicsAndQueuesTimer,
 };
+use my_tcp_sockets::unix_socket::UnixSocketServer;
 use my_tcp_sockets::TcpServer;
 use rust_extensions::MyTimer;
 use tcp::socket_events::TcpServerEvents;
@@ -60,6 +61,23 @@ async fn main() {
             my_logger::LOGGER.clone(),
         )
         .await;
+
+    let _unix_socket = if let Some(unix_socket_addr) = app.settings.listen_unix_socket.as_ref() {
+        let unix_socket =
+            UnixSocketServer::new("MySbTcpServerUnixSocket", unix_socket_addr.to_string());
+        unix_socket
+            .start(
+                Arc::new(my_service_bus::tcp_contracts::MySbSerializerFactory),
+                Arc::new(TcpServerEvents::new(app.clone())),
+                app.states.clone(),
+                my_logger::LOGGER.clone(),
+            )
+            .await;
+
+        Some(unix_socket)
+    } else {
+        None
+    };
 
     let http_connections_counter = crate::http::start_up::setup_server(&app);
 

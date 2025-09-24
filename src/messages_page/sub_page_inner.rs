@@ -138,7 +138,7 @@ impl SubPageInner {
         None
     }
 
-    pub fn get_message(&self, msg_id: MessageId) -> GetMessageResult {
+    pub fn get_message<'s>(&'s self, msg_id: MessageId) -> GetMessageResult<'s> {
         if let Some(msg) = self.messages.get(&msg_id) {
             match msg {
                 MySbCachedMessage::Loaded(msg) => GetMessageResult::Message(msg),

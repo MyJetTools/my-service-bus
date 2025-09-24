@@ -21,15 +21,12 @@ pub fn try_to_deliver_to_subscribers(
     topic: &Arc<Topic>,
     topic_data: &mut TopicInner,
 ) {
-    let mut sw = StopWatch::new();
-    sw.start();
+    let sw = StopWatch::new();
     let mut to_send = Vec::new();
 
     for topic_queue in topic_data.queues.get_all_mut() {
         compile_packages(app, topic, &mut to_send, topic_queue, &topic_data.pages);
     }
-
-    sw.pause();
 
     if to_send.len() > 0 {
         for package_builder in to_send {
@@ -48,15 +45,13 @@ pub async fn try_to_deliver_to_subscribers(
     topic: &Arc<Topic>,
     topic_data: &mut TopicInner,
 ) {
-    let mut sw = StopWatch::new();
-    sw.start();
+    let sw = StopWatch::new();
+
     let mut to_send = Vec::new();
 
     for topic_queue in topic_data.queues.get_all_mut() {
         compile_packages(app, topic, &mut to_send, topic_queue, &topic_data.pages);
     }
-
-    sw.pause();
 
     if to_send.len() > 0 {
         for package_builder in to_send {

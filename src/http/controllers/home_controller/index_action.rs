@@ -31,6 +31,7 @@ async fn handle_request(
     );
 
     HttpOutput::Content {
+        status_code: 200,
         content_type: Some(WebContentType::Html),
         content: content.into_bytes(),
         headers: None,

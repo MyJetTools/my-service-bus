@@ -54,6 +54,8 @@ pub struct SettingsModel {
     pub auto_create_topic_on_subscribe: bool,
     pub persist_timer_interval: Duration,
     pub persist_compressed: bool,
+
+    pub listen_unix_socket: Option<String>,
 }
 
 impl SettingsModel {
@@ -99,6 +101,7 @@ impl SettingsModel {
             auto_create_topic_on_subscribe: true,
             persist_timer_interval: Duration::from_secs(1),
             persist_compressed: false,
+            listen_unix_socket: None,
         }
     }
 
@@ -199,6 +202,7 @@ impl Into<SettingsModel> for SettingsModelYaml {
             auto_create_topic_on_subscribe,
             persist_timer_interval: Duration::from_str(&self.persist_timer_interval).unwrap(),
             persist_compressed: self.persist_compressed,
+            listen_unix_socket: None,
         }
     }
 }

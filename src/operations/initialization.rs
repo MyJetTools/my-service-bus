@@ -9,8 +9,7 @@ use crate::topics::TopicSnapshot;
 use crate::app::AppContext;
 
 pub async fn init(app: Arc<AppContext>) {
-    let mut sw = StopWatch::new();
-    sw.start();
+    let sw = StopWatch::new();
 
     let topics_and_queues = restore_topics_and_queues(app.as_ref()).await;
 
@@ -46,7 +45,6 @@ pub async fn init(app: Arc<AppContext>) {
     */
 
     app.states.set_initialized();
-    sw.pause();
 
     my_logger::LOGGER.write_info(
         "Initialization",

@@ -39,7 +39,7 @@ impl ReusableTopicsList {
         self.data.len()
     }
 
-    pub fn iter(&self) -> std::slice::Iter<Arc<Topic>> {
+    pub fn iter<'s>(&'s self) -> std::slice::Iter<'s, Arc<Topic>> {
         self.data.iter()
     }
 }
