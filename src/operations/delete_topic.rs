@@ -19,7 +19,7 @@ pub async fn delete_topic(
         });
     }
 
-    app.messages_pages_repo
+    app.persistence_client
         .delete_topic(topic_id, hard_delete_moment)
         .await;
 

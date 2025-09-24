@@ -2,6 +2,7 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 package persistence;
 
+
 enum QueueTypePersistenceGrpcEnum {
    Permanent = 0;
    AutoDelete = 1;
@@ -19,9 +20,7 @@ message QueueSnapshotGrpcModel {
   persistence.QueueTypePersistenceGrpcEnum QueueType = 3;
 }
 
-message SaveQueueSnapshotGrpcRequest {
-  repeated persistence.TopicAndQueuesSnapshotGrpcModel QueueSnapshot = 1;
-}
+
 
 message TopicAndQueuesSnapshotGrpcModel {
   string TopicId = 1;
@@ -30,18 +29,17 @@ message TopicAndQueuesSnapshotGrpcModel {
   optional bool Persist = 4;
 }
 
-service MyServiceBusQueuePersistenceGrpcService {
-
-   rpc GetSnapshot(google.protobuf.Empty) returns (stream persistence.TopicAndQueuesSnapshotGrpcModel);
-   rpc SaveSnapshot(persistence.SaveQueueSnapshotGrpcRequest) returns (google.protobuf.Empty);
-}
-
 
 ///////////
 
 message GetHistoryByDateGrpcRequest {
   string TopicId = 1;
   int64 FromDateTime = 2;
+}
+
+message SaveMessagesGrpcRequest{
+  string TopicId = 1;
+  repeated MessageContentGrpcModel Messages = 2; 
 }
 
 message MessageContentGrpcModel {
@@ -55,11 +53,6 @@ message MessageContentMetaDataItem {
   string Key = 1;
   string Value = 2;
 }
-
-service MyServiceBusHistoryReaderGrpcService {
-   rpc GetByDate(persistence.GetHistoryByDateGrpcRequest) returns (stream persistence.MessageContentGrpcModel);
-}
-
 
 //////////////
 
@@ -77,7 +70,7 @@ message GetMessageGrpcRequest {
   int64 MessageId = 2;
 }
 
-message GetMessagesPageGrpcRequest {
+message GetPageCompressedGrpcRequest {
   string TopicId = 1;
   int64 PageNo = 2;
   int64 FromMessageId = 3;
@@ -85,7 +78,15 @@ message GetMessagesPageGrpcRequest {
   int32 Version = 5;
 }
 
-message MyServerBusPersistenceVersion{
+message GetPageGrpcRequest {
+  string TopicId = 1;
+  int64 PageNo = 2;
+  int64 FromMessageId = 3;
+  int64 ToMessageId = 4;
+  int32 Version = 5;
+}
+
+message GetVersionGrpcResponse{
   string Version = 1;
 }
 
@@ -94,30 +95,36 @@ message DeleteTopicGrpcRequest {
   int64 DeleteAfter = 2;
 }
 
-message GetSubPageRequest{
+message GetSubPageGrpcRequest{
   string TopicId = 1;
   int64 SubPageNo = 2;
 }
 
 
-message RestoreTopicRequest{
+message RestoreTopicGrpcRequest{
   string TopicId = 1;
 }
 
-message RestoreTopicResponse{
+message RestoreTopicGrpcResponse{
   bool Result = 1;
   int64 MessageId = 2;
 }
 
 service MyServiceBusMessagesPersistenceGrpcService {
-   rpc GetVersion(google.protobuf.Empty) returns (persistence.MyServerBusPersistenceVersion);
-   rpc GetMessage(persistence.GetMessageGrpcRequest) returns (persistence.MessageContentGrpcModel);
-   rpc GetPageCompressed(persistence.GetMessagesPageGrpcRequest) returns (stream persistence.CompressedMessageChunkModel);
-   rpc GetPage(persistence.GetMessagesPageGrpcRequest) returns (stream persistence.MessageContentGrpcModel);
-   rpc GetSubPage(persistence.GetSubPageRequest) returns (stream persistence.MessageContentGrpcModel);
-   rpc SaveMessages(stream persistence.CompressedMessageChunkModel) returns (google.protobuf.Empty);
-   rpc SaveMessagesUncompressed(stream persistence.UnCompressedMessageChunkModel) returns (google.protobuf.Empty);
+
+   rpc GetQueueSnapshot(google.protobuf.Empty) returns (stream TopicAndQueuesSnapshotGrpcModel);
+   rpc SaveQueueSnapshot(stream TopicAndQueuesSnapshotGrpcModel) returns (google.protobuf.Empty);
+
+   rpc GetHistoryByDate(GetHistoryByDateGrpcRequest) returns (stream persistence.MessageContentGrpcModel);
+
+   rpc GetVersion(google.protobuf.Empty) returns (GetVersionGrpcResponse);
+   rpc GetMessage(GetMessageGrpcRequest) returns (MessageContentGrpcModel);
+   rpc GetPageCompressed(GetPageCompressedGrpcRequest) returns (stream CompressedMessageChunkModel);
+   rpc GetPage(GetPageGrpcRequest) returns (stream MessageContentGrpcModel);
+   rpc GetSubPage(GetSubPageGrpcRequest) returns (stream MessageContentGrpcModel);
+   rpc SaveMessages(stream SaveMessagesGrpcRequest) returns (google.protobuf.Empty);
    rpc DeleteTopic(DeleteTopicGrpcRequest) returns (google.protobuf.Empty);
-   rpc RestoreTopic(RestoreTopicRequest) returns (RestoreTopicResponse);
+   rpc RestoreTopic(RestoreTopicGrpcRequest) returns (RestoreTopicGrpcResponse);
+   rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 

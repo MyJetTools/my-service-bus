@@ -12,7 +12,6 @@ use crate::messages_page::{MessagesToPersistBucket, MySbMessageContent, SizeMetr
 use crate::queue_subscribers::DeadSubscriber;
 
 use super::topic_data_access::TopicDataAccess;
-use super::TopicSnapshot;
 use super::{TopicId, TopicInner};
 
 pub struct Topic {
@@ -43,15 +42,13 @@ impl Topic {
         read_access.message_id.into()
     }
 
-    pub async fn get_topic_snapshot(&self) -> TopicSnapshot {
+    pub async fn get_topic_info<TResult>(
+        &self,
+        convert: impl Fn(&TopicInner) -> TResult,
+    ) -> TResult {
         let inner = self.inner.lock().await;
 
-        TopicSnapshot {
-            message_id: inner.message_id.into(),
-            topic_id: inner.topic_id.as_str().into(),
-            queues: inner.queues.get_snapshot_to_persist(),
-            persist: inner.persist,
-        }
+        convert(&inner)
     }
 
     pub async fn find_subscribers_dead_on_delivery(

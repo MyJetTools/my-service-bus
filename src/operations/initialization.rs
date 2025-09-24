@@ -77,7 +77,7 @@ async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
     loop {
         attempt += 1;
 
-        let topics_and_queues = app.topics_and_queues_repo.load().await;
+        let topics_and_queues = app.persistence_client.get_queue_snapshot().await;
 
         my_logger::LOGGER.write_info(
             "restore_topics_and_queues",

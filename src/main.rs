@@ -17,6 +17,7 @@ mod avg_value;
 mod errors;
 mod grpc_client;
 mod http;
+mod mappers;
 mod messages_page;
 mod metric_data;
 mod operations;
@@ -39,8 +40,12 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 #[tokio::main]
 async fn main() {
     let settings = settings::SettingsModel::read().await;
+    let settings = Arc::new(settings);
 
-    let app = Arc::new(AppContext::new(settings).await);
+    let messages_repo =
+        crate::grpc_client::PersistenceGrpcService::create_production_instance(settings.clone());
+
+    let app = Arc::new(AppContext::new(messages_repo, settings).await);
 
     app.immediately_persist_event_loop
         .register_event_loop(Arc::new(ImmediatelyPersistEventLoop::new(app.clone())))

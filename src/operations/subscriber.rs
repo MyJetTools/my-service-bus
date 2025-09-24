@@ -113,7 +113,7 @@ mod tests {
         publisher::MessageToPublish, subscriber::TopicQueueType, SbMessageHeaders,
     };
 
-    use crate::settings::SettingsModel;
+    use crate::{grpc_client::PersistenceGrpcService, settings::SettingsModel};
 
     #[tokio::test]
     async fn test_we_kick_subscriber_and_messages_goes_to_queue_back_and_then_to_new_connection() {
@@ -123,7 +123,13 @@ mod tests {
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
 
-        let app = Arc::new(crate::app::AppContext::new(settings).await);
+        let app = Arc::new(
+            crate::app::AppContext::new(
+                PersistenceGrpcService::create_mock_instance(),
+                settings.into(),
+            )
+            .await,
+        );
 
         let session = app.sessions.add_test("127.0.0.1").await;
 

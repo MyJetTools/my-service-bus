@@ -1,0 +1,11 @@
+use crate::persistence_grpc::*;
+
+#[my_grpc_extensions::client::generate_grpc_client(
+    proto_file: "./proto/MyServicePersistenceGrpcService.proto",
+    crate_ns: "crate::persistence_grpc",
+    retries: 3,
+    request_timeout_sec: 10,
+    ping_timeout_sec: 1,
+    ping_interval_sec: 3,
+)]
+pub struct PersistenceGrpcClient;

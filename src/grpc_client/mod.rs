@@ -1,20 +1,12 @@
 mod error;
-mod grpc_client;
-pub mod mappers;
-mod messages_pages_grpc_repo;
 #[cfg(test)]
 mod messages_pages_mock_repo;
-mod protobuf_models;
+mod persistence_grpc_client;
+mod persistence_grpc_service;
 
-pub use grpc_client::*;
+pub use persistence_grpc_service::*;
 
 pub use error::*;
-pub use messages_pages_grpc_repo::MessagesPagesGrpcRepo;
 #[cfg(test)]
-pub use messages_pages_mock_repo::MessagesPagesMockRepo;
-mod topics_and_queues_snapshot_grpc_repo;
-#[cfg(test)]
-mod topics_and_queues_snapshot_mock_repo;
-mod topics_and_queues_snapshot_repo;
-
-pub use topics_and_queues_snapshot_repo::TopicsAndQueuesSnapshotRepo;
+pub use messages_pages_mock_repo::*;
+pub use persistence_grpc_client::*;

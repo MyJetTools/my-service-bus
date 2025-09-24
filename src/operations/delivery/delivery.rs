@@ -210,6 +210,7 @@ mod tests {
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
     use crate::app::AppContext;
+    use crate::grpc_client::PersistenceGrpcService;
     use crate::settings::SettingsModel;
 
     use super::*;
@@ -222,7 +223,13 @@ mod tests {
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
 
-        let app = Arc::new(AppContext::new(settings).await);
+        let app = Arc::new(
+            AppContext::new(
+                PersistenceGrpcService::create_mock_instance(),
+                settings.into(),
+            )
+            .await,
+        );
 
         let test_session = app.sessions.add_test("127.0.0.1").await;
 
@@ -278,7 +285,13 @@ mod tests {
 
         let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
 
-        let app = Arc::new(AppContext::new(settings).await);
+        let app = Arc::new(
+            AppContext::new(
+                PersistenceGrpcService::create_mock_instance(),
+                settings.into(),
+            )
+            .await,
+        );
 
         let test_session = app.sessions.add_test("127.0.0.1").await;
 
@@ -301,7 +314,7 @@ mod tests {
 
         let messages_to_persist = vec![msg1, msg2];
 
-        app.messages_pages_repo
+        app.persistence_client
             .save_messages(TOPIC_NAME, messages_to_persist)
             .await
             .unwrap();

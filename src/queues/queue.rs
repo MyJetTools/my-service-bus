@@ -7,7 +7,7 @@ use rust_extensions::sorted_vec::EntityWithStrKey;
 
 use crate::{
     queue_subscribers::{SubscriberId, SubscribersList},
-    topics::{TopicId, TopicQueueSnapshot},
+    topics::TopicId,
 };
 
 use super::{delivery_attempts::DeliveryAttempts, QueueId};
@@ -66,30 +66,31 @@ impl TopicQueue {
         MessageId::from_opt_i64(self.queue.get_min_id())
     }
 
-    pub fn get_snapshot_to_persist(&self) -> Option<TopicQueueSnapshot> {
-        match self.queue_type {
-            TopicQueueType::Permanent => {
-                let result = TopicQueueSnapshot {
-                    queue_id: self.queue_id.to_string(),
-                    queue_type: self.queue_type.clone(),
-                    ranges: self.queue.get_snapshot(),
-                };
+    /*
+       pub fn get_snapshot_to_persist(&self) -> Option<TopicQueueSnapshot> {
+           match self.queue_type {
+               TopicQueueType::Permanent => {
+                   let result = TopicQueueSnapshot {
+                       queue_id: self.queue_id.to_string(),
+                       queue_type: self.queue_type.clone(),
+                       ranges: self.queue.get_snapshot(),
+                   };
 
-                Some(result)
-            }
-            TopicQueueType::DeleteOnDisconnect => None,
-            TopicQueueType::PermanentWithSingleConnection => {
-                let result = TopicQueueSnapshot {
-                    queue_id: self.queue_id.to_string(),
-                    queue_type: self.queue_type.clone(),
-                    ranges: self.queue.get_snapshot(),
-                };
+                   Some(result)
+               }
+               TopicQueueType::DeleteOnDisconnect => None,
+               TopicQueueType::PermanentWithSingleConnection => {
+                   let result = TopicQueueSnapshot {
+                       queue_id: self.queue_id.to_string(),
+                       queue_type: self.queue_type.clone(),
+                       ranges: self.queue.get_snapshot(),
+                   };
 
-                Some(result)
-            }
-        }
-    }
-
+                   Some(result)
+               }
+           }
+       }
+    */
     pub fn enqueue_messages(&mut self, msgs: &QueueWithIntervals) {
         for msg_id in msgs {
             self.queue.enqueue(msg_id);

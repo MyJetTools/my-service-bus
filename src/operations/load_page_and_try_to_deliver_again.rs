@@ -20,7 +20,7 @@ pub fn load_page_and_try_to_deliver_again(
 
         let sub_page = crate::operations::page_loader::load_page_to_cache(
             &topic,
-            app.messages_pages_repo.clone(),
+            app.persistence_client.clone(),
             sub_page_id,
         )
         .await;

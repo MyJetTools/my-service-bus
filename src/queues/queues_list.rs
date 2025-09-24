@@ -3,11 +3,7 @@ use my_service_bus::abstractions::{
 };
 use rust_extensions::sorted_vec::SortedVecWithStrKey;
 
-use crate::{
-    queue_subscribers::QueueSubscriber,
-    sessions::SessionId,
-    topics::{TopicId, TopicQueueSnapshot},
-};
+use crate::{queue_subscribers::QueueSubscriber, sessions::SessionId, topics::TopicId};
 
 use super::{queue::TopicQueue, QueueId};
 
@@ -87,15 +83,12 @@ impl TopicQueuesList {
         self.queues.iter_mut()
     }
 
-    pub fn get_snapshot_to_persist(&self) -> Vec<TopicQueueSnapshot> {
-        let mut result = Vec::new();
+    pub fn get_snapshot<TResult>(&self, convert: impl Fn(&TopicQueue) -> TResult) -> Vec<TResult> {
+        let mut result = Vec::with_capacity(self.queues.len());
 
-        for queue in self.get_all() {
-            let get_snapshot_to_persist_result = queue.get_snapshot_to_persist();
-
-            if let Some(snapshot_to_persist) = get_snapshot_to_persist_result {
-                result.push(snapshot_to_persist);
-            }
+        for item in self.get_all() {
+            let item = convert(item);
+            result.push(item);
         }
         return result;
     }

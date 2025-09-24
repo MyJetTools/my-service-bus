@@ -8,14 +8,14 @@ use my_logger::LogEventCtx;
 use my_service_bus::shared::sub_page::SubPageId;
 
 use crate::{
-    grpc_client::{MessagesPagesRepo, PersistenceError},
+    grpc_client::{PersistenceGrpcService, PersistenceError},
     messages_page::{MySbCachedMessage, SubPage, SubPageInner},
     topics::Topic,
 };
 
 pub async fn load_page(
     topic: &Topic,
-    messages_pages_repo: &Arc<MessagesPagesRepo>,
+    messages_pages_repo: &Arc<PersistenceGrpcService>,
     sub_page_id: SubPageId,
 ) -> SubPage {
     let mut attempt_no = 0;

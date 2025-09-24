@@ -1,45 +1,32 @@
 use std::time::Duration;
 
+use my_grpc_extensions::*;
 use rust_extensions::duration_utils::DurationExtensions;
 use serde::{Deserialize, Serialize};
 use tokio::{fs::File, io::AsyncReadExt};
-
-use crate::grpc_client::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo};
 
 #[cfg(test)]
 const TEST_GRPC_URL: &str = "test";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SettingsModelYaml {
-    #[serde(rename = "GrpcUrl")]
     pub persistence_grpc_url: String,
 
-    #[serde(rename = "QueueGcTimeout")]
     pub queue_gc_timeout: String,
 
-    #[serde(rename = "DebugMode")]
     pub debug_mode: bool,
 
-    #[serde(rename = "MaxDeliverySize")]
     pub max_delivery_size: usize,
 
-    #[serde(rename = "DeliveryTimeout")]
     pub delivery_timeout: Option<String>,
 
-    #[serde(rename = "AutoCreateTopicOnPublish")]
     pub auto_create_topic_on_publish: Option<bool>,
 
-    #[serde(rename = "AutoCreateTopicOnSubscribe")]
     pub auto_create_topic_on_subscribe: Option<bool>,
 
-    #[serde(rename = "GrpcTimeoutSecs")]
     pub grpc_timeout_secs: u64,
 
-    #[serde(rename = "PersistTimerInterval")]
     pub persist_timer_interval: String,
-
-    #[serde(rename = "PersistCompressed")]
-    pub persist_compressed: bool,
 
     pub listen_unix_socket: Option<String>,
 }
@@ -55,9 +42,15 @@ pub struct SettingsModel {
     pub auto_create_topic_on_publish: bool,
     pub auto_create_topic_on_subscribe: bool,
     pub persist_timer_interval: Duration,
-    pub persist_compressed: bool,
 
     pub listen_unix_socket: Option<String>,
+}
+
+#[async_trait::async_trait]
+impl GrpcClientSettings for SettingsModel {
+    async fn get_grpc_url(&self, _name: &'static str) -> GrpcUrl {
+        self.persistence_grpc_url.clone().into()
+    }
 }
 
 impl SettingsModel {
@@ -102,27 +95,8 @@ impl SettingsModel {
             auto_create_topic_on_publish: true,
             auto_create_topic_on_subscribe: true,
             persist_timer_interval: Duration::from_secs(1),
-            persist_compressed: false,
             listen_unix_socket: None,
         }
-    }
-
-    pub async fn create_topics_and_queues_snapshot_repo(&self) -> TopicsAndQueuesSnapshotRepo {
-        #[cfg(test)]
-        if self.persistence_grpc_url == TEST_GRPC_URL {
-            return TopicsAndQueuesSnapshotRepo::create_mock_instance();
-        }
-
-        TopicsAndQueuesSnapshotRepo::create_production_instance(self).await
-    }
-
-    pub async fn create_messages_pages_repo(&self) -> MessagesPagesRepo {
-        #[cfg(test)]
-        if self.persistence_grpc_url == TEST_GRPC_URL {
-            return MessagesPagesRepo::create_mock_instance();
-        }
-
-        MessagesPagesRepo::create_production_instance(self).await
     }
 }
 
@@ -203,7 +177,6 @@ impl Into<SettingsModel> for SettingsModelYaml {
             auto_create_topic_on_publish,
             auto_create_topic_on_subscribe,
             persist_timer_interval: Duration::from_str(&self.persist_timer_interval).unwrap(),
-            persist_compressed: self.persist_compressed,
             listen_unix_socket: self.listen_unix_socket,
         }
     }

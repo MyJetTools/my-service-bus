@@ -3,11 +3,8 @@ use std::{sync::Arc, time::Duration};
 use rust_extensions::{AppStates, ApplicationStates};
 
 use crate::{
-    grpc_client::{MessagesPagesRepo, TopicsAndQueuesSnapshotRepo},
-    queue_subscribers::SubscriberIdGenerator,
-    sessions::SessionsList,
-    settings::SettingsModel,
-    topics::TopicsList,
+    grpc_client::PersistenceGrpcService, queue_subscribers::SubscriberIdGenerator,
+    sessions::SessionsList, settings::SettingsModel, topics::TopicsList,
     utils::MultiThreadedShortString,
 };
 
@@ -18,8 +15,7 @@ pub const APP_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 pub struct AppContext {
     pub states: Arc<AppStates>,
     pub topic_list: TopicsList,
-    pub topics_and_queues_repo: Arc<TopicsAndQueuesSnapshotRepo>,
-    pub messages_pages_repo: Arc<MessagesPagesRepo>,
+    pub persistence_client: Arc<PersistenceGrpcService>,
     pub sessions: SessionsList,
     pub process_id: String,
     pub subscriber_id_generator: SubscriberIdGenerator,
@@ -32,18 +28,16 @@ pub struct AppContext {
 
     pub persistence_version: MultiThreadedShortString,
 
-    pub settings: SettingsModel,
+    pub settings: Arc<SettingsModel>,
 }
 
 impl AppContext {
-    pub async fn new(settings: SettingsModel) -> Self {
-        let topics_and_queues_repo = settings.create_topics_and_queues_snapshot_repo().await;
-        let messages_pages_repo = settings.create_messages_pages_repo().await;
+    pub async fn new(messages_repo: PersistenceGrpcService, settings: Arc<SettingsModel>) -> Self {
         Self {
             states: Arc::new(AppStates::create_un_initialized()),
             topic_list: TopicsList::new(),
-            topics_and_queues_repo: Arc::new(topics_and_queues_repo),
-            messages_pages_repo: Arc::new(messages_pages_repo),
+
+            persistence_client: Arc::new(messages_repo),
             sessions: SessionsList::new(),
             process_id: uuid::Uuid::new_v4().to_string(),
 

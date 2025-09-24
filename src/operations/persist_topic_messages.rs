@@ -17,17 +17,10 @@ pub async fn persist_topic_messages(app: &Arc<AppContext>, topic: &Arc<Topic>) {
             bucket.add(msg);
         }
 
-        if app.settings.persist_compressed {
-            app.messages_pages_repo
-                .save_messages(topic.topic_id.as_str(), bucket.get())
-                .await
-                .unwrap();
-        } else {
-            app.messages_pages_repo
-                .save_messages_uncompressed(topic.topic_id.as_str(), bucket.get())
-                .await
-                .unwrap();
-        }
+        app.persistence_client
+            .save_messages(topic.topic_id.as_str(), bucket.get())
+            .await
+            .unwrap();
 
         topic.mark_messages_as_persisted(&bucket).await;
     }
