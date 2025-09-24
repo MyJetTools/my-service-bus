@@ -24,8 +24,6 @@ pub struct SettingsModelYaml {
 
     pub auto_create_topic_on_subscribe: Option<bool>,
 
-    pub grpc_timeout_secs: u64,
-
     pub persist_timer_interval: String,
 
     pub listen_unix_socket: Option<String>,
