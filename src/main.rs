@@ -63,8 +63,8 @@ async fn main() {
         .await;
 
     let _unix_socket = if let Some(unix_socket_addr) = app.settings.listen_unix_socket.as_ref() {
-        let unix_socket =
-            UnixSocketServer::new("MySbTcpServerUnixSocket", unix_socket_addr.to_string());
+        let unix_socket_addr = rust_extensions::file_utils::format_path(unix_socket_addr);
+        let unix_socket = UnixSocketServer::new("MySbTcpServerUnixSocket", unix_socket_addr);
         unix_socket
             .start(
                 Arc::new(my_service_bus::tcp_contracts::MySbSerializerFactory),

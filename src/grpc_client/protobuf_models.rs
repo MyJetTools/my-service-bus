@@ -1,10 +1,11 @@
 use my_service_bus::shared::protobuf_models::MessageProtobufModel;
 
+/*
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MessagesProtobufModel {
     #[prost(message, repeated, tag = "1")]
     pub messages: Vec<MessageProtobufModel>,
-}
+} */
 
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct NewMessagesProtobufContract {
