@@ -1,29 +1,15 @@
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use my_service_bus::{
         abstractions::{publisher::MessageToPublish, subscriber::TopicQueueType, SbMessageHeaders},
         shared::sub_page::SubPageId,
     };
 
-    use crate::{grpc_client::PersistenceGrpcService, settings::SettingsModel};
-
     #[tokio::test]
     async fn test_that_we_do_not_gc_messages_which_are_on_delivery() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
-        const DELIVERY_SIZE: usize = 16;
-
-        let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
-
-        let app = Arc::new(
-            crate::app::AppContext::new(
-                PersistenceGrpcService::create_mock_instance(),
-                settings.into(),
-            )
-            .await,
-        );
+        let app = crate::test_tools::create_app_context().await;
 
         let session = app.sessions.add_test().await;
 

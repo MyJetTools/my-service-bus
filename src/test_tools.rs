@@ -2,7 +2,10 @@ use std::sync::{Arc, Mutex};
 
 use my_service_bus::shared::sub_page::SubPageId;
 
-use crate::{app::AppContext, background::RestorePageTask, topics::Topic};
+use crate::{
+    app::AppContext, background::RestorePageTask, grpc_client::PersistenceGrpcService,
+    settings::SettingsModel, topics::Topic,
+};
 
 #[derive(Default)]
 struct SubpageLoaderInner {
@@ -58,4 +61,22 @@ impl SubPageLoaderSchedulerMock {
             &mut topic_access,
         );
     }
+}
+
+pub async fn create_app_context() -> Arc<AppContext> {
+    const DELIVERY_SIZE: usize = 16;
+
+    let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
+
+    let app = Arc::new(
+        AppContext::new(
+            PersistenceGrpcService::create_mock_instance(),
+            settings.into(),
+        )
+        .await,
+    );
+
+    app.restore_page_scheduler.apply_app_ctx(app.clone());
+
+    app
 }

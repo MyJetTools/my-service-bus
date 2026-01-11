@@ -167,29 +167,12 @@ mod tests {
     use my_service_bus::shared::protobuf_models::MessageProtobufModel;
     use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-    use crate::app::AppContext;
-    use crate::grpc_client::PersistenceGrpcService;
-    use crate::settings::SettingsModel;
-
-    use super::*;
-
     #[tokio::test]
     async fn test_publish_subscribe_case() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
-        const DELIVERY_SIZE: usize = 16;
 
-        let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
-
-        let app = Arc::new(
-            AppContext::new(
-                PersistenceGrpcService::create_mock_instance(),
-                settings.into(),
-            )
-            .await,
-        );
-
-        app.restore_page_scheduler.apply_app_ctx(app.clone());
+        let app = crate::test_tools::create_app_context().await;
 
         let test_session = app.sessions.add_test().await;
 
@@ -239,22 +222,12 @@ mod tests {
         assert_eq!(result_packets.len(), 1);
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[tokio::test]
     async fn test_we_subscriber_and_deliver_persisted_messages() {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
-        const DELIVERY_SIZE: usize = 16;
 
-        let settings = SettingsModel::create_test_settings(DELIVERY_SIZE);
-
-        let app = Arc::new(
-            AppContext::new(
-                PersistenceGrpcService::create_mock_instance(),
-                settings.into(),
-            )
-            .await,
-        );
-
+        let app = crate::test_tools::create_app_context().await;
         let test_session = app.sessions.add_test().await;
 
         app.topic_list.add(TOPIC_NAME, 3.into(), true).await;
@@ -307,7 +280,8 @@ mod tests {
         )
         .await
         .unwrap();
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+        app.restore_page_scheduler.emulate_event_loop_tick().await;
 
         let mut result_packets = test_session.get_list_of_packets_and_clear_them();
         assert_eq!(result_packets.len(), 1);
