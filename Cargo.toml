@@ -8,7 +8,7 @@ edition = "2021"
 
 [dependencies]
 
-my-service-bus = { tag = "1.1.4", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
+my-service-bus = { tag = "1.1.5", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
     "tcp_contracts",
     "shared",
 
@@ -20,9 +20,7 @@ my-http-server = { tag = "0.8.3", git = "https://github.com/MyJetTools/my-http-s
 ] }
 
 
-my-tcp-sockets = { tag = "0.1.11", git = "https://github.com/MyJetTools/my-tcp-sockets.git", features = [
-    "unix-socket",
-] }
+my-tcp-sockets = { tag = "0.1.12", git = "https://github.com/MyJetTools/my-tcp-sockets.git" }
 
 rust-extensions = { tag = "0.1.5", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
     "with-tokio",

@@ -1,4 +1,4 @@
-use crate::{http::auth::GetSessionToken, sessions::MyServiceBusSession};
+use crate::http::auth::GetSessionToken;
 
 use my_http_server::macros::http_route;
 use my_service_bus::abstractions::publisher::MessageToPublish;
@@ -60,7 +60,7 @@ async fn handle_request(
         http_input.topic_id.as_str(),
         messages_to_publish,
         false,
-        http_session.get_session_id(),
+        http_session.session_id,
     )
     .await?;
 

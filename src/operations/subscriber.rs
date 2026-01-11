@@ -17,7 +17,7 @@ pub async fn subscribe_to_queue(
     topic_id: String,
     queue_id: String,
     queue_type: TopicQueueType,
-    session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
+    session: MyServiceBusSession,
 ) -> Result<SubscriberId, OperationFailResult> {
     let topic = {
         let topic = app.topic_list.get(topic_id.as_str()).await;
@@ -46,7 +46,7 @@ pub async fn subscribe_to_queue(
 
     topic_queue.update_queue_type(queue_type);
 
-    let session_id = session.get_session_id();
+    let session_id = session.session_id;
 
     let kicked_subscriber_result = topic_queue.subscribers.subscribe(
         subscriber_id,
@@ -89,10 +89,11 @@ pub async fn subscribe_to_queue(
         );
     }
 
-    #[cfg(test)]
-    crate::operations::delivery::try_to_deliver_to_subscribers(app, &topic, &mut topic_data).await;
-    #[cfg(not(test))]
-    crate::operations::delivery::try_to_deliver_to_subscribers(app, &topic, &mut topic_data);
+    crate::operations::delivery::try_to_deliver_to_subscribers(
+        app.as_ref(),
+        &topic,
+        &mut topic_data,
+    );
 
     Ok(subscriber_id)
 }
@@ -131,9 +132,9 @@ mod tests {
             .await,
         );
 
-        let session = app.sessions.add_test("127.0.0.1").await;
+        let session = app.sessions.add_test().await;
 
-        let topic = crate::operations::publisher::create_topic_if_not_exists(
+        let topic = crate::operations::create_topic_if_not_exists(
             &app,
             Some(session.session_id),
             TOPIC_NAME,
@@ -146,7 +147,7 @@ mod tests {
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,
-            session.clone(),
+            session.clone().into(),
         )
         .await
         .unwrap();
@@ -171,14 +172,14 @@ mod tests {
         .await
         .unwrap();
 
-        let session2 = app.sessions.add_test("127.0.0.1").await;
+        let session2 = app.sessions.add_test().await;
 
         let subscriber_id_2 = crate::operations::subscriber::subscribe_to_queue(
             &app,
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,
-            session2.clone(),
+            session2.clone().into(),
         )
         .await
         .unwrap();

@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use my_service_bus::abstractions::{queue_with_intervals::QueueWithIntervals, MessageId};
 use rust_extensions::{date_time::DateTimeAsMicroseconds, sorted_vec::EntityWithKey, StrOrString};
@@ -63,15 +63,11 @@ pub struct QueueSubscriber {
     pub delivery_compilation_duration: Duration,
 
     pub id: SubscriberId,
-    pub session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
+    pub session: MyServiceBusSession,
 }
 
 impl QueueSubscriber {
-    pub fn new(
-        id: SubscriberId,
-        queue_id: QueueId,
-        session: Arc<dyn MyServiceBusSession + Send + Sync + 'static>,
-    ) -> Self {
+    pub fn new(id: SubscriberId, queue_id: QueueId, session: MyServiceBusSession) -> Self {
         Self {
             queue_id: queue_id.clone(),
             subscribed: DateTimeAsMicroseconds::now(),

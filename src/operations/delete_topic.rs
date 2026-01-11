@@ -25,8 +25,8 @@ pub async fn delete_topic(
 
     app.topic_list.delete_topic(topic_id).await;
 
-    let mut reusable_topics = crate::topics::ReusableTopicsList::new();
-    crate::operations::persist_topics_and_queues(app, &mut reusable_topics).await;
+    let topic_list = app.topic_list.get_all().await;
+    crate::operations::persist_topics_and_queues(app, topic_list.as_slice()).await;
 
     Ok(())
 }

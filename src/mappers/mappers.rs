@@ -80,8 +80,8 @@ impl From<QueueSnapshotGrpcModel> for TopicQueueSnapshot {
     }
 }
 
-impl From<&QueueIndexRange> for QueueIndexRangeGrpcModel {
-    fn from(src: &QueueIndexRange) -> Self {
+impl From<&QueueIndexRange<i64>> for QueueIndexRangeGrpcModel {
+    fn from(src: &QueueIndexRange<i64>) -> Self {
         Self {
             from_id: src.from_id,
             to_id: src.to_id,
@@ -89,7 +89,7 @@ impl From<&QueueIndexRange> for QueueIndexRangeGrpcModel {
     }
 }
 
-impl From<QueueIndexRangeGrpcModel> for QueueIndexRange {
+impl From<QueueIndexRangeGrpcModel> for QueueIndexRange<i64> {
     fn from(src: QueueIndexRangeGrpcModel) -> Self {
         Self {
             from_id: src.from_id,

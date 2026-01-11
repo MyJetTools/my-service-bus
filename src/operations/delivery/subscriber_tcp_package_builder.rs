@@ -3,8 +3,8 @@ use std::sync::Arc;
 use my_service_bus::abstractions::MyServiceBusMessage;
 use my_service_bus::abstractions::SbMessageHeaders;
 
-use my_service_bus::tcp_contracts::delivery_package_builder::DeliverTcpPacketBuilder;
-use my_service_bus::tcp_contracts::{MySbTcpContract, PacketProtVer};
+use my_service_bus::tcp_contracts::new_messages_packet_builder::NewMessagesPacketBuilder;
+use my_service_bus::tcp_contracts::*;
 
 use crate::queues::QueueId;
 use crate::{messages_page::MySbMessageContent, queue_subscribers::SubscriberId, topics::Topic};
@@ -33,7 +33,7 @@ impl<'s> MyServiceBusMessage for PacketToSendWrapper<'s> {
 }
 
 pub struct SubscriberTcpPackageBuilder {
-    tcp_builder: DeliverTcpPacketBuilder,
+    tcp_builder: NewMessagesPacketBuilder,
     data_size: usize,
 }
 
@@ -44,11 +44,27 @@ impl SubscriberTcpPackageBuilder {
         subscriber_id: SubscriberId,
         protocol_version: PacketProtVer,
     ) -> Self {
-        let tcp_builder = DeliverTcpPacketBuilder::new(
+        let tcp_builder = NewMessagesPacketBuilder::new(
             topic.topic_id.as_str(),
             queue_id.as_str(),
             subscriber_id.get_value(),
             protocol_version,
+        );
+        Self {
+            tcp_builder,
+            data_size: 0,
+        }
+    }
+
+    pub fn new_last_version(
+        topic: &Arc<Topic>,
+        queue_id: &QueueId,
+        subscriber_id: SubscriberId,
+    ) -> Self {
+        let tcp_builder = NewMessagesPacketBuilder::new_last_version(
+            topic.topic_id.as_str(),
+            queue_id.as_str(),
+            subscriber_id.get_value(),
         );
         Self {
             tcp_builder,
@@ -72,5 +88,9 @@ impl SubscriberTcpPackageBuilder {
 
     pub fn get_result(self) -> MySbTcpContract {
         self.tcp_builder.get_result()
+    }
+
+    pub fn into_new_messages_model(self) -> NewMessagesModel {
+        self.tcp_builder.into_new_messages_model()
     }
 }

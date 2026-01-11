@@ -42,7 +42,7 @@ async fn handle_request(
         input_data.topic_id,
         input_data.queue_id,
         queue_type,
-        http_session,
+        http_session.into(),
     )
     .await?;
 

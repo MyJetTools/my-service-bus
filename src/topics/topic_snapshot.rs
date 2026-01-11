@@ -7,7 +7,7 @@ use rust_extensions::ShortString;
 pub struct TopicQueueSnapshot {
     pub queue_id: String,
     pub queue_type: TopicQueueType,
-    pub ranges: Vec<QueueIndexRange>,
+    pub ranges: Vec<QueueIndexRange<i64>>,
 }
 #[derive(Clone)]
 pub struct TopicSnapshot {

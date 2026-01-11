@@ -41,15 +41,15 @@ pub async fn all_confirmed(
         }
 
         if !topic_access.persist {
-            topic_access.gc_messages();
+            topic_access.gc();
         }
     }
 
-    #[cfg(test)]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_access)
-        .await;
-    #[cfg(not(test))]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_access);
+    crate::operations::delivery::try_to_deliver_to_subscribers(
+        app.as_ref(),
+        &topic,
+        &mut topic_access,
+    );
 
     Ok(())
 }
@@ -84,10 +84,11 @@ pub async fn all_fail(
         }
     }
 
-    #[cfg(test)]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data).await;
-    #[cfg(not(test))]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
+    crate::operations::delivery::try_to_deliver_to_subscribers(
+        app.as_ref(),
+        &topic,
+        &mut topic_data,
+    );
 
     Ok(())
 }
@@ -136,10 +137,11 @@ pub async fn intermediary_confirm(
         topic_queue.confirm_delivered(&confirmed_ids);
     }
 
-    #[cfg(test)]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data).await;
-    #[cfg(not(test))]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
+    crate::operations::delivery::try_to_deliver_to_subscribers(
+        app.as_ref(),
+        &topic,
+        &mut topic_data,
+    );
 
     Ok(())
 }
@@ -175,10 +177,11 @@ pub async fn some_messages_are_confirmed(
         }
     }
 
-    #[cfg(test)]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data).await;
-    #[cfg(not(test))]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
+    crate::operations::delivery::try_to_deliver_to_subscribers(
+        app.as_ref(),
+        &topic,
+        &mut topic_data,
+    );
 
     Ok(())
 }

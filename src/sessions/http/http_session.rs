@@ -1,15 +1,16 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 
 use rust_extensions::{
-    date_time::DateTimeAsMicroseconds,
-    sorted_vec::{EntityWithKey, EntityWithStrKey},
-    TaskCompletionAwaiter,
+    date_time::DateTimeAsMicroseconds, sorted_vec::EntityWithStrKey, TaskCompletionAwaiter,
 };
 use tokio::sync::Mutex;
 
 use crate::{
     operations::delivery::SubscriberPackageBuilder,
-    sessions::{my_sb_session::*, ConnectionMetrics, MyServiceBusSession, SessionId},
+    sessions::{my_sb_session::*, ConnectionMetrics, SessionId},
 };
 
 use super::{HttpDeliveryPackage, HttpSessionKey, SendQueueInner};
@@ -28,7 +29,7 @@ pub struct MyServiceBusHttpSession {
     pub connected_moment: DateTimeAsMicroseconds,
     connection_metrics: ConnectionMetrics,
     connected: AtomicBool,
-    send_queue: Mutex<SendQueueInner>,
+    send_queue: Arc<Mutex<SendQueueInner>>,
 }
 
 impl MyServiceBusHttpSession {
@@ -48,7 +49,7 @@ impl MyServiceBusHttpSession {
             connected: AtomicBool::new(true),
             connection_metrics: ConnectionMetrics::new(),
             connected_moment: DateTimeAsMicroseconds::now(),
-            send_queue: Mutex::new(SendQueueInner::new()),
+            send_queue: Arc::new(Mutex::new(SendQueueInner::new())),
         }
     }
 
@@ -91,31 +92,8 @@ impl MyServiceBusHttpSession {
             }
         }
     }
-}
 
-impl EntityWithStrKey for MyServiceBusHttpSession {
-    fn get_key(&self) -> &str {
-        self.session_key.as_str()
-    }
-}
-
-impl EntityWithKey<i64> for MyServiceBusHttpSession {
-    fn get_key(&self) -> &i64 {
-        self.session_id.as_ref()
-    }
-}
-
-#[async_trait::async_trait]
-impl MyServiceBusSession for MyServiceBusHttpSession {
-    fn get_session_type(&self) -> SessionType {
-        SessionType::Http
-    }
-
-    fn get_session_id(&self) -> crate::sessions::SessionId {
-        self.session_id
-    }
-
-    fn get_name_and_version(&self) -> SessionNameAndVersion {
+    pub fn get_name_and_version(&self) -> SessionNameAndVersion {
         SessionNameAndVersion {
             name: self.name.to_string(),
             version: Some(self.version.to_string()),
@@ -123,7 +101,7 @@ impl MyServiceBusSession for MyServiceBusHttpSession {
         }
     }
 
-    fn get_metrics(&self) -> SessionMetrics {
+    pub fn get_metrics(&self) -> SessionMetrics {
         SessionMetrics {
             ip: self.ip.to_string(),
             connected: self.connected_moment,
@@ -132,21 +110,26 @@ impl MyServiceBusSession for MyServiceBusHttpSession {
         }
     }
 
-    async fn disconnect(&self) -> bool {
-        self.connected.swap(false, Ordering::SeqCst)
+    pub fn send_messages_to_connection(&self, package_builder: SubscriberPackageBuilder) {
+        let send_queue = self.send_queue.clone();
+
+        tokio::spawn(async move {
+            let http_delivery_package = package_builder.get_http_result();
+            let mut write_access = send_queue.lock().await;
+
+            write_access.queue.enqueue_messages(http_delivery_package);
+
+            write_access.deliver_message();
+        });
     }
 
-    async fn send_messages_to_connection(&self, mut package_builder: SubscriberPackageBuilder) {
-        let messages = package_builder.get_http_result();
-        let mut write_access = self.send_queue.lock().await;
+    pub fn disconnect(&self) -> bool {
+        self.connected.swap(false, Ordering::SeqCst)
+    }
+}
 
-        write_access.queue.enqueue_messages(
-            package_builder.topic.topic_id.clone(),
-            package_builder.queue_id.clone(),
-            package_builder.subscriber_id,
-            messages,
-        );
-
-        write_access.deliver_message();
+impl EntityWithStrKey for MyServiceBusHttpSession {
+    fn get_key(&self) -> &str {
+        self.session_key.as_str()
     }
 }

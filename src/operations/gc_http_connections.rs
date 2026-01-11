@@ -11,6 +11,6 @@ pub async fn gc_http_connections(app: &AppContext) {
         .await;
 
     for disconnected_session in disconnected_sessions {
-        crate::operations::sessions::disconnect(app, disconnected_session).await;
+        crate::operations::sessions::disconnect(app, disconnected_session.into()).await;
     }
 }

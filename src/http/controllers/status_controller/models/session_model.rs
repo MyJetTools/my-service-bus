@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{app::AppContext, sessions::MyServiceBusSession};
 
 use rust_extensions::date_time::DateTimeAsMicroseconds;
@@ -31,21 +29,21 @@ pub struct SessionJsonResult {
 }
 
 impl SessionJsonResult {
-    pub async fn new(session: &Arc<dyn MyServiceBusSession + Send + Sync + 'static>) -> Self {
+    pub async fn new(session: &MyServiceBusSession) -> Self {
         let now = DateTimeAsMicroseconds::now();
 
         let session_metrics = session.get_metrics();
 
         let session_type = if let Some(prot_ver) = session_metrics.tcp_protocol_version {
-            format!("{}[{}]", session.get_session_type().as_str(), prot_ver)
+            format!("{}[{}]", session.get_type_as_str(), prot_ver)
         } else {
-            session.get_session_type().as_str().to_string()
+            session.get_type_as_str().to_string()
         };
 
         let name_and_version = session.get_name_and_version();
 
         Self {
-            id: session.get_session_id().get_value(),
+            id: session.session_id.get_value(),
             ip: session_metrics.ip,
             session_type,
             name: name_and_version.name,

@@ -4,7 +4,6 @@ use std::time::Duration;
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::sub_page::SubPageId;
 
-use rust_extensions::date_time::DateTimeAsMicroseconds;
 use rust_extensions::sorted_vec::EntityWithStrKey;
 use tokio::sync::Mutex;
 
@@ -17,7 +16,6 @@ use super::{TopicId, TopicInner};
 pub struct Topic {
     pub topic_id: TopicId,
     inner: Mutex<TopicInner>,
-    pub restore_page_lock: Mutex<DateTimeAsMicroseconds>,
     pub immediately_persist_is_charged: AtomicBool,
 }
 
@@ -27,7 +25,6 @@ impl Topic {
         Self {
             topic_id: topic_id.clone(),
             inner: Mutex::new(TopicInner::new(topic_id, message_id, persist)),
-            restore_page_lock: Mutex::new(DateTimeAsMicroseconds::now()),
             immediately_persist_is_charged: AtomicBool::new(false),
         }
     }

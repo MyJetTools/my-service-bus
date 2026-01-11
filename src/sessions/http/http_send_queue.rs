@@ -1,9 +1,6 @@
 use rust_extensions::auto_shrink::VecAutoShrink;
 
-use crate::{
-    http::controllers::MessageToDeliverHttpContract, queue_subscribers::SubscriberId,
-    queues::QueueId, topics::TopicId,
-};
+use crate::queue_subscribers::SubscriberId;
 
 use super::HttpDeliveryPackage;
 
@@ -20,40 +17,26 @@ impl HttpSendQueue {
 
     fn check_if_we_have_it_already(
         &self,
-        topic_id: &TopicId,
-        queue_id: &QueueId,
+        topic_id: &str,
+        queue_id: &str,
         subscriber_id: SubscriberId,
     ) {
         for itm in self.queue.iter() {
-            if itm.topic_id.as_str() == topic_id.as_str()
-                && itm.queue_id.as_str() == queue_id.as_str()
+            if itm.topic_id.as_str() == topic_id
+                && itm.queue_id.as_str() == queue_id
                 && itm.subscriber_id.get_value() == subscriber_id.get_value()
             {
                 panic!(
                     "Messages already in the queue {}/{}. Subscriber:{}",
-                    topic_id.as_str(),
-                    queue_id.as_str(),
-                    itm.subscriber_id
+                    topic_id, queue_id, itm.subscriber_id
                 );
             }
         }
     }
 
-    pub fn enqueue_messages(
-        &mut self,
-        topic_id: TopicId,
-        queue_id: QueueId,
-        subscriber_id: SubscriberId,
-        messages: Vec<MessageToDeliverHttpContract>,
-    ) {
-        self.check_if_we_have_it_already(&topic_id, &queue_id, subscriber_id);
-
-        self.queue.push(HttpDeliveryPackage {
-            topic_id,
-            queue_id,
-            subscriber_id,
-            messages,
-        })
+    pub fn enqueue_messages(&mut self, data: HttpDeliveryPackage) {
+        self.check_if_we_have_it_already(&data.topic_id, &data.queue_id, data.subscriber_id);
+        self.queue.push(data)
     }
 
     pub fn get_next_package(&mut self) -> Option<HttpDeliveryPackage> {

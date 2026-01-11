@@ -18,7 +18,7 @@ pub async fn init(app: Arc<AppContext>) {
     for topic_and_queues in topics_and_queues {
         let topic = app
             .topic_list
-            .restore(
+            .add(
                 topic_and_queues.topic_id.as_str(),
                 topic_and_queues.message_id.into(),
                 topic_and_queues.persist,

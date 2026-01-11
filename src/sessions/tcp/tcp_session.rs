@@ -4,18 +4,18 @@ use std::sync::{
 };
 
 use my_service_bus::tcp_contracts::{MySbTcpConnection, PacketProtVer};
-use rust_extensions::sorted_vec::*;
+use rust_extensions::sorted_vec::EntityWithKey;
 
 use crate::{
     operations::delivery::SubscriberPackageBuilder,
-    sessions::{my_sb_session::*, ConnectionMetricsSnapshot, MyServiceBusSession, SessionId},
+    sessions::{my_sb_session::*, ConnectionMetricsSnapshot, SessionId},
 };
 
 pub struct MyServiceBusTcpSession {
+    pub session_id: SessionId,
     pub connection: Arc<MySbTcpConnection>,
     protocol_version: i32,
     delivery_packet_version: AtomicU8,
-    pub session_id: SessionId,
     pub name: String,
     pub version: Option<String>,
     pub env_info: Option<String>,
@@ -61,19 +61,8 @@ impl MyServiceBusTcpSession {
             packet_version,
         }
     }
-}
 
-#[async_trait::async_trait]
-impl MyServiceBusSession for MyServiceBusTcpSession {
-    fn get_session_type(&self) -> SessionType {
-        SessionType::Tcp(self.get_messages_to_deliver_protocol_version())
-    }
-
-    fn get_session_id(&self) -> crate::sessions::SessionId {
-        self.session_id
-    }
-
-    fn get_name_and_version(&self) -> SessionNameAndVersion {
+    pub fn get_name_and_version(&self) -> SessionNameAndVersion {
         SessionNameAndVersion {
             name: self.name.to_string(),
             version: self.version.clone(),
@@ -81,7 +70,7 @@ impl MyServiceBusSession for MyServiceBusTcpSession {
         }
     }
 
-    fn get_metrics(&self) -> SessionMetrics {
+    pub fn get_metrics(&self) -> SessionMetrics {
         let statistics = self.connection.statistics();
         SessionMetrics {
             ip: if let Some(addr) = &self.connection.addr {
@@ -101,24 +90,21 @@ impl MyServiceBusSession for MyServiceBusTcpSession {
         }
     }
 
-    async fn disconnect(&self) -> bool {
-        self.connection.disconnect().await
+    pub fn send_messages_to_connection(&self, package_builder: SubscriberPackageBuilder) {
+        let messages = package_builder.get_tcp_result();
+        let connection = self.connection.clone();
+        tokio::spawn(async move {
+            connection.send(&messages).await;
+        });
     }
 
-    async fn send_messages_to_connection(&self, mut package_builder: SubscriberPackageBuilder) {
-        let messages = package_builder.get_tcp_result();
-        self.connection.send(&messages).await;
+    pub async fn disconnect(&self) -> bool {
+        self.connection.disconnect().await
     }
 }
 
 impl EntityWithKey<i32> for MyServiceBusTcpSession {
     fn get_key(&self) -> &i32 {
         &self.connection.id
-    }
-}
-
-impl EntityWithKey<i64> for MyServiceBusTcpSession {
-    fn get_key(&self) -> &i64 {
-        self.session_id.as_ref()
     }
 }

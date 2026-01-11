@@ -28,6 +28,12 @@ pub struct AppContext {
 
     pub persistence_version: MultiThreadedShortString,
 
+    #[cfg(not(test))]
+    pub restore_page_scheduler: super::LoadSubPageScheduler,
+
+    #[cfg(test)]
+    pub restore_page_scheduler: crate::test_tools::SubPageLoaderSchedulerMock,
+
     pub settings: Arc<SettingsModel>,
 }
 
@@ -51,6 +57,8 @@ impl AppContext {
             },
             immediately_persist_event_loop: ImmediatelyPersistEventLoop::new(),
             persistence_version: MultiThreadedShortString::new(),
+
+            restore_page_scheduler: Default::default(),
             settings,
         }
     }

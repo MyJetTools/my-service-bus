@@ -121,7 +121,11 @@ impl TcpServerEvents {
                     .await
                 {
                     operations::subscriber::subscribe_to_queue(
-                        &self.app, topic_id, queue_id, queue_type, session,
+                        &self.app,
+                        topic_id,
+                        queue_id,
+                        queue_type,
+                        session.into(),
                     )
                     .await?;
                 }
@@ -161,7 +165,7 @@ impl TcpServerEvents {
                     .get_session_id_by_tcp_connection_id(connection.id)
                     .await
                 {
-                    operations::publisher::create_topic_if_not_exists(
+                    operations::create_topic_if_not_exists(
                         &self.app,
                         Some(session),
                         topic_id.as_str(),
@@ -242,12 +246,7 @@ impl TcpServerEvents {
 
                 Ok(())
             }
-            MySbTcpContract::NewMessages {
-                topic_id: _,
-                queue_id: _,
-                confirmation_id: _,
-                messages: _,
-            } => {
+            MySbTcpContract::NewMessages(_) => {
                 //this is Client Side Message
 
                 Ok(())

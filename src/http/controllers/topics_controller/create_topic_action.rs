@@ -32,12 +32,8 @@ async fn handle_request(
     input_data: CreateTopicRequestContract,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    crate::operations::publisher::create_topic_if_not_exists(
-        &action.app,
-        None,
-        input_data.topic_id.as_ref(),
-    )
-    .await?;
+    crate::operations::create_topic_if_not_exists(&action.app, None, input_data.topic_id.as_ref())
+        .await?;
 
     HttpOutput::as_text("Topic is created".to_string())
         .into_ok_result(true)

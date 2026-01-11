@@ -12,6 +12,8 @@ use crate::messages_page::{ActiveSubPages, MessagesPageList, MySbMessageContent,
 use crate::queue_subscribers::QueueSubscriber;
 use crate::queues::{TopicQueue, TopicQueuesList};
 use crate::sessions::SessionId;
+#[cfg(test)]
+use crate::sub_page::GetMessageResult;
 use crate::utils::MinMessageIdCalculator;
 
 use super::{TopicId, TopicPublishers, TopicStatistics};
@@ -124,11 +126,15 @@ impl TopicInner {
         result
     }
 
-    pub fn gc_pages(&mut self) {
-        if let Some(min_message_id) = self.get_min_message_id() {
-            let active_sub_pages = self.get_active_sub_pages();
-            self.pages.gc_pages(&active_sub_pages, min_message_id);
-        }
+    pub fn gc(&mut self) {
+
+        let Some(min_message_id) = self.get_min_message_id() else{
+            return;
+        };
+
+        let active_sub_pages = self.get_active_sub_pages();
+        self.pages.gc_pages(  &active_sub_pages);
+        self.pages.gc_messages(min_message_id, &active_sub_pages);
     }
 
     pub fn gc_queues_with_no_subscribers(
@@ -190,13 +196,6 @@ impl TopicInner {
         result
     }
 
-    pub fn gc_messages(&mut self) {
-        if let Some(min_message_id) = self.get_min_message_id() {
-            let active_sub_pages = self.get_active_sub_pages();
-            self.pages.gc_messages(min_message_id, &active_sub_pages);
-        }
-    }
-
     pub fn get_messages_to_persist<TResult>(
         &self,
         transform: impl Fn(&MySbMessageContent) -> TResult,
@@ -208,14 +207,14 @@ impl TopicInner {
 
     pub fn mark_messages_as_persisted(&mut self, sub_page_id: SubPageId, ids: &QueueWithIntervals) {
         self.pages.mark_messages_as_persisted(sub_page_id, ids);
-        self.gc_messages();
+        self.gc();
     }
 
     #[cfg(test)]
     pub fn get_message<'s>(
         &'s self,
         message_id: MessageId,
-    ) -> Option<crate::messages_page::GetMessageResult<'s>> {
+    ) -> Option<GetMessageResult<'s>> {
         let sub_page_id: SubPageId = message_id.into();
         let sub_page = self.pages.get(sub_page_id)?;
 
@@ -271,6 +270,6 @@ mod tests {
 
         let message_result = topic_inner.get_message(message_to_deliver_id.into());
 
-        assert!(message_result.unwrap().is_garbage_collected());
+        assert!(message_result.unwrap().is_not_loaded());
     }
 }

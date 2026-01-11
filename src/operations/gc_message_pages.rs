@@ -25,9 +25,9 @@ mod tests {
             .await,
         );
 
-        let session = app.sessions.add_test("127.0.0.1").await;
+        let session = app.sessions.add_test().await;
 
-        let topic = crate::operations::publisher::create_topic_if_not_exists(
+        let topic = crate::operations::create_topic_if_not_exists(
             &app,
             Some(session.session_id),
             TOPIC_NAME,
@@ -40,7 +40,7 @@ mod tests {
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,
-            session.clone(),
+            session.clone().into(),
         )
         .await
         .unwrap();
@@ -68,8 +68,7 @@ mod tests {
         {
             let mut data = topic.get_access().await;
 
-            data.gc_messages();
-            data.gc_pages();
+            data.gc();
 
             let queue = data.queues.get(QUEUE_NAME).unwrap();
 
@@ -77,7 +76,7 @@ mod tests {
 
             assert_eq!(2, subscriber.get_messages_amount_on_delivery());
 
-            let sub_page = data.pages.get(SubPageId::new(0)).unwrap();
+            let sub_page = data.pages.get_mut(SubPageId::new(0)).unwrap();
 
             let messages = sub_page.unwrap_all_messages_with_content();
 

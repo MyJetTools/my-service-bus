@@ -33,18 +33,18 @@ impl StatusJsonResult {
 
         sys_info.refresh_all();
 
-        let (snapshot_id, all_topics) = app.topic_list.get_all_with_snapshot_id().await;
+        let snapshot = app.topic_list.get_all_with_snapshot_id().await;
 
         let mut queues = BTreeMap::new();
 
         let mut topics = TopicsJsonResult {
-            snapshot_id,
+            snapshot_id: snapshot.snapshot_id,
             items: Vec::new(),
         };
 
         let sessions = SessionsJsonResult::new(app).await;
 
-        for topic in all_topics {
+        for topic in snapshot.topics.iter() {
             let topic_data = topic.get_access().await;
             queues.insert(
                 topic_data.topic_id.to_string(),

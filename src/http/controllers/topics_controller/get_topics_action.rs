@@ -34,7 +34,7 @@ async fn handle_request(
 
     let mut items: Vec<JsonTopicResult> = Vec::new();
 
-    for topic in topics {
+    for topic in topics.iter() {
         let item = JsonTopicResult::new(topic.as_ref()).await;
 
         items.push(item);

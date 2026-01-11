@@ -1,3 +1,4 @@
+#[derive(Default)]
 pub struct SizeMetrics {
     pub messages_amount: usize,
     pub data_size: usize,

@@ -1,27 +1,13 @@
-use my_service_bus::tcp_contracts::PacketProtVer;
-use rust_extensions::date_time::DateTimeAsMicroseconds;
+use std::sync::Arc;
 
-use crate::operations::delivery::SubscriberPackageBuilder;
+use rust_extensions::{date_time::DateTimeAsMicroseconds, sorted_vec::EntityWithKey};
+
+use crate::{
+    operations::delivery::SubscriberPackageBuilder,
+    sessions::{http::MyServiceBusHttpSession, tcp::MyServiceBusTcpSession},
+};
 
 use super::{ConnectionMetricsSnapshot, SessionId};
-
-pub enum SessionType {
-    Tcp(PacketProtVer),
-    Http,
-    #[cfg(test)]
-    Test,
-}
-
-impl SessionType {
-    pub fn as_str(&self) -> &str {
-        match self {
-            SessionType::Tcp(_) => "tcp",
-            SessionType::Http => "http",
-            #[cfg(test)]
-            SessionType::Test => "test",
-        }
-    }
-}
 
 pub struct SessionMetrics {
     pub ip: String,
@@ -36,17 +22,104 @@ pub struct SessionNameAndVersion {
     pub env_info: Option<String>,
 }
 
-#[async_trait::async_trait]
-pub trait MyServiceBusSession {
-    fn get_session_id(&self) -> SessionId;
-    fn get_name_and_version(&self) -> SessionNameAndVersion;
-    fn get_session_type(&self) -> SessionType;
+#[derive(Clone)]
+pub enum MyServiceBusSessionInner {
+    Tcp(Arc<MyServiceBusTcpSession>),
+    Http(Arc<MyServiceBusHttpSession>),
+    #[cfg(test)]
+    Test(Arc<super::test::MyServiceBusTestSession>),
+}
 
-    fn get_metrics(&self) -> SessionMetrics;
+#[derive(Clone)]
+pub struct MyServiceBusSession {
+    pub session_id: SessionId,
+    pub inner: MyServiceBusSessionInner,
+}
 
-    async fn disconnect(&self) -> bool;
+impl MyServiceBusSession {
+    pub fn get_type_as_str(&self) -> &'static str {
+        match &self.inner {
+            MyServiceBusSessionInner::Tcp(_) => "tcp",
+            MyServiceBusSessionInner::Http(_) => "http",
+            #[cfg(test)]
+            MyServiceBusSessionInner::Test(_) => "test",
+        }
+    }
+    pub fn get_name_and_version(&self) -> SessionNameAndVersion {
+        match &self.inner {
+            MyServiceBusSessionInner::Tcp(session) => session.get_name_and_version(),
+            MyServiceBusSessionInner::Http(session) => session.get_name_and_version(),
+            #[cfg(test)]
+            MyServiceBusSessionInner::Test(session) => session.get_name_and_version(),
+        }
+    }
 
-    async fn send_messages_to_connection(&self, package_builder: SubscriberPackageBuilder);
+    pub fn get_metrics(&self) -> SessionMetrics {
+        match &self.inner {
+            MyServiceBusSessionInner::Tcp(session) => session.get_metrics(),
+            MyServiceBusSessionInner::Http(session) => session.get_metrics(),
+            #[cfg(test)]
+            MyServiceBusSessionInner::Test(session) => session.get_metrics(),
+        }
+    }
+
+    pub async fn disconnect(&self) -> bool {
+        match &self.inner {
+            MyServiceBusSessionInner::Tcp(session) => session.disconnect().await,
+            MyServiceBusSessionInner::Http(session) => session.disconnect(),
+            #[cfg(test)]
+            MyServiceBusSessionInner::Test(session) => session.disconnect(),
+        }
+    }
+
+    pub fn send_messages_to_connection(&self, package_builder: SubscriberPackageBuilder) {
+        match &self.inner {
+            MyServiceBusSessionInner::Tcp(session) => {
+                session.send_messages_to_connection(package_builder)
+            }
+            MyServiceBusSessionInner::Http(session) => {
+                session.send_messages_to_connection(package_builder)
+            }
+            #[cfg(test)]
+            MyServiceBusSessionInner::Test(session) => {
+                session.send_messages_to_connection(package_builder)
+            }
+        }
+    }
+}
+
+impl EntityWithKey<i64> for MyServiceBusSession {
+    fn get_key(&self) -> &i64 {
+        self.session_id.as_ref()
+    }
+}
+
+impl Into<MyServiceBusSession> for Arc<MyServiceBusTcpSession> {
+    fn into(self) -> MyServiceBusSession {
+        MyServiceBusSession {
+            session_id: self.session_id,
+            inner: MyServiceBusSessionInner::Tcp(self),
+        }
+    }
+}
+
+impl Into<MyServiceBusSession> for Arc<MyServiceBusHttpSession> {
+    fn into(self) -> MyServiceBusSession {
+        MyServiceBusSession {
+            session_id: self.session_id,
+            inner: MyServiceBusSessionInner::Http(self),
+        }
+    }
+}
+
+#[cfg(test)]
+impl Into<MyServiceBusSession> for Arc<super::test::MyServiceBusTestSession> {
+    fn into(self) -> MyServiceBusSession {
+        MyServiceBusSession {
+            session_id: self.session_id,
+            inner: MyServiceBusSessionInner::Test(self),
+        }
+    }
 }
 
 /*

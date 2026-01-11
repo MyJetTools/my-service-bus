@@ -8,8 +8,9 @@ use my_logger::LogEventCtx;
 use my_service_bus::shared::sub_page::SubPageId;
 
 use crate::{
-    grpc_client::{PersistenceGrpcService, PersistenceError},
-    messages_page::{MySbCachedMessage, SubPage, SubPageInner},
+    grpc_client::{PersistenceError, PersistenceGrpcService},
+    messages_page::MySbCachedMessage,
+    sub_page::{SubPage, SubPageInner},
     topics::Topic,
 };
 
@@ -42,9 +43,10 @@ pub async fn load_page(
                         }
                     }
 
-                    return SubPageInner::restore(sub_page_id, result).into();
+                    let sub_page_inner = SubPageInner::restore(result);
+                    return SubPage::restore(sub_page_id, sub_page_inner);
                 }
-                None => return SubPage::create_as_missing(sub_page_id),
+                None => return SubPage::new_as_brand_new(sub_page_id),
             }
         }
 
@@ -63,7 +65,7 @@ pub async fn load_page(
                         .add("attemptNo", attempt_no.to_string()),
                 );
 
-                return SubPage::create_as_missing(sub_page_id);
+                return SubPage::new_as_brand_new(sub_page_id);
             }
             _ => {
                 let mut ctx = HashMap::new();
@@ -87,7 +89,7 @@ pub async fn load_page(
         attempt_no += 1;
 
         if attempt_no == 5 {
-            return SubPage::create_as_missing(sub_page_id);
+            return SubPage::new_as_brand_new(sub_page_id);
         }
         tokio::time::sleep(Duration::from_secs(1)).await
     }

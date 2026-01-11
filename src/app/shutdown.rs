@@ -8,7 +8,8 @@ pub async fn execute(app: Arc<AppContext>) {
 }
 
 async fn empty_persistence_queues(app: Arc<AppContext>) {
-    for topic in app.topic_list.get_all().await {
+    let topics = app.topic_list.get_all().await;
+    for topic in topics.iter() {
         let metrics = topic.get_topic_size_metrics().await;
 
         while metrics.persist_size > 0 {
@@ -30,7 +31,9 @@ async fn empty_persistence_queues(app: Arc<AppContext>) {
 
 async fn make_last_topics_and_queues_persist(app: Arc<AppContext>) {
     println!("Making final topics and queues snapshot save");
-    let mut reusable_topics = crate::topics::ReusableTopicsList::new();
-    crate::operations::persist_topics_and_queues(&app, &mut reusable_topics).await;
+
+    let topic_list = app.topic_list.get_all().await;
+
+    crate::operations::persist_topics_and_queues(&app, topic_list.as_slice()).await;
     println!("Final topics and queues snapshot save is done");
 }

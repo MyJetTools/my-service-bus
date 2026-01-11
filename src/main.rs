@@ -4,8 +4,7 @@ use background::{
     DeadSubscribersKickerTimer, GcTimer, ImmediatelyPersistEventLoop, MetricsTimer,
     PersistTopicsAndQueuesTimer,
 };
-use my_tcp_sockets::unix_socket::UnixSocketServer;
-use my_tcp_sockets::TcpServer;
+use my_tcp_sockets::{unix_socket_server::UnixSocketServer, TcpServer};
 use rust_extensions::MyTimer;
 use tcp::socket_events::TcpServerEvents;
 
@@ -25,7 +24,10 @@ mod queue_subscribers;
 mod queues;
 mod sessions;
 mod settings;
+mod sub_page;
 mod tcp;
+#[cfg(test)]
+mod test_tools;
 mod utils;
 
 mod background;
@@ -113,6 +115,20 @@ async fn main() {
     persist_timer.start(app.clone(), my_logger::LOGGER.clone());
     gc_timer.start(app.clone(), my_logger::LOGGER.clone());
     app.immediately_persist_event_loop.start(app.clone()).await;
+
+    #[cfg(not(test))]
+    app.restore_page_scheduler
+        .restore_page_events_loop
+        .register_event_loop(Arc::new(crate::background::RestoreSubPagesEventLoop::new(
+            app.clone(),
+        )))
+        .await;
+
+    #[cfg(not(test))]
+    app.restore_page_scheduler
+        .restore_page_events_loop
+        .start(app.states.clone(), my_logger::LOGGER.clone())
+        .await;
 
     app.states.wait_until_shutdown().await;
 

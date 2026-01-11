@@ -1,21 +1,18 @@
 use std::sync::Arc;
 
 use my_service_bus::abstractions::MessageId;
-use my_service_bus::shared::validators::InvalidTopicName;
 use rust_extensions::sorted_vec::SortedVecOfArcWithStrKey;
 
-use super::{ReusableTopicsList, Topic};
+use super::Topic;
 
 pub struct TopicListInner {
     topics: SortedVecOfArcWithStrKey<Topic>,
-    snapshot_id: usize,
 }
 
 impl TopicListInner {
     pub fn new() -> Self {
         Self {
             topics: SortedVecOfArcWithStrKey::new(),
-            snapshot_id: 0,
         }
     }
 
@@ -23,62 +20,61 @@ impl TopicListInner {
         self.topics.get(topic_id).cloned()
     }
 
-    pub fn fill_with_topics(&self, dest: &mut ReusableTopicsList) {
-        dest.clean(self.topics.len());
-        for topic in self.topics.iter() {
-            dest.push(topic.clone());
-        }
-
-        dest.update_snapshot_id(self.snapshot_id);
-    }
-    pub fn get_all(&self) -> Vec<Arc<Topic>> {
-        let mut result = Vec::with_capacity(self.topics.len());
-        for topic in self.topics.iter() {
-            result.push(topic.clone())
-        }
-
-        result
-    }
-
-    pub fn get_snapshot_id(&self) -> usize {
-        self.snapshot_id
-    }
-
-    pub fn add_if_not_exists(
-        &mut self,
-        topic_id: &str,
-        persist: bool,
-    ) -> Result<Arc<Topic>, InvalidTopicName> {
-        match self.topics.get_or_create(topic_id) {
-            rust_extensions::sorted_vec::GetOrCreateEntry::Get(item) => Ok(item.clone()),
+    pub fn add_if_not_exists(&mut self, topic_id: &str, persist: bool) -> AddIfNotExistsResult {
+        let new_one = match self.topics.get_or_create(topic_id) {
+            rust_extensions::sorted_vec::GetOrCreateEntry::Get(topic) => {
+                return AddIfNotExistsResult::NotAdded(topic.clone());
+            }
             rust_extensions::sorted_vec::GetOrCreateEntry::Create(entry) => {
-                my_service_bus::shared::validators::validate_topic_name(topic_id)?;
-
                 let topic = Topic::new(topic_id.to_string(), 0, persist);
                 let topic = Arc::new(topic);
                 let result = entry.insert_and_get_value(topic);
-                self.snapshot_id += 1;
-                return Ok(result.clone());
+                result.clone()
             }
+        };
+
+        AddIfNotExistsResult::Added {
+            snapshot: self.topics.as_slice().to_vec(),
+            added_topic: new_one,
         }
     }
 
-    pub fn restore(&mut self, topic_id: &str, message_id: MessageId, persist: bool) -> Arc<Topic> {
+    pub fn add(&mut self, topic_id: &str, message_id: MessageId, persist: bool) -> AddTopicResult {
         let topic = Topic::new(topic_id.to_string(), message_id.get_value(), persist);
-        let result = Arc::new(topic);
-        self.topics.insert_or_replace(result.clone());
+        let topic = Arc::new(topic);
+        self.topics.insert_or_replace(topic.clone());
 
-        self.snapshot_id += 1;
-        return result;
+        AddTopicResult {
+            topic,
+            snapshot: self.topics.as_slice().to_vec(),
+        }
     }
 
-    pub fn delete_topic(&mut self, topic_id: &str) -> Option<Arc<Topic>> {
-        let result = self.topics.remove(topic_id);
-        self.snapshot_id += 1;
-        result
-    }
+    pub fn remove(&mut self, topic_id: &str) -> Option<RemoveTopicResult> {
+        let removed_topic = self.topics.remove(topic_id)?;
+        let result = RemoveTopicResult {
+            removed_topic,
+            snapshot: self.topics.as_slice().to_vec(),
+        };
 
-    pub fn len(&self) -> usize {
-        self.topics.len()
+        Some(result)
     }
+}
+
+pub enum AddIfNotExistsResult {
+    Added {
+        snapshot: Vec<Arc<Topic>>,
+        added_topic: Arc<Topic>,
+    },
+    NotAdded(Arc<Topic>),
+}
+
+pub struct AddTopicResult {
+    pub topic: Arc<Topic>,
+    pub snapshot: Vec<Arc<Topic>>,
+}
+
+pub struct RemoveTopicResult {
+    pub removed_topic: Arc<Topic>,
+    pub snapshot: Vec<Arc<Topic>>,
 }

@@ -1,5 +1,42 @@
 # MY SERVICE BUS
 
+## Overview
+
+**My Service Bus** is a high-performance, distributed message broker and service bus written in Rust. It provides a pub/sub messaging system with persistent message storage, designed for building scalable microservices architectures.
+
+### Core Functionality
+
+- **Topics & Queues**: Organizes messages into topics (channels) and queues (subscription groups)
+- **Publish/Subscribe**: Publishers send messages to topics; subscribers consume messages from queues
+- **Message Persistence**: Messages are persisted to a separate persistence service via gRPC for durability
+- **Multiple Queue Types**: Supports permanent queues, temporary queues (delete on disconnect), and single-connection queues
+- **Dual Protocol Support**: 
+  - TCP server (port 6421) for high-performance binary protocol communication
+  - HTTP server for REST API access and web-based management UI
+  - Optional Unix socket support for local inter-process communication
+- **Message Delivery**: Reliable message delivery with delivery confirmation, retry mechanisms, and dead subscriber detection
+- **Background Processing**: Automated garbage collection, message persistence, metrics collection, and health monitoring
+- **Web UI**: Built-in web interface for monitoring topics, queues, sessions, and system metrics
+- **Prometheus Integration**: Exposes metrics for monitoring and observability
+- **Message Paging**: Efficient memory management through message pagination and sub-page organization
+
+### Architecture
+
+The application consists of:
+- **Main Node** (`my-service-bus`): Handles message routing, delivery, and client connections
+- **Persistence Service** (`my-service-bus-persistence`): Separate service for durable message storage (must be running before starting the main node)
+
+### Key Features
+
+- High-throughput message processing
+- At-least-once delivery guarantees
+- Automatic message persistence with configurable delays
+- Session management for TCP and HTTP connections
+- Dead subscriber detection and cleanup
+- Graceful shutdown with message drain
+- Real-time metrics and monitoring
+- Compressed message storage option
+
 ## Run  
 
 You should run my-service-bus-persistence before running my-service-bus

@@ -2,29 +2,9 @@ use std::sync::Arc;
 
 use my_service_bus::abstractions::publisher::MessageToPublish;
 
-use crate::{app::AppContext, sessions::SessionId, topics::Topic};
+use crate::{app::AppContext, sessions::SessionId};
 
 use super::OperationFailResult;
-
-pub async fn create_topic_if_not_exists(
-    app: &Arc<AppContext>,
-    session_id: Option<SessionId>,
-    topic_id: &str,
-) -> Result<Arc<Topic>, OperationFailResult> {
-    let topic = app.topic_list.add_if_not_exists(topic_id).await?;
-
-    let mut reusable_topics = crate::topics::ReusableTopicsList::new();
-    crate::operations::persist_topics_and_queues(&app, &mut reusable_topics).await;
-
-    {
-        if let Some(session_id) = session_id {
-            let mut topic_data = topic.get_access().await;
-            topic_data.set_publisher_as_active(session_id);
-        }
-    }
-
-    return Ok(topic);
-}
 
 pub async fn publish(
     app: &Arc<AppContext>,
@@ -69,9 +49,11 @@ pub async fn publish(
         }
     }
 
-    #[cfg(test)]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data).await;
-    #[cfg(not(test))]
-    crate::operations::delivery::try_to_deliver_to_subscribers(&app, &topic, &mut topic_data);
+    crate::operations::delivery::try_to_deliver_to_subscribers(
+        app.as_ref(),
+        &topic,
+        &mut topic_data,
+    );
+
     Ok(())
 }

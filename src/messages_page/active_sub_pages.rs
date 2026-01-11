@@ -24,4 +24,8 @@ impl ActiveSubPages {
         let index = self.pages.binary_search_by(|itm| itm.cmp(&sub_page_id));
         index.is_ok()
     }
+
+    pub fn as_slice(&self) -> &[SubPageId] {
+        &self.pages
+    }
 }
