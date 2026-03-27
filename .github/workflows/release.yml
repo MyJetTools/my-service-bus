@@ -4,7 +4,7 @@ on:
     tags: "*"
 
 env:
-  IMAGE_NAME: myjettools/my-service-bus
+  IMAGE_NAME: ghcr.io/myjettools/my-service-bus
 
 jobs:
   build:
