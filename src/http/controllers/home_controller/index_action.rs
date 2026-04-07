@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use my_http_server::macros::http_route;
-use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput, WebContentType};
+use my_http_server::*;
 
 use crate::app::AppContext;
 
@@ -32,10 +32,8 @@ async fn handle_request(
 
     HttpOutput::Content {
         status_code: 200,
-        content_type: Some(WebContentType::Html),
+        headers:HttpResponseHeaders::new(Some(WebContentType::Html)),
         content: content.into_bytes(),
-        headers: None,
-        set_cookies: None,
     }
     .into_ok_result(false)
     .into()

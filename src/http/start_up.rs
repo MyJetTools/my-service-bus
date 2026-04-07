@@ -25,7 +25,7 @@ pub fn setup_server(app: &Arc<AppContext>) -> HttpConnectionsCounter {
 
     http_server.add_middleware(controllers);
 
-    http_server.add_middleware(Arc::new(StaticFilesMiddleware::new(None, None)));
+    http_server.add_middleware(Arc::new(StaticFilesMiddleware::new()));
     http_server.start(app.states.clone(), my_logger::LOGGER.clone());
 
     http_server.get_http_connections_counter()

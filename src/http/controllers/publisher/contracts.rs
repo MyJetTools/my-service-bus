@@ -1,4 +1,4 @@
-use my_http_server::{HttpFailResult, HttpOutput, WebContentType};
+use my_http_server::{HttpFailResult, HttpOutput, HttpResponseHeaders, WebContentType};
 
 use my_http_server::macros::{MyHttpInput, MyHttpObjectStructure};
 use my_service_bus::abstractions::SbMessageHeaders;
@@ -41,11 +41,9 @@ impl MessageToPublishJsonModel {
         match self.base64_message.from_base64() {
             Ok(bytes) => Ok(bytes),
             Err(err) => HttpOutput::Content {
-                content_type: WebContentType::Text.into(),
                 status_code: 400,
                 content: format!("Can not convert content from Base64. Err: {}", err).into_bytes(),
-                headers: None,
-                set_cookies: None,
+                headers: HttpResponseHeaders::new(WebContentType::Text.into()),
             }
             .into_err(false, false),
         }
