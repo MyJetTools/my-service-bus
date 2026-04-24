@@ -20,13 +20,13 @@ pub async fn subscribe_to_queue(
     session: MyServiceBusSession,
 ) -> Result<SubscriberId, OperationFailResult> {
     let topic = {
-        let topic = app.topic_list.get(topic_id.as_str()).await;
+        let topic = app.topic_list.get(topic_id.as_str());
 
         match topic {
             Some(result) => result,
             None => {
                 if app.settings.auto_create_topic_on_subscribe {
-                    app.topic_list.add_if_not_exists(topic_id.as_str()).await?
+                    app.topic_list.add_if_not_exists(topic_id.as_str())?
                 } else {
                     return Err(OperationFailResult::TopicNotFound { topic_id });
                 }

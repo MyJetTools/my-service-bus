@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use my_service_bus::shared::sub_page::SubPageId;
-use rust_extensions::events_loop::EventsLoopMutexWrapped;
 
 use crate::{background::RestorePageTask, topics::Topic};
+use rust_extensions::events_loop::EventsLoop;
 
 pub struct LoadSubPageScheduler {
-    pub restore_page_events_loop: EventsLoopMutexWrapped<RestorePageTask>,
+    pub restore_page_events_loop: EventsLoop<RestorePageTask>,
 }
 
 impl LoadSubPageScheduler {
@@ -19,7 +19,7 @@ impl LoadSubPageScheduler {
 impl Default for LoadSubPageScheduler {
     fn default() -> Self {
         Self {
-            restore_page_events_loop: EventsLoopMutexWrapped::new("RestorePageTasks"),
+            restore_page_events_loop: EventsLoop::new("RestorePageTasks"),
         }
     }
 }

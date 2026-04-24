@@ -230,7 +230,7 @@ mod tests {
         let app = crate::test_tools::create_app_context().await;
         let test_session = app.sessions.add_test().await;
 
-        app.topic_list.add(TOPIC_NAME, 3.into(), true).await;
+        app.topic_list.add(TOPIC_NAME, 3.into(), true);
 
         //Simulate that we have persisted messages
         let msg1 = MessageProtobufModel::new(
@@ -255,7 +255,7 @@ mod tests {
             .unwrap();
 
         {
-            let topic = app.topic_list.get(TOPIC_NAME).await.unwrap();
+            let topic = app.topic_list.get(TOPIC_NAME).unwrap();
             let mut topic_data = topic.get_access().await;
 
             let mut queue_with_intervals = QueueWithIntervals::new();

@@ -11,7 +11,7 @@ pub async fn delete_topic(
     topic_id: &str,
     hard_delete_moment: DateTimeAsMicroseconds,
 ) -> Result<(), OperationFailResult> {
-    let topic = app.topic_list.get(topic_id).await;
+    let topic = app.topic_list.get(topic_id);
 
     if topic.is_none() {
         return Err(OperationFailResult::TopicNotFound {
@@ -23,9 +23,9 @@ pub async fn delete_topic(
         .delete_topic(topic_id, hard_delete_moment)
         .await;
 
-    app.topic_list.delete_topic(topic_id).await;
+    app.topic_list.delete_topic(topic_id);
 
-    let topic_list = app.topic_list.get_all().await;
+    let topic_list = app.topic_list.get_all();
     crate::operations::persist_topics_and_queues(app, topic_list.as_slice()).await;
 
     Ok(())

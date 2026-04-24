@@ -33,7 +33,7 @@ impl StatusJsonResult {
 
         sys_info.refresh_all();
 
-        let snapshot = app.topic_list.get_all_with_snapshot_id().await;
+        let snapshot = app.topic_list.get_all_with_snapshot_id();
 
         let mut queues = BTreeMap::new();
 

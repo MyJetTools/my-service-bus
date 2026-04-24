@@ -13,7 +13,6 @@ pub async fn set_message_id(
     let topic = app
         .topic_list
         .get(topic_id)
-        .await
         .ok_or(OperationFailResult::TopicNotFound {
             topic_id: topic_id.to_string(),
         })?;
@@ -43,7 +42,6 @@ pub async fn delete_queue(
     let topic = app
         .topic_list
         .get(topic_id)
-        .await
         .ok_or(OperationFailResult::TopicNotFound {
             topic_id: topic_id.to_string(),
         })?;

@@ -36,11 +36,7 @@ async fn handle_request(
     input_data: GetListOfQueuesInputContract,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let topic = action
-        .app
-        .topic_list
-        .get(input_data.topic_id.as_str())
-        .await;
+    let topic = action.app.topic_list.get(input_data.topic_id.as_str());
 
     if topic.is_none() {
         return Err(HttpFailResult::as_not_found(

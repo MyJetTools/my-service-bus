@@ -32,11 +32,7 @@ async fn handle_request(
     input_model: GetOnDeliveryInputModel,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let topic = action
-        .app
-        .topic_list
-        .get(input_model.topic_id.as_str())
-        .await;
+    let topic = action.app.topic_list.get(input_model.topic_id.as_str());
     if topic.is_none() {
         return Err(HttpFailResult::as_not_found(
             "Topic not found".to_string(),

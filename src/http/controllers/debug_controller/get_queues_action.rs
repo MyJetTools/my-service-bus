@@ -30,7 +30,7 @@ async fn handle_request(
     input_data: GetQueuesAwaitingToDeliver,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let topic = action.app.topic_list.get(&input_data.topic_id).await;
+    let topic = action.app.topic_list.get(&input_data.topic_id);
 
     if topic.is_none() {
         return Err(HttpFailResult::as_not_found(

@@ -20,7 +20,6 @@ pub async fn all_confirmed(
     let topic = app
         .topic_list
         .get(topic_id)
-        .await
         .ok_or(OperationFailResult::TopicNotFound {
             topic_id: topic_id.to_string(),
         })?;
@@ -63,7 +62,6 @@ pub async fn all_fail(
     let topic = app
         .topic_list
         .get(topic_id)
-        .await
         .ok_or(OperationFailResult::TopicNotFound {
             topic_id: topic_id.to_string(),
         })?;
@@ -103,7 +101,6 @@ pub async fn intermediary_confirm(
     let topic = app
         .topic_list
         .get(topic_id)
-        .await
         .ok_or(OperationFailResult::TopicNotFound {
             topic_id: topic_id.to_string(),
         })?;
@@ -156,7 +153,6 @@ pub async fn some_messages_are_confirmed(
     let topic = app
         .topic_list
         .get(topic_id)
-        .await
         .ok_or(OperationFailResult::TopicNotFound {
             topic_id: topic_id.to_string(),
         })?;

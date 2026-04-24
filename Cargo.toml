@@ -62,6 +62,7 @@ rand = "*"
 sysinfo = "*"
 prometheus = "*"
 uuid = { version = "*", features = ["serde", "v4"] }
+arc-swap = "*"
 
 
 tikv-jemalloc-ctl = { version = "*", features = ['use_std'] }

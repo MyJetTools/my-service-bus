@@ -1,7 +1,7 @@
 use crate::{app::AppContext, sessions::MyServiceBusSession};
 
 pub async fn disconnect(app: &AppContext, disconnected_session: MyServiceBusSession) {
-    let topics = app.topic_list.get_all().await;
+    let topics = app.topic_list.get_all();
 
     for topic in topics.iter() {
         let mut topic_data = topic.get_access().await;

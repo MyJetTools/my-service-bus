@@ -38,7 +38,7 @@ impl MyTimerTick for MetricsTimer {
         let mut permanent_queues_without_subscribers = 0;
         let mut topics_without_queues = 0;
 
-        let topic_list = self.app.topic_list.get_all().await;
+        let topic_list = self.app.topic_list.get_all();
 
         for topic in topic_list.iter() {
             let metrics = {

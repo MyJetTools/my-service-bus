@@ -16,14 +16,11 @@ pub async fn init(app: Arc<AppContext>) {
     println!("Loaded topics {}", topics_and_queues.len());
 
     for topic_and_queues in topics_and_queues {
-        let topic = app
-            .topic_list
-            .add(
-                topic_and_queues.topic_id.as_str(),
-                topic_and_queues.message_id.into(),
-                topic_and_queues.persist,
-            )
-            .await;
+        let topic = app.topic_list.add(
+            topic_and_queues.topic_id.as_str(),
+            topic_and_queues.message_id.into(),
+            topic_and_queues.persist,
+        );
 
         for queue in topic_and_queues.queues {
             let queue_with_intervals = QueueWithIntervals::restore(queue.ranges);

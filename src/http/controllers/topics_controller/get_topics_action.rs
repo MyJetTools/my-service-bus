@@ -30,7 +30,7 @@ async fn handle_request(
     action: &GetTopicsAction,
     _: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let topics = action.app.topic_list.get_all().await;
+    let topics = action.app.topic_list.get_all();
 
     let mut items: Vec<JsonTopicResult> = Vec::new();
 

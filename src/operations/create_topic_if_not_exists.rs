@@ -9,7 +9,7 @@ pub async fn create_topic_if_not_exists(
     session_id: Option<SessionId>,
     topic_id: &str,
 ) -> Result<Arc<Topic>, OperationFailResult> {
-    let topic = app.topic_list.add_if_not_exists(topic_id).await?;
+    let topic = app.topic_list.add_if_not_exists(topic_id)?;
 
     {
         if let Some(session_id) = session_id {

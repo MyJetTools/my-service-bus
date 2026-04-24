@@ -12,6 +12,7 @@ use crate::{app::AppContext, operations};
 
 use super::error::MySbSocketError;
 
+#[derive(Clone)]
 pub struct TcpServerEvents {
     app: Arc<AppContext>,
 }
@@ -259,18 +260,18 @@ impl TcpServerEvents {
 impl SocketEventCallback<MySbTcpContract, MySbTcpSerializer, MySbSerializerState>
     for TcpServerEvents
 {
-    async fn connected(&self, _connection: Arc<MySbTcpConnection>) {
+    async fn connected(&mut self, _connection: Arc<MySbTcpConnection>) {
         self.app.prometheus.mark_new_tcp_connection();
     }
 
-    async fn disconnected(&self, connection: Arc<MySbTcpConnection>) {
+    async fn disconnected(&mut self, connection: Arc<MySbTcpConnection>) {
         self.app.prometheus.mark_new_tcp_disconnection();
         if let Some(session) = self.app.sessions.remove_tcp(connection.id).await {
             crate::operations::sessions::disconnect(self.app.as_ref(), session).await;
         }
     }
 
-    async fn payload(&self, connection: &Arc<MySbTcpConnection>, contract: MySbTcpContract) {
+    async fn payload(&mut self, connection: &Arc<MySbTcpConnection>, contract: MySbTcpContract) {
         let connection_id = connection.id;
         if let Err(err) = self.handle_incoming_packet(contract, connection).await {
             my_logger::LOGGER.write_error(

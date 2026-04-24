@@ -26,7 +26,7 @@ async fn handle_request(
 
     sb.append_line("<h1>Please, select topic to show logs</h1>");
 
-    for topic in action.app.topic_list.get_all().await {
+    for topic in action.app.topic_list.get_all().iter() {
         let line = format!(
             "<a class='btn btn-sm btn-outline-primary' href='/api/logs/topic/{topic_id}'>{topic_id}</a>",
             topic_id = topic.topic_id

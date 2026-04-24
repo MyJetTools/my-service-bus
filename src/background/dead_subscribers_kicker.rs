@@ -18,7 +18,7 @@ impl DeadSubscribersKickerTimer {
 #[async_trait::async_trait]
 impl MyTimerTick for DeadSubscribersKickerTimer {
     async fn tick(&self) {
-        let topics = self.app.topic_list.get_all().await;
+        let topics = self.app.topic_list.get_all();
 
         for topic in topics.iter() {
             let dead_subscribers = topic

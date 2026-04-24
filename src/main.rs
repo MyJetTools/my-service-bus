@@ -50,8 +50,7 @@ async fn main() {
     let app = Arc::new(AppContext::new(messages_repo, settings).await);
 
     app.immediately_persist_event_loop
-        .register_event_loop(Arc::new(ImmediatelyPersistEventLoop::new(app.clone())))
-        .await;
+        .register_event_loop(Arc::new(ImmediatelyPersistEventLoop::new(app.clone()))).await;
 
     tokio::task::spawn(crate::operations::initialization::init(app.clone()));
 
@@ -63,7 +62,7 @@ async fn main() {
     tcp_server
         .start(
             Arc::new(my_service_bus::tcp_contracts::MySbSerializerFactory),
-            Arc::new(TcpServerEvents::new(app.clone())),
+            TcpServerEvents::new(app.clone()),
             app.states.clone(),
             my_logger::LOGGER.clone(),
         )
@@ -75,7 +74,7 @@ async fn main() {
         unix_socket
             .start(
                 Arc::new(my_service_bus::tcp_contracts::MySbSerializerFactory),
-                Arc::new(TcpServerEvents::new(app.clone())),
+                TcpServerEvents::new(app.clone()),
                 app.states.clone(),
                 my_logger::LOGGER.clone(),
             )

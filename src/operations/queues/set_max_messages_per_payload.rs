@@ -10,7 +10,6 @@ pub async fn set_max_messages_per_payload(
     let topic = app
         .topic_list
         .get(topic_id)
-        .await
         .ok_or(OperationFailResult::TopicNotFound {
             topic_id: topic_id.to_string(),
         })?;

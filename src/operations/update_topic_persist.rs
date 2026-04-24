@@ -7,7 +7,7 @@ pub async fn update_topic_persist(
     topic_id: String,
     persist: bool,
 ) -> Result<(), OperationFailResult> {
-    let topic = app.topic_list.get(topic_id.as_str()).await;
+    let topic = app.topic_list.get(topic_id.as_str());
 
     if topic.is_none() {
         return Err(OperationFailResult::TopicNotFound { topic_id });

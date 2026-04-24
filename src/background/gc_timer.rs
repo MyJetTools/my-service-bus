@@ -19,7 +19,7 @@ impl GcTimer {
 #[async_trait::async_trait]
 impl MyTimerTick for GcTimer {
     async fn tick(&self) {
-        let topic_list = self.app.topic_list.get_all().await;
+        let topic_list = self.app.topic_list.get_all();
 
         for topic in topic_list.iter() {
             let now = DateTimeAsMicroseconds::now();
