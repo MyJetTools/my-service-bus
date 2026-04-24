@@ -102,7 +102,6 @@ impl QueueSubscriber {
     }
 
     pub fn cancel_the_rent(&mut self) {
-        println!("Cancel the rent");
         self.metrics.set_delivery_mode_as_ready_to_deliver();
         self.delivery_state = QueueSubscriberDeliveryState::Idle;
     }
