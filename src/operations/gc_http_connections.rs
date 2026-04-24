@@ -7,8 +7,7 @@ pub async fn gc_http_connections(app: &AppContext) {
 
     let disconnected_sessions = app
         .sessions
-        .remove_and_disconnect_expired_http_sessions(inactive_session_timeout)
-        .await;
+        .remove_and_disconnect_expired_http_sessions(inactive_session_timeout);
 
     for disconnected_session in disconnected_sessions {
         crate::operations::sessions::disconnect(app, disconnected_session.into()).await;

@@ -62,7 +62,7 @@ impl StatusJsonResult {
                 totalmem: sys_info.total_memory(),
                 usedmem: sys_info.used_memory(),
             },
-            persistence_version: app.persistence_version.get().await,
+            persistence_version: app.persistence_version.get(),
             version: crate::app::APP_VERSION.to_string(),
         }
     }

@@ -19,7 +19,7 @@ impl HttpContextExtensions for AppContext {
         &self,
         session_id: &str,
     ) -> Result<Arc<MyServiceBusSession>, HttpFailResult> {
-        match self.sessions.get_http(session_id).await {
+        match self.sessions.get_http(session_id) {
             Some(session) => {
                 if session.connection.is_http() {
                     Ok(session)

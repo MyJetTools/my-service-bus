@@ -3,7 +3,6 @@ mod connection_metrics;
 mod my_sb_session;
 
 mod sessions_list;
-mod sessions_list_inner;
 
 pub use my_sb_session::*;
 

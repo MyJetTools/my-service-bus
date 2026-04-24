@@ -11,7 +11,7 @@ mod tests {
         const QUEUE_NAME: &str = "test-queue";
         let app = crate::test_tools::create_app_context().await;
 
-        let session = app.sessions.add_test().await;
+        let session = app.sessions.add_test();
 
         let topic = crate::operations::create_topic_if_not_exists(
             &app,

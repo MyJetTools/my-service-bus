@@ -1,44 +1,53 @@
 use std::{sync::Arc, time::Duration};
 
-use rust_extensions::{
-    date_time::DateTimeAsMicroseconds,
-    sorted_vec::{EntityWithStrKey, SortedVecOfArcWithStrKey},
-};
+use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use super::MyServiceBusHttpSession;
 
+#[derive(Clone)]
 pub struct HttpSessionsList {
-    sessions: SortedVecOfArcWithStrKey<MyServiceBusHttpSession>,
+    sessions: Vec<Arc<MyServiceBusHttpSession>>,
+}
+
+fn find(sessions: &[Arc<MyServiceBusHttpSession>], session_key: &str) -> Result<usize, usize> {
+    sessions.binary_search_by(|s| s.session_key.as_str().cmp(session_key))
 }
 
 impl HttpSessionsList {
     pub fn new() -> Self {
         HttpSessionsList {
-            sessions: SortedVecOfArcWithStrKey::new(),
+            sessions: Vec::new(),
         }
     }
 
     pub fn add(&mut self, session: Arc<MyServiceBusHttpSession>) {
-        match self.sessions.insert_or_if_not_exists(session.get_key()) {
-            rust_extensions::sorted_vec::InsertIfNotExists::Insert(entry) => {
-                entry.insert(session.clone());
+        match find(&self.sessions, session.session_key.as_str()) {
+            Ok(_) => {
+                panic!(
+                    "Http session with key {} already exists",
+                    session.session_key.as_str()
+                );
             }
-            rust_extensions::sorted_vec::InsertIfNotExists::Exists(_) => {
-                panic!("Http session with key {} already exists", session.get_key());
+            Err(idx) => {
+                self.sessions.insert(idx, session);
             }
         }
     }
 
     pub fn get(&self, session_key: &str) -> Option<&Arc<MyServiceBusHttpSession>> {
-        self.sessions.get(session_key)
+        match find(&self.sessions, session_key) {
+            Ok(idx) => Some(&self.sessions[idx]),
+            Err(_) => None,
+        }
     }
 
     pub fn remove(&mut self, session_key: &str) -> Option<Arc<MyServiceBusHttpSession>> {
-        self.sessions.remove(session_key)
+        let idx = find(&self.sessions, session_key).ok()?;
+        Some(self.sessions.remove(idx))
     }
 
     pub fn get_all(&self) -> Vec<Arc<MyServiceBusHttpSession>> {
-        self.sessions.iter().map(|itm| itm.clone()).collect()
+        self.sessions.clone()
     }
 
     pub fn get_sessions_to_gc(

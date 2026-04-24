@@ -93,9 +93,7 @@ impl MyServiceBusTcpSession {
     pub fn send_messages_to_connection(&self, package_builder: SubscriberPackageBuilder) {
         let messages = package_builder.get_tcp_result();
         let connection = self.connection.clone();
-        tokio::spawn(async move {
-            connection.send(&messages).await;
-        });
+        connection.send(&messages);
     }
 
     pub async fn disconnect(&self) -> bool {

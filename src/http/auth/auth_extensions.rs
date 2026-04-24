@@ -20,7 +20,7 @@ impl GetSessionToken for HttpContext {
         if let Some(token) = self.credentials.as_ref() {
             let id = token.get_id();
 
-            if let Some(session) = ctx.sessions.get_http(id).await {
+            if let Some(session) = ctx.sessions.get_http(id) {
                 return Ok(session);
             }
         }

@@ -41,8 +41,7 @@ async fn handle_request(
     let session_key = action
         .app
         .sessions
-        .add_http(input_data.name, input_data.version, ip)
-        .await;
+        .add_http(input_data.name, input_data.version, ip);
 
     let result = GreetingJsonResult {
         session: session_key.into_string(),

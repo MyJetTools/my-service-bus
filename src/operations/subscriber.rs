@@ -118,7 +118,7 @@ mod tests {
         const QUEUE_NAME: &str = "test-queue";
         let app = crate::test_tools::create_app_context().await;
 
-        let session = app.sessions.add_test().await;
+        let session = app.sessions.add_test();
 
         let topic = crate::operations::create_topic_if_not_exists(
             &app,
@@ -158,7 +158,7 @@ mod tests {
         .await
         .unwrap();
 
-        let session2 = app.sessions.add_test().await;
+        let session2 = app.sessions.add_test();
 
         let subscriber_id_2 = crate::operations::subscriber::subscribe_to_queue(
             &app,

@@ -74,7 +74,7 @@ pub struct SessionsJsonResult {
 
 impl SessionsJsonResult {
     pub async fn new(app: &AppContext) -> Self {
-        let (sessions_snapshot_id, all_sessions) = app.sessions.get_snapshot().await;
+        let (sessions_snapshot_id, all_sessions) = app.sessions.get_snapshot();
 
         let mut result = SessionsJsonResult {
             snapshot_id: sessions_snapshot_id,

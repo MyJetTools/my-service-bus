@@ -1,24 +1,26 @@
+use std::sync::Arc;
+
+use arc_swap::ArcSwap;
 use rust_extensions::ShortString;
-use tokio::sync::RwLock;
 
 pub struct MultiThreadedShortString {
-    value: RwLock<ShortString>,
+    value: ArcSwap<ShortString>,
 }
 
 impl MultiThreadedShortString {
     pub fn new() -> Self {
         Self {
-            value: RwLock::new(ShortString::new_empty()),
+            value: ArcSwap::from_pointee(ShortString::new_empty()),
         }
     }
 
-    pub async fn update(&self, new_value: &str) {
-        let mut write_access = self.value.write().await;
-        write_access.update(new_value);
+    pub fn update(&self, new_value: &str) {
+        let mut next = ShortString::new_empty();
+        next.update(new_value);
+        self.value.store(Arc::new(next));
     }
 
-    pub async fn get(&self) -> String {
-        let read_access = self.value.read().await;
-        read_access.as_str().to_string()
+    pub fn get(&self) -> String {
+        self.value.load().as_str().to_string()
     }
 }

@@ -3,10 +3,10 @@ use std::sync::{
     Arc,
 };
 
+use parking_lot::Mutex;
 use rust_extensions::{
     date_time::DateTimeAsMicroseconds, sorted_vec::EntityWithStrKey, TaskCompletionAwaiter,
 };
-use tokio::sync::Mutex;
 
 use crate::{
     operations::delivery::SubscriberPackageBuilder,
@@ -65,7 +65,7 @@ impl MyServiceBusHttpSession {
     pub async fn one_second_tick(&self) {
         self.connection_metrics.one_second_tick();
 
-        let mut awaiter = self.send_queue.lock().await;
+        let mut awaiter = self.send_queue.lock();
         awaiter.ping_awaiter();
     }
 
@@ -73,8 +73,8 @@ impl MyServiceBusHttpSession {
         self.connection_metrics.last_incoming_moment.as_date_time()
     }
 
-    pub async fn get_messages_to_deliver(&self) -> MessageToDeliverResult {
-        let mut write_access = self.send_queue.lock().await;
+    pub fn get_messages_to_deliver(&self) -> MessageToDeliverResult {
+        let mut write_access = self.send_queue.lock();
 
         if let Some(next_package) = write_access.queue.get_next_package() {
             return MessageToDeliverResult::Package(next_package);
@@ -85,7 +85,7 @@ impl MyServiceBusHttpSession {
     }
 
     pub async fn get_long_pool_messages(&self) -> Result<Option<HttpDeliveryPackage>, String> {
-        match self.get_messages_to_deliver().await {
+        match self.get_messages_to_deliver() {
             MessageToDeliverResult::Package(package) => Ok(Some(package)),
             MessageToDeliverResult::Awaiter(awaiter) => {
                 return awaiter.get_result().await;
@@ -111,16 +111,12 @@ impl MyServiceBusHttpSession {
     }
 
     pub fn send_messages_to_connection(&self, package_builder: SubscriberPackageBuilder) {
-        let send_queue = self.send_queue.clone();
+        let http_delivery_package = package_builder.get_http_result();
+        let mut write_access = self.send_queue.lock();
 
-        tokio::spawn(async move {
-            let http_delivery_package = package_builder.get_http_result();
-            let mut write_access = send_queue.lock().await;
+        write_access.queue.enqueue_messages(http_delivery_package);
 
-            write_access.queue.enqueue_messages(http_delivery_package);
-
-            write_access.deliver_message();
-        });
+        write_access.deliver_message();
     }
 
     pub fn disconnect(&self) -> bool {

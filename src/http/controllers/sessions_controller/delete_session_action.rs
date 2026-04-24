@@ -36,7 +36,6 @@ async fn handle_request(
         .app
         .sessions
         .remove_by_session_id(input_data.connection_id.into())
-        .await
     {
         Some(session) => {
             crate::operations::sessions::disconnect(&action.app, session).await;

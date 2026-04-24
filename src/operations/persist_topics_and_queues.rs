@@ -13,8 +13,7 @@ use crate::{
 pub async fn persist_topics_and_queues(app: &Arc<AppContext>, topic_list: &[Arc<Topic>]) {
     if let Some(get_persistence_version) = app.persistence_client.get_persistence_version().await {
         app.persistence_version
-            .update(get_persistence_version.as_str())
-            .await;
+            .update(get_persistence_version.as_str());
     }
 
     let mut topics_snapshots = Vec::with_capacity(topic_list.len());

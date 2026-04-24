@@ -29,7 +29,7 @@ impl TcpServerEvents {
     ) -> Result<(), MySbSocketError> {
         match tcp_contract {
             MySbTcpContract::Ping {} => {
-                connection.send(&MySbTcpContract::Pong).await;
+                connection.send(&MySbTcpContract::Pong);
                 Ok(())
             }
             MySbTcpContract::Pong {} => Ok(()),
@@ -56,16 +56,13 @@ impl TcpServerEvents {
                     no += 1;
                 }
 
-                self.app
-                    .sessions
-                    .add_tcp(
-                        connection.clone(),
-                        connection_name.unwrap(),
-                        version,
-                        env_info,
-                        protocol_version,
-                    )
-                    .await;
+                self.app.sessions.add_tcp(
+                    connection.clone(),
+                    connection_name.unwrap(),
+                    version,
+                    env_info,
+                    protocol_version,
+                );
 
                 Ok(())
             }
@@ -79,7 +76,6 @@ impl TcpServerEvents {
                     .app
                     .sessions
                     .get_session_id_by_tcp_connection_id(connection.id)
-                    .await
                 {
                     let result = operations::publisher::publish(
                         &self.app,
@@ -87,19 +83,16 @@ impl TcpServerEvents {
                         data_to_publish,
                         persist_immediately,
                         session_id,
-                    )
-                    .await;
+                    ).await;
 
                     if let Err(err) = result {
                         connection
                             .send(&MySbTcpContract::Reject {
                                 message: format!("{:?}", err),
-                            })
-                            .await;
+                            });
                     } else {
                         connection
-                            .send(&MySbTcpContract::PublishResponse { request_id })
-                            .await;
+                            .send(&MySbTcpContract::PublishResponse { request_id });
                     }
                 }
 
@@ -123,7 +116,6 @@ impl TcpServerEvents {
                     .app
                     .sessions
                     .get_tcp_session_by_connection_id(connection.id)
-                    .await
                 {
                     operations::subscriber::subscribe_to_queue(
                         &self.app,
@@ -173,7 +165,6 @@ impl TcpServerEvents {
                     .app
                     .sessions
                     .get_session_id_by_tcp_connection_id(connection.id)
-                    .await
                 {
                     operations::create_topic_if_not_exists(
                         &self.app,
@@ -211,7 +202,6 @@ impl TcpServerEvents {
                         .app
                         .sessions
                         .get_tcp_session_by_connection_id(connection.id)
-                        .await
                     {
                         session.update_deliver_message_packet_version(*version as u8)
                     }
@@ -275,7 +265,7 @@ impl SocketEventCallback<MySbTcpContract, MySbTcpSerializer, MySbSerializerState
 
     async fn disconnected(&mut self, connection: Arc<MySbTcpConnection>) {
         self.app.prometheus.mark_new_tcp_disconnection();
-        if let Some(session) = self.app.sessions.remove_tcp(connection.id).await {
+        if let Some(session) = self.app.sessions.remove_tcp(connection.id) {
             crate::operations::sessions::disconnect(self.app.as_ref(), session).await;
         }
     }
