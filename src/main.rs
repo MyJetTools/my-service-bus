@@ -120,14 +120,12 @@ async fn main() {
         .restore_page_events_loop
         .register_event_loop(Arc::new(crate::background::RestoreSubPagesEventLoop::new(
             app.clone(),
-        )))
-        .await;
+        )));
 
     #[cfg(not(test))]
     app.restore_page_scheduler
         .restore_page_events_loop
-        .start(app.states.clone(), my_logger::LOGGER.clone())
-        .await;
+        .start(app.states.clone(), my_logger::LOGGER.clone());
 
     app.states.wait_until_shutdown().await;
 

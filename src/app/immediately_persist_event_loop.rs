@@ -27,11 +27,11 @@ impl ImmediatelyPersistEventLoop {
         &self,
         events_loop: Arc<dyn EventsLoopTick<Arc<Topic>> + Send + Sync + 'static>,
     ) {
-        self.events_loop.register_event_loop(events_loop).await;
+        self.events_loop.register_event_loop(events_loop);
     }
 
     pub async fn start(&self, app_states: Arc<dyn ApplicationStates + Send + Sync + 'static>) {
-        self.events_loop.start( app_states, my_logger::LOGGER.clone()).await;
+        self.events_loop.start( app_states, my_logger::LOGGER.clone());
     }
 
     pub fn send(&self, topic: Arc<Topic>) {
