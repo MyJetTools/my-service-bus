@@ -24,7 +24,7 @@ pub async fn all_confirmed(
             topic_id: topic_id.to_string(),
         })?;
 
-    let mut topic_access = topic.get_access().await;
+    let mut topic_access = topic.get_access();
 
     {
         let topic_queue =
@@ -66,7 +66,7 @@ pub async fn all_fail(
             topic_id: topic_id.to_string(),
         })?;
 
-    let mut topic_data = topic.get_access().await;
+    let mut topic_data = topic.get_access();
 
     {
         let topic_queue =
@@ -105,7 +105,7 @@ pub async fn intermediary_confirm(
             topic_id: topic_id.to_string(),
         })?;
 
-    let mut topic_data = topic.get_access().await;
+    let mut topic_data = topic.get_access();
 
     {
         let topic_queue =
@@ -157,7 +157,7 @@ pub async fn some_messages_are_confirmed(
             topic_id: topic_id.to_string(),
         })?;
 
-    let mut topic_data = topic.get_access().await;
+    let mut topic_data = topic.get_access();
     {
         let topic_queue =
             topic_data

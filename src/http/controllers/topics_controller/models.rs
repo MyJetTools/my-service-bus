@@ -21,7 +21,7 @@ impl JsonTopicResult {
     pub async fn new(topic: &Topic) -> Self {
         Self {
             id: topic.topic_id.to_string(),
-            message_id: topic.get_message_id().await.into(),
+            message_id: topic.get_message_id().into(),
         }
     }
 }

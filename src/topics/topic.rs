@@ -4,8 +4,8 @@ use std::time::Duration;
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::sub_page::SubPageId;
 
+use parking_lot::Mutex;
 use rust_extensions::sorted_vec::EntityWithStrKey;
-use tokio::sync::Mutex;
 
 use crate::messages_page::{MessagesToPersistBucket, MySbMessageContent, SizeMetrics};
 use crate::queue_subscribers::DeadSubscriber;
@@ -29,31 +29,28 @@ impl Topic {
         }
     }
 
-    pub async fn get_access<'s>(&'s self) -> TopicDataAccess<'s> {
-        let access = self.inner.lock().await;
+    pub fn get_access<'s>(&'s self) -> TopicDataAccess<'s> {
+        let access = self.inner.lock();
         TopicDataAccess::new(access)
     }
 
-    pub async fn get_message_id(&self) -> MessageId {
-        let read_access = self.inner.lock().await;
+    pub fn get_message_id(&self) -> MessageId {
+        let read_access = self.inner.lock();
         read_access.message_id.into()
     }
 
-    pub async fn get_topic_info<TResult>(
-        &self,
-        convert: impl Fn(&TopicInner) -> TResult,
-    ) -> TResult {
-        let inner = self.inner.lock().await;
+    pub fn get_topic_info<TResult>(&self, convert: impl Fn(&TopicInner) -> TResult) -> TResult {
+        let inner = self.inner.lock();
 
         convert(&inner)
     }
 
-    pub async fn find_subscribers_dead_on_delivery(
+    pub fn find_subscribers_dead_on_delivery(
         &self,
         delivery_timeout_duration: Duration,
     ) -> Vec<DeadSubscriber> {
         let mut result = vec![];
-        let mut topic_data = self.inner.lock().await;
+        let mut topic_data = self.inner.lock();
 
         for queue in topic_data.queues.get_all_mut() {
             let dead_subscribers = queue
@@ -73,26 +70,26 @@ impl Topic {
         result
     }
 
-    pub async fn get_messages_to_persist<TResult>(
+    pub fn get_messages_to_persist<TResult>(
         &self,
         transform: impl Fn(&MySbMessageContent) -> TResult,
     ) -> Vec<(SubPageId, Vec<TResult>)> {
-        let read_access = self.get_access().await;
+        let read_access = self.get_access();
         read_access.get_messages_to_persist(transform)
     }
 
-    pub async fn mark_messages_as_persisted(&self, bucket: &MessagesToPersistBucket) {
-        let mut write_access = self.get_access().await;
+    pub fn mark_messages_as_persisted(&self, bucket: &MessagesToPersistBucket) {
+        let mut write_access = self.get_access();
         write_access.mark_messages_as_persisted(bucket.sub_page_id, &bucket.ids);
     }
 
-    pub async fn get_topic_size_metrics(&self) -> SizeMetrics {
-        let read_access = self.get_access().await;
+    pub fn get_topic_size_metrics(&self) -> SizeMetrics {
+        let read_access = self.get_access();
         read_access.get_topic_size_metrics()
     }
 
-    pub async fn update_persist(&self, persist: bool) {
-        let mut write_access = self.get_access().await;
+    pub fn update_persist(&self, persist: bool) {
+        let mut write_access = self.get_access();
         write_access.persist = persist;
     }
 }

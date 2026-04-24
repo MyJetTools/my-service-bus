@@ -34,7 +34,7 @@ pub async fn subscribe_to_queue(
         }
     };
 
-    let mut topic_data = topic.get_access().await;
+    let mut topic_data = topic.get_access();
 
     let topic_queue = topic_data.queues.add_queue_if_not_exists(
         topic.topic_id.clone(),
@@ -171,7 +171,7 @@ mod tests {
         .unwrap();
 
         {
-            let data = topic.get_access().await;
+            let data = topic.get_access();
             let queue = data.queues.get(QUEUE_NAME).unwrap();
 
             let subscriber = queue.subscribers.get_by_id(subscriber_id_2).unwrap();

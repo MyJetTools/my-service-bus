@@ -15,7 +15,7 @@ pub async fn update_topic_persist(
 
     let topic = topic.unwrap();
 
-    topic.update_persist(persist).await;
+    topic.update_persist(persist);
 
     Ok(())
 }

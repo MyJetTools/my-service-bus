@@ -8,7 +8,7 @@ use crate::{app::AppContext, messages_page::MessagesToPersistBucket, topics::Top
 
 pub async fn persist_topic_messages(app: &Arc<AppContext>, topic: &Arc<Topic>) {
     let messages_to_persist: Vec<(SubPageId, Vec<MessageProtobufModel>)> =
-        topic.get_messages_to_persist(|itm| itm.into()).await;
+        topic.get_messages_to_persist(|itm| itm.into());
 
     for (sub_page_id, messages_to_persist) in messages_to_persist {
         let mut bucket = MessagesToPersistBucket::new(sub_page_id);
@@ -22,6 +22,6 @@ pub async fn persist_topic_messages(app: &Arc<AppContext>, topic: &Arc<Topic>) {
             .await
             .unwrap();
 
-        topic.mark_messages_as_persisted(&bucket).await;
+        topic.mark_messages_as_persisted(&bucket);
     }
 }

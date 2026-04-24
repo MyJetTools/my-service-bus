@@ -25,7 +25,7 @@ impl MyTimerTick for GcTimer {
             let now = DateTimeAsMicroseconds::now();
 
             let removed_queues = {
-                let mut topic_data = topic.get_access().await;
+                let mut topic_data = topic.get_access();
                 topic_data.gc();
 
                 let removed_queues = topic_data

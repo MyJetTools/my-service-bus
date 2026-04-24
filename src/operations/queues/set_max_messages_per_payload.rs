@@ -14,7 +14,7 @@ pub async fn set_max_messages_per_payload(
             topic_id: topic_id.to_string(),
         })?;
 
-    let mut topic_data = topic.get_access().await;
+    let mut topic_data = topic.get_access();
 
     let topic_queue =
         topic_data

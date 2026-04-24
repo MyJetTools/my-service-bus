@@ -54,7 +54,7 @@ impl SubPageLoaderSchedulerMock {
         )
         .await;
 
-        let mut topic_access = task.topic.get_access().await;
+        let mut topic_access = task.topic.get_access();
         crate::operations::delivery::try_to_deliver_to_subscribers(
             app.as_ref(),
             &task.topic,

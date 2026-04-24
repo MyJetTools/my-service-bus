@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use tokio::sync::MutexGuard;
+use parking_lot::MutexGuard;
 
 use super::TopicInner;
 

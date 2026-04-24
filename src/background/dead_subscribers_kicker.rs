@@ -21,9 +21,8 @@ impl MyTimerTick for DeadSubscribersKickerTimer {
         let topics = self.app.topic_list.get_all();
 
         for topic in topics.iter() {
-            let dead_subscribers = topic
-                .find_subscribers_dead_on_delivery(self.app.delivery_timeout)
-                .await;
+            let dead_subscribers =
+                topic.find_subscribers_dead_on_delivery(self.app.delivery_timeout);
 
             if dead_subscribers.len() > 0 {
                 for dead_subscriber in dead_subscribers {

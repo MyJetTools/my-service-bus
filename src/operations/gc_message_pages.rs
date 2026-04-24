@@ -52,7 +52,7 @@ mod tests {
         .unwrap();
 
         {
-            let mut data = topic.get_access().await;
+            let mut data = topic.get_access();
 
             data.gc();
 

@@ -42,7 +42,7 @@ async fn handle_request(
 
         let topic = topic.unwrap();
 
-        let topic_access = topic.get_access().await;
+        let topic_access = topic.get_access();
 
         topic_access.get_min_message_id()
     };

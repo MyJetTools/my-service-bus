@@ -25,7 +25,7 @@ pub async fn init(app: Arc<AppContext>) {
         for queue in topic_and_queues.queues {
             let queue_with_intervals = QueueWithIntervals::restore(queue.ranges);
 
-            let mut topic_data = topic.get_access().await;
+            let mut topic_data = topic.get_access();
             topic_data.queues.restore(
                 topic.topic_id.clone(),
                 queue.queue_id.into(),

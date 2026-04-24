@@ -31,7 +31,7 @@ impl EventsLoopTick<RestorePageTask> for RestoreSubPagesEventLoop {
         let app = self.app.clone();
         let topic = model.topic;
         tokio::spawn(async move {
-            let mut topic_access = topic.get_access().await;
+            let mut topic_access = topic.get_access();
             crate::operations::delivery::try_to_deliver_to_subscribers(
                 app.as_ref(),
                 &topic,

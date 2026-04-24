@@ -42,7 +42,7 @@ impl MyTimerTick for MetricsTimer {
 
         for topic in topic_list.iter() {
             let metrics = {
-                let mut topic_data = topic.get_access().await;
+                let mut topic_data = topic.get_access();
 
                 topic_data.one_second_tick();
 

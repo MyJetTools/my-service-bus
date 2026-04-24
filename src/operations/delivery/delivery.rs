@@ -256,7 +256,7 @@ mod tests {
 
         {
             let topic = app.topic_list.get(TOPIC_NAME).unwrap();
-            let mut topic_data = topic.get_access().await;
+            let mut topic_data = topic.get_access();
 
             let mut queue_with_intervals = QueueWithIntervals::new();
 
