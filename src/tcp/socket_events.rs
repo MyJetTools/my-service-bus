@@ -115,6 +115,10 @@ impl TcpServerEvents {
                 queue_id,
                 queue_type,
             } => {
+                println!(
+                    "Subscribe packet received: connection_id={} topic_id={} queue_id={} queue_type={:?}",
+                    connection.id, topic_id, queue_id, queue_type
+                );
                 if let Some(session) = self
                     .app
                     .sessions
@@ -129,6 +133,11 @@ impl TcpServerEvents {
                         session.into(),
                     )
                     .await?;
+                } else {
+                    println!(
+                        "Subscribe packet ignored: no session for connection_id={}",
+                        connection.id
+                    );
                 }
 
                 Ok(())
