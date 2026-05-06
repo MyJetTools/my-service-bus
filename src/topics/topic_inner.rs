@@ -115,29 +115,11 @@ impl TopicInner {
 
         result.add_if_not_exists(sub_page_id);
 
-        if self.persist {
-            // persist=true: content of any sub_page can be reloaded from disk on demand,
-            // so it is enough to keep the lowest sub_page each queue references.
-            for queue in self.queues.get_all() {
-                if let Some(min_msg_id) = queue.get_min_msg_id() {
-                    let sub_page_id = SubPageId::from_message_id(min_msg_id);
+        for queue in self.queues.get_all() {
+            if let Some(min_msg_id) = queue.get_min_msg_id() {
+                let sub_page_id = SubPageId::from_message_id(min_msg_id);
 
-                    result.add_if_not_exists(sub_page_id);
-                }
-            }
-        } else {
-            // persist=false: nothing to reload from. Protect every sub_page touched by any
-            // queue interval or subscriber on-delivery range.
-            for queue in self.queues.get_all() {
-                result.add_intervals(&queue.queue);
-
-                if let Some(subscribers) = queue.subscribers.get_all() {
-                    for subscriber in subscribers {
-                        if let Some(on_delivery) = subscriber.get_messages_on_delivery() {
-                            result.add_intervals(&on_delivery);
-                        }
-                    }
-                }
+                result.add_if_not_exists(sub_page_id);
             }
         }
 
@@ -145,15 +127,6 @@ impl TopicInner {
     }
 
     pub fn gc(&mut self) {
-        if self.queues.get_all().next().is_none() {
-            let current_sub_page: SubPageId = self.message_id.into();
-            self.pages.gc_all_except(current_sub_page);
-
-            let mut active_sub_pages = ActiveSubPages::new();
-            active_sub_pages.add_if_not_exists(current_sub_page);
-            self.pages.gc_messages(self.message_id, &active_sub_pages);
-            return;
-        }
 
         let Some(min_message_id) = self.get_min_message_id() else{
             return;
@@ -298,74 +271,5 @@ mod tests {
         let message_result = topic_inner.get_message(message_to_deliver_id.into());
 
         assert!(message_result.unwrap().is_not_loaded());
-    }
-
-    #[test]
-    fn persist_false_protects_all_sub_pages_in_queue_intervals() {
-        let mut topic_inner = super::TopicInner::new("test".into(), 6_000, false);
-
-        let queue = QueueWithIntervals::from_single_interval(1_000, 5_999);
-
-        topic_inner.queues.restore(
-            topic_inner.topic_id.clone(),
-            "q".to_string().into(),
-            TopicQueueType::Permanent,
-            queue,
-        );
-
-        let active = topic_inner.get_active_sub_pages();
-
-        // sub_pages 1..=5 are referenced by the queue; sub_page 6 is current.
-        for id in 1..=6 {
-            assert!(
-                active.has_sub_page(my_service_bus::shared::sub_page::SubPageId::new(id)),
-                "expected sub_page {} active",
-                id
-            );
-        }
-    }
-
-    #[test]
-    fn persist_true_only_protects_min_sub_page() {
-        let mut topic_inner = super::TopicInner::new("test".into(), 6_000, true);
-
-        let queue = QueueWithIntervals::from_single_interval(1_000, 5_999);
-
-        topic_inner.queues.restore(
-            topic_inner.topic_id.clone(),
-            "q".to_string().into(),
-            TopicQueueType::Permanent,
-            queue,
-        );
-
-        let active = topic_inner.get_active_sub_pages();
-
-        // Only the queue's min sub_page (1) and the current (6) are active.
-        for id in [1, 6] {
-            assert!(active.has_sub_page(my_service_bus::shared::sub_page::SubPageId::new(id)));
-        }
-
-        for id in [2, 3, 4, 5] {
-            assert!(
-                !active.has_sub_page(my_service_bus::shared::sub_page::SubPageId::new(id)),
-                "sub_page {} must NOT be active for persist=true",
-                id
-            );
-        }
-    }
-
-    #[test]
-    fn no_queues_only_current_sub_page_survives_gc() {
-        // Pre-populate stale sub_pages, then run gc() with no queues.
-        let mut topic_inner = super::TopicInner::new("test".into(), 7_150_000, false);
-
-        // Force creation of an old sub_page like the user observed in the UI.
-        let old_sub_page_id = my_service_bus::shared::sub_page::SubPageId::new(6_567);
-        let old_page = crate::sub_page::SubPage::new_as_brand_new(old_sub_page_id);
-        topic_inner.pages.restore_sub_page(old_page);
-
-        topic_inner.gc();
-
-        assert!(topic_inner.pages.get(old_sub_page_id).is_none());
     }
 }

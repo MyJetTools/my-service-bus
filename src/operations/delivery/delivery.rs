@@ -24,19 +24,8 @@ pub fn try_to_deliver_to_subscribers(
     let sw = StopWatch::new();
     let mut to_send = Vec::new();
 
-    let topic_persist = topic_data.persist;
-    let current_message_id = topic_data.message_id;
-
     for topic_queue in topic_data.queues.get_all_mut() {
-        compile_packages(
-            app,
-            topic,
-            &mut to_send,
-            topic_queue,
-            &mut topic_data.pages,
-            topic_persist,
-            current_message_id,
-        );
+        compile_packages(app, topic, &mut to_send, topic_queue, &mut topic_data.pages);
     }
 
     if to_send.len() > 0 {
@@ -56,8 +45,6 @@ fn compile_packages(
     to_send: &mut Vec<SubscriberPackageBuilder>,
     topic_queue: &mut TopicQueue,
     pages: &mut MessagesPageList,
-    topic_persist: bool,
-    current_message_id: my_service_bus::abstractions::MessageId,
 ) {
     let mut not_engaged_topics = Vec::new();
 
@@ -70,16 +57,8 @@ fn compile_packages(
             break;
         };
 
-        let package_builder = compile_package(
-            app,
-            topic,
-            topic_queue,
-            pages,
-            subscriber_id,
-            &session,
-            topic_persist,
-            current_message_id,
-        );
+        let package_builder =
+            compile_package(app, topic, topic_queue, pages, subscriber_id, &session);
 
         if let Some(package_builder) = package_builder {
             to_send.push(package_builder);
@@ -100,8 +79,6 @@ fn compile_package(
     pages: &mut MessagesPageList,
     subscriber_id: SubscriberId,
     session: &MyServiceBusSession,
-    topic_persist: bool,
-    current_message_id: my_service_bus::abstractions::MessageId,
 ) -> Option<SubscriberPackageBuilder> {
     let mut package_builder: Option<SubscriberPackageBuilder> = None;
 
@@ -132,18 +109,10 @@ fn compile_package(
         let sub_page = match pages.get_mut(sub_page_id) {
             Some(sub_page) => sub_page,
             None => {
-                if topic_persist {
-                    app.restore_page_scheduler
-                        .schedule_load_sub_page(topic.clone(), sub_page_id);
-                    return package_builder;
-                }
+                app.restore_page_scheduler
+                    .schedule_load_sub_page(topic.clone(), sub_page_id);
 
-                let target = pages
-                    .find_next_existing_sub_page(sub_page_id)
-                    .unwrap_or_else(|| current_message_id.into());
-                let target_first = target.get_first_message_id().get_value();
-                drain_queue_below(&mut topic_queue.queue, target_first);
-                continue;
+                return package_builder;
             }
         };
 
@@ -171,12 +140,10 @@ fn compile_package(
             }
             GetMessageResult::Missing => {}
             GetMessageResult::NotLoaded => {
-                if topic_persist {
-                    app.restore_page_scheduler
-                        .schedule_load_sub_page(topic.clone(), sub_page_id);
-                    return package_builder;
-                }
-                // persist=false: nothing to reload from. The id is already dequeued, just skip it.
+                app.restore_page_scheduler
+                    .schedule_load_sub_page(topic.clone(), sub_page_id);
+
+                return package_builder;
             }
         }
 
@@ -187,18 +154,6 @@ fn compile_package(
     }
 
     package_builder
-}
-
-fn drain_queue_below(
-    queue: &mut my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals,
-    target_msg_id: i64,
-) {
-    while let Some(peek) = queue.peek() {
-        if peek >= target_msg_id {
-            break;
-        }
-        queue.dequeue();
-    }
 }
 
 #[cfg(test)]
