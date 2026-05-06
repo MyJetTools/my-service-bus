@@ -137,6 +137,11 @@ impl MessagesPageList {
         }
     }
 
+    #[cfg(test)]
+    pub fn has_sub_page_in_cache(&self, sub_page_id: SubPageId) -> bool {
+        self.sub_pages.get(sub_page_id.as_ref()).is_some()
+    }
+
     pub fn get_page_size_metrics(&self) -> BTreeMap<i64, PageSizeMetrics> {
         let mut result: BTreeMap<i64, PageSizeMetrics> = BTreeMap::new();
 
@@ -156,5 +161,56 @@ impl MessagesPageList {
         }
 
         result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn find_next_existing_sub_page_returns_strictly_greater() {
+        let mut list = MessagesPageList::new();
+
+        list.restore_sub_page(SubPage::new_as_brand_new(SubPageId::new(1)));
+        list.restore_sub_page(SubPage::new_as_brand_new(SubPageId::new(5)));
+        list.restore_sub_page(SubPage::new_as_brand_new(SubPageId::new(10)));
+
+        assert_eq!(
+            list.find_next_existing_sub_page(SubPageId::new(0))
+                .map(|p| p.get_value()),
+            Some(1)
+        );
+        assert_eq!(
+            list.find_next_existing_sub_page(SubPageId::new(1))
+                .map(|p| p.get_value()),
+            Some(5)
+        );
+        assert_eq!(
+            list.find_next_existing_sub_page(SubPageId::new(5))
+                .map(|p| p.get_value()),
+            Some(10)
+        );
+        assert_eq!(
+            list.find_next_existing_sub_page(SubPageId::new(10))
+                .map(|p| p.get_value()),
+            None
+        );
+        assert_eq!(
+            list.find_next_existing_sub_page(SubPageId::new(20))
+                .map(|p| p.get_value()),
+            None
+        );
+    }
+
+    #[test]
+    fn find_next_existing_sub_page_empty_returns_none() {
+        let list = MessagesPageList::new();
+
+        assert_eq!(
+            list.find_next_existing_sub_page(SubPageId::new(0))
+                .map(|p| p.get_value()),
+            None
+        );
     }
 }

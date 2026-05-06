@@ -25,7 +25,6 @@ pub fn try_to_deliver_to_subscribers(
     let mut to_send = Vec::new();
 
     let topic_persist = topic_data.persist;
-    let current_message_id = topic_data.message_id;
 
     for topic_queue in topic_data.queues.get_all_mut() {
         compile_packages(
@@ -35,7 +34,6 @@ pub fn try_to_deliver_to_subscribers(
             topic_queue,
             &mut topic_data.pages,
             topic_persist,
-            current_message_id,
         );
     }
 
@@ -57,7 +55,6 @@ fn compile_packages(
     topic_queue: &mut TopicQueue,
     pages: &mut MessagesPageList,
     topic_persist: bool,
-    current_message_id: my_service_bus::abstractions::MessageId,
 ) {
     let mut not_engaged_topics = Vec::new();
 
@@ -78,7 +75,6 @@ fn compile_packages(
             subscriber_id,
             &session,
             topic_persist,
-            current_message_id,
         );
 
         if let Some(package_builder) = package_builder {
@@ -101,7 +97,6 @@ fn compile_package(
     subscriber_id: SubscriberId,
     session: &MyServiceBusSession,
     topic_persist: bool,
-    current_message_id: my_service_bus::abstractions::MessageId,
 ) -> Option<SubscriberPackageBuilder> {
     let mut package_builder: Option<SubscriberPackageBuilder> = None;
 
@@ -138,9 +133,14 @@ fn compile_package(
                     return package_builder;
                 }
 
+                // Always advance past the missing sub_page so peek() cannot land on it again.
+                // `find_next_existing_sub_page` is guaranteed to return id strictly greater
+                // than `sub_page_id`; the fallback is `sub_page_id + 1`. We avoid using
+                // `current_message_id` here because the current sub_page itself may also be
+                // absent from cache, which would let the loop spin forever.
                 let target = pages
                     .find_next_existing_sub_page(sub_page_id)
-                    .unwrap_or_else(|| current_message_id.into());
+                    .unwrap_or_else(|| SubPageId::new(sub_page_id.get_value() + 1));
                 let target_first = target.get_first_message_id().get_value();
                 drain_queue_below(&mut topic_queue.queue, target_first);
                 continue;
