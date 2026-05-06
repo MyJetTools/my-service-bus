@@ -209,7 +209,7 @@ fn get_delivery_bucket(
         let delivery_amount = delivery_state.bucket.to_be_confirmed.queue_size();
 
         let now = DateTimeAsMicroseconds::now();
-        let delivery_duration = delivery_state.get_duration_since_last_update(now);
+        let delivery_duration = delivery_state.get_delivery_duration(now);
         if delivery_amount > 0 {
             subscriber.update_delivery_time(delivery_amount, delivery_duration, positive);
         } else {

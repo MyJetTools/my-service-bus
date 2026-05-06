@@ -12,12 +12,14 @@ use super::{SubscriberId, SubscriberMetrics};
 #[derive(Debug)]
 pub struct OnDeliveryStateData {
     pub bucket: DeliveryBucket,
+    delivery_started_at: DateTimeAsMicroseconds,
     last_update: DateTimeAsMicroseconds,
 }
 
 impl OnDeliveryStateData {
-    pub fn get_duration_since_last_update(&self, now: DateTimeAsMicroseconds) -> Duration {
-        now.duration_since(self.last_update).as_positive_or_zero()
+    pub fn get_delivery_duration(&self, now: DateTimeAsMicroseconds) -> Duration {
+        now.duration_since(self.delivery_started_at)
+            .as_positive_or_zero()
     }
 }
 
@@ -157,9 +159,11 @@ impl QueueSubscriber {
     ) {
         self.delivery_compilation_duration = compilation_duration;
         if let QueueSubscriberDeliveryState::Rented = &self.delivery_state {
+            let now = DateTimeAsMicroseconds::now();
             self.delivery_state = QueueSubscriberDeliveryState::OnDelivery(OnDeliveryStateData {
                 bucket: DeliveryBucket::new(messages),
-                last_update: DateTimeAsMicroseconds::now(),
+                delivery_started_at: now,
+                last_update: now,
             });
             self.metrics.set_delivery_mode_as_on_delivery();
 
