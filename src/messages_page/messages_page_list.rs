@@ -60,6 +60,37 @@ impl MessagesPageList {
         }
     }
 
+    pub fn find_next_existing_sub_page(&self, after: SubPageId) -> Option<SubPageId> {
+        let after = after.get_value();
+        for sub_page in self.sub_pages.iter() {
+            let id = sub_page.get_id().get_value();
+            if id > after {
+                return Some(sub_page.get_id());
+            }
+        }
+        None
+    }
+
+    pub fn gc_all_except(&mut self, keep: SubPageId) {
+        let mut to_remove = Vec::new();
+
+        for sub_page in self.sub_pages.iter() {
+            if sub_page.get_id().get_value() == keep.get_value() {
+                continue;
+            }
+
+            if !sub_page.is_ready_to_gc(&[]) {
+                continue;
+            }
+
+            to_remove.push(sub_page.get_id());
+        }
+
+        for page_id in to_remove {
+            self.sub_pages.remove(page_id.as_ref());
+        }
+    }
+
     pub fn gc_messages(
         &mut self,
         min_message_id: my_service_bus::abstractions::MessageId,
