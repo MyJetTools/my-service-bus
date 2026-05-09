@@ -48,36 +48,15 @@ pub async fn subscribe_to_queue(
 
     let session_id = session.session_id;
 
-    let kicked_subscriber_result = topic_queue.subscribers.subscribe(
+    let kicked_subscribers = topic_queue.subscribers.subscribe(
+        queue_type.is_single_connection(),
         subscriber_id,
         topic.topic_id.clone(),
         topic_queue.queue_id.clone(),
         session,
     );
 
-    if let Some(kicked_subscriber) = kicked_subscriber_result {
-        my_logger::LOGGER.write_info(
-            "subscribe_to_queue",
-            "Subscribed. Subscriber is kicked",
-            LogEventCtx::new()
-                .add("topicId", topic_queue.queue_id.as_str())
-                .add("queueId", topic_queue.queue_id.as_str())
-                .add("subscriberId", subscriber_id.get_value().to_string())
-                .add(
-                    "kickedSubscriberId",
-                    kicked_subscriber.id.get_value().to_string(),
-                )
-                .add(
-                    "messagesToDeliverOnKickSubscriber",
-                    kicked_subscriber
-                        .get_messages_amount_on_delivery()
-                        .to_string(),
-                )
-                .add("sessionId", session_id.get_value().to_string()),
-        );
-
-        remove_subscriber(topic_queue, kicked_subscriber);
-    } else {
+    if kicked_subscribers.is_empty() {
         my_logger::LOGGER.write_info(
             "subscribe_to_queue",
             "Subscribed.",
@@ -87,6 +66,30 @@ pub async fn subscribe_to_queue(
                 .add("subscriberId", subscriber_id.get_value().to_string())
                 .add("sessionId", session_id.get_value().to_string()),
         );
+    } else {
+        for kicked_subscriber in kicked_subscribers {
+            my_logger::LOGGER.write_info(
+                "subscribe_to_queue",
+                "Subscribed. Subscriber is kicked",
+                LogEventCtx::new()
+                    .add("topicId", topic_queue.queue_id.as_str())
+                    .add("queueId", topic_queue.queue_id.as_str())
+                    .add("subscriberId", subscriber_id.get_value().to_string())
+                    .add(
+                        "kickedSubscriberId",
+                        kicked_subscriber.id.get_value().to_string(),
+                    )
+                    .add(
+                        "messagesToDeliverOnKickSubscriber",
+                        kicked_subscriber
+                            .get_messages_amount_on_delivery()
+                            .to_string(),
+                    )
+                    .add("sessionId", session_id.get_value().to_string()),
+            );
+
+            remove_subscriber(topic_queue, kicked_subscriber);
+        }
     }
 
     crate::operations::delivery::try_to_deliver_to_subscribers(

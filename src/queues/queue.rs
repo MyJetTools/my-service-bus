@@ -36,7 +36,7 @@ impl TopicQueue {
             topic_id,
             queue_id,
             queue: QueueWithIntervals::new(),
-            subscribers: SubscribersList::new(queue_type),
+            subscribers: SubscribersList::new(),
             delivery_attempts: DeliveryAttempts::new(),
             queue_type,
             debug: std::env::var("DEBUG").is_ok(),
@@ -54,7 +54,7 @@ impl TopicQueue {
             topic_id,
             queue_id,
             queue,
-            subscribers: SubscribersList::new(queue_type),
+            subscribers: SubscribersList::new(),
             delivery_attempts: DeliveryAttempts::new(),
             queue_type,
             debug: std::env::var("DEBUG").is_ok(),
@@ -168,30 +168,11 @@ impl TopicQueue {
     }
 
     pub fn queue_type_is_about_to_change(&self, new_queue_type: TopicQueueType) -> bool {
-        match self.queue_type {
-            TopicQueueType::Permanent => match new_queue_type {
-                TopicQueueType::Permanent => false,
-                TopicQueueType::DeleteOnDisconnect => true,
-                TopicQueueType::PermanentWithSingleConnection => true,
-            },
-            TopicQueueType::DeleteOnDisconnect => match new_queue_type {
-                TopicQueueType::Permanent => true,
-                TopicQueueType::DeleteOnDisconnect => false,
-                TopicQueueType::PermanentWithSingleConnection => true,
-            },
-            TopicQueueType::PermanentWithSingleConnection => match new_queue_type {
-                TopicQueueType::Permanent => true,
-                TopicQueueType::DeleteOnDisconnect => true,
-                TopicQueueType::PermanentWithSingleConnection => false,
-            },
-        }
+        self.queue_type.is_auto_delete() != new_queue_type.is_auto_delete()
+            || self.queue_type.is_single_connection() != new_queue_type.is_single_connection()
     }
 
     pub fn is_permanent(&self) -> bool {
-        match &self.queue_type {
-            TopicQueueType::Permanent => true,
-            TopicQueueType::DeleteOnDisconnect => false,
-            TopicQueueType::PermanentWithSingleConnection => true,
-        }
+        !self.queue_type.is_auto_delete()
     }
 }

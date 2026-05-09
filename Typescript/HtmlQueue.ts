@@ -8,26 +8,25 @@ class HtmlQueue {
     }
 
 
-    static renderQueueTypeName(queue: ITopicQueue): string {
-        if (queue.queueType == 0)
-            return "permanent";
-
-        if (queue.queueType == 1)
-            return "auto-delete";
-
-        if (queue.queueType == 2)
-            return "permanent-single-connect";
-
-        return "unknown:" + queue.queueType;
+    static isAutoDelete(queue: ITopicQueue): boolean {
+        return queue.queueType == 1 || queue.queueType == 3;
     }
 
-
+    static isSingleConnect(queue: ITopicQueue): boolean {
+        return queue.queueType == 2 || queue.queueType == 3;
+    }
 
     static renderQueueTypeBadge(queue: ITopicQueue): string {
 
-        let badgeType = queue.queueType == 1 ? "badge-success" : "badge-warning";
+        let persistenceBadge = this.isAutoDelete(queue)
+            ? '<span class="badge badge-success">auto-delete</span>'
+            : '<span class="badge badge-warning">permanent</span>';
 
-        return '<span class="badge ' + badgeType + '">' + this.renderQueueTypeName(queue) + "</span>";
+        let connectionBadge = this.isSingleConnect(queue)
+            ? '<span class="badge badge-info">single-connect</span>'
+            : '<span class="badge badge-secondary">multi-connect</span>';
+
+        return persistenceBadge + " " + connectionBadge;
 
     }
 

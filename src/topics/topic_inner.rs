@@ -178,9 +178,7 @@ impl TopicInner {
         let mut queues_to_delete = None;
 
         for topic_queue in queues_with_no_subscribers.unwrap() {
-            if let my_service_bus::abstractions::subscriber::TopicQueueType::DeleteOnDisconnect =
-                topic_queue.queue_type
-            {
+            if topic_queue.queue_type.is_auto_delete() {
                 if now
                     .duration_since(topic_queue.subscribers.last_unsubscribe)
                     .as_positive_or_zero()
