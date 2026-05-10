@@ -15,6 +15,11 @@ WWWROOT="${WWWROOT:-$SCRIPT_DIR/../my-service-bus/wwwroot}"
 DX_OUT="$SCRIPT_DIR/target/dx/my-service-bus-ui/release/web/public"
 
 cd "$SCRIPT_DIR"
+
+# Wipe dx output dir before building — manganis keeps every hashed asset it has
+# ever produced in there, and `cp -R` would carry all that history into wwwroot.
+rm -rf "$DX_OUT"
+
 dx build --release --platform web
 
 if [ ! -d "$DX_OUT" ]; then

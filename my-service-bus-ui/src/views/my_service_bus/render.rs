@@ -9,7 +9,7 @@ use super::state::*;
 
 #[component]
 pub fn RenderMyServiceBus() -> Element {
-    let cs = use_signal(|| MySbState::default());
+    let mut cs = use_signal(|| MySbState::default());
     let cs_ra = cs.read();
 
     start_background(cs, &cs_ra);
@@ -19,7 +19,26 @@ pub fn RenderMyServiceBus() -> Element {
         Err(err) => return err,
     };
 
-    let topics_to_render = data.topics.items.iter().map(|topic| {
+    let filter = cs_ra.filter_string.clone();
+
+    let topics_iter = data.topics.items.iter().filter(|topic| {
+        if filter.is_empty() {
+            return true;
+        }
+        if topic.id.to_lowercase().contains(&filter) {
+            return true;
+        }
+        if let Some(qs) = data.queues.get(&topic.id) {
+            for q in &qs.queues {
+                if q.id.to_lowercase().contains(&filter) {
+                    return true;
+                }
+            }
+        }
+        false
+    });
+
+    let topics_to_render = topics_iter.map(|topic| {
         let topic_connections = super::components::render_topic_connections(data, topic);
 
         let graph = super::components::render_graph(true, topic.publish_history.as_slice());
@@ -66,19 +85,34 @@ pub fn RenderMyServiceBus() -> Element {
     let mem_used = crate::utils::format_mem(data.system.usedmem);
     let mem_total = crate::utils::format_mem(data.system.totalmem);
 
+    let filter_value = cs_ra.filter_string.clone();
+
     rsx! {
         div { class: "layout-with-status-bar",
 
-            div { style: "overflow-y:auto",
+            div { class: "no-scrollbar", style: "overflow-y:auto",
 
                 table {
                     style: "margin:0",
-                    class: "table table-striped table-dark",
+                    class: "table table-striped table-dark sticky-thead",
                     thead {
                         tr {
                             th { "Topics" }
                             th { "Topic Connections" }
-                            th { "Queues" }
+                            th {
+                                div { class: "queues-header",
+                                    span { "Queues" }
+                                    input {
+                                        r#type: "text",
+                                        class: "header-search",
+                                        placeholder: "Filter topic / queue / session…",
+                                        value: "{filter_value}",
+                                        oninput: move |e| {
+                                            cs.write().filter_string = e.value().to_lowercase();
+                                        },
+                                    }
+                                }
+                            }
                         }
                     }
                     tbody { {topics_to_render} }

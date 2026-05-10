@@ -23,9 +23,24 @@ fn App() -> Element {
     rsx! {
         document::Stylesheet { href: STYLED_CSS }
         document::Stylesheet { href: APP_CSS }
-        style { ":root {{ --left-panel-width: 0px; }} #main {{ height: 100vh; }} body {{ margin: 0; }}" }
-        div { id: "main-panel",
-            RenderMyServiceBus {}
+        style {
+            "html, body, #main {{ height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; }}
+             .no-scrollbar {{ scrollbar-width: none; -ms-overflow-style: none; }}
+             .no-scrollbar::-webkit-scrollbar {{ width: 0; height: 0; }}
+             .sticky-thead thead th {{ position: sticky; top: 0; z-index: 5; }}
+             .queues-header {{ display: flex; align-items: center; gap: 16px; }}
+             .queues-header > span {{ flex: 0 0 auto; }}
+             .header-search {{
+                 margin-left: auto;
+                 width: 100%; max-width: 300px;
+                 height: 30px;
+                 padding: 4px 10px 4px 32px;
+                 background: #fff url('/assets/ico/search.svg') no-repeat 8px center / 16px;
+                 color: #000; font: 13px -apple-system, sans-serif; font-weight: normal;
+                 text-transform: none; letter-spacing: normal;
+                 border: 1px solid #999; border-radius: 4px;
+             }}"
         }
+        RenderMyServiceBus {}
     }
 }

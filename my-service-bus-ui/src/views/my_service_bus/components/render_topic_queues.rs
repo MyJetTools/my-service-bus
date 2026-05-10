@@ -53,22 +53,34 @@ pub fn render_topic_queues(data: &MySbHttpContract, topic: &TopicHttpModel) -> E
             }
         };
 
-        let queue_type = match topic_queue.queue_type {
-            0 => rsx! {
-                span { class: "badge text-bg-warning", "permanent" }
-            },
-            1 => rsx! {
-                span { class: "badge text-bg-success", "auto-delete" }
-            },
-            2 => {
-                rsx! {
-                    span { class: "badge text-bg-primary", "permanent-single-connect" }
-                }
-            }
+        // queue_type bits: bit0 = auto-delete, bit1 = single-connection
+        // 0=permanent+multi, 1=auto-delete+multi, 2=permanent+single, 3=auto-delete+single
+        let is_auto_delete = topic_queue.queue_type & 1 != 0;
+        let is_single = topic_queue.queue_type & 2 != 0;
 
-            _ => rsx! {
-                span { class: "badge text-bg-danger", "unknown" }
-            },
+        let delete_mode = if is_auto_delete {
+            rsx! {
+                span { class: "badge text-bg-success", "auto-delete" }
+            }
+        } else {
+            rsx! {
+                span { class: "badge text-bg-warning", "permanent" }
+            }
+        };
+
+        let connect_mode = if is_single {
+            rsx! {
+                span { class: "badge text-bg-primary", "single-connect" }
+            }
+        } else {
+            rsx! {
+                span { class: "badge text-bg-info", "multi-connect" }
+            }
+        };
+
+        let queue_type = rsx! {
+            {delete_mode}
+            {connect_mode}
         };
 
         let queue = super::render_queues(&topic_queue.data);
