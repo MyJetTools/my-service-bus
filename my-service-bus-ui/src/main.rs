@@ -1,5 +1,6 @@
 mod api;
 mod components;
+mod dialogs;
 mod models;
 mod utils;
 mod views;
@@ -20,6 +21,8 @@ fn main() {
 
 #[component]
 fn App() -> Element {
+    use_context_provider(|| Signal::new(crate::dialogs::DialogState::None));
+
     rsx! {
         document::Stylesheet { href: STYLED_CSS }
         document::Stylesheet { href: APP_CSS }

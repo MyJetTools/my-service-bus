@@ -3,10 +3,11 @@ use std::time::Duration;
 use dioxus::prelude::*;
 use dioxus_utils::js::sleep;
 
+use crate::dialogs::{DialogState, RenderDialog};
 use crate::models::MySbHttpContract;
 use crate::utils::format_unix_micros;
 
-use super::state::{DialogState, MySbState};
+use super::state::MySbState;
 
 #[component]
 pub fn RenderMyServiceBus() -> Element {
@@ -90,8 +91,17 @@ pub fn RenderMyServiceBus() -> Element {
                     class: "btn btn-sm btn-outline-danger",
                     style: "padding: 0 6px; font-size: 11px; margin-top: 4px;",
                     onclick: move |_| {
-                        cs.write().dialog = Some(DialogState::DeleteTopic {
-                            topic_id: topic_id_for_btn.clone(),
+                        let topic_id = topic_id_for_btn.clone();
+                        consume_context::<Signal<DialogState>>().set(DialogState::DeleteTopic {
+                            topic_id: topic_id.clone(),
+                            on_ok: EventHandler::new(move |iso: String| {
+                                let t = topic_id.clone();
+                                spawn(async move {
+                                    if let Err(err) = crate::api::my_sb::delete_topic(&t, &iso).await {
+                                        dioxus_logger::tracing::error!("delete_topic failed: {err}");
+                                    }
+                                });
+                            }),
                         });
                     },
                     "Delete topic"
@@ -140,46 +150,8 @@ pub fn RenderMyServiceBus() -> Element {
     let mem_total = crate::utils::format_mem(data.system.totalmem);
 
     let filter_value = cs_ra.filter_string.clone();
-    let dialog = cs_ra.dialog.clone();
-
     rsx! {
-        match dialog {
-            Some(DialogState::DeleteQueue { topic_id, queue_id }) => rsx! {
-                DeleteQueueDialog {
-                    cs,
-                    topic_id: topic_id.clone(),
-                    queue_id: queue_id.clone(),
-                    on_confirm: move |_| {
-                        let t = topic_id.clone();
-                        let q = queue_id.clone();
-                        let mut cs = cs;
-                        spawn(async move {
-                            if let Err(err) = crate::api::my_sb::delete_queue(&t, &q).await {
-                                dioxus_logger::tracing::error!("delete_queue failed: {err}");
-                            }
-                        });
-                        cs.write().dialog = None;
-                    },
-                }
-            },
-            Some(DialogState::DeleteTopic { topic_id }) => rsx! {
-                DeleteTopicDialog {
-                    cs,
-                    topic_id: topic_id.clone(),
-                    on_confirm: move |iso: String| {
-                        let t = topic_id.clone();
-                        let mut cs = cs;
-                        spawn(async move {
-                            if let Err(err) = crate::api::my_sb::delete_topic(&t, &iso).await {
-                                dioxus_logger::tracing::error!("delete_topic failed: {err}");
-                            }
-                        });
-                        cs.write().dialog = None;
-                    },
-                }
-            },
-            None => rsx! {},
-        }
+        RenderDialog {}
         div { class: "layout-with-status-bar",
 
             div { class: "no-scrollbar", style: "overflow-y:auto",
@@ -279,105 +251,3 @@ fn get_data(cs_ra: &MySbState) -> Result<&MySbHttpContract, Element> {
     }
 }
 
-#[component]
-fn DeleteTopicDialog(
-    cs: Signal<MySbState>,
-    topic_id: String,
-    on_confirm: EventHandler<String>,
-) -> Element {
-    let mut hard_24h = use_signal(|| false);
-    let mut cs = cs;
-    let topic_label = topic_id.clone();
-    rsx! {
-        div { class: "modal-overlay",
-            div { class: "modal-card",
-                h3 { style: "margin-top:0", "Confirm" }
-                p {
-                    "Confirm to delete topic "
-                    b { "{topic_label}" }
-                    "?"
-                }
-                div { style: "display:flex; flex-direction: column; gap:6px; margin: 12px 0;",
-                    label { style: "cursor: pointer;",
-                        input {
-                            r#type: "radio",
-                            name: "hard_delete_moment",
-                            checked: !hard_24h(),
-                            onchange: move |_| hard_24h.set(false),
-                        }
-                        " Now (immediate hard delete)"
-                    }
-                    label { style: "cursor: pointer;",
-                        input {
-                            r#type: "radio",
-                            name: "hard_delete_moment",
-                            checked: hard_24h(),
-                            onchange: move |_| hard_24h.set(true),
-                        }
-                        " After 24 hours (allows restore)"
-                    }
-                }
-                div { style: "display:flex; justify-content:flex-end; gap:10px; margin-top:16px",
-                    button {
-                        class: "btn btn-secondary",
-                        onclick: move |_| {
-                            cs.write().dialog = None;
-                        },
-                        "Cancel"
-                    }
-                    button {
-                        class: "btn btn-danger",
-                        onclick: move |_| {
-                            let now_ms = js_sys::Date::now();
-                            let target_ms = if hard_24h() { now_ms + 86_400_000.0 } else { now_ms };
-                            let date = js_sys::Date::new(&target_ms.into());
-                            let iso: String = date.to_iso_string().into();
-                            on_confirm.call(iso);
-                        },
-                        "Delete"
-                    }
-                }
-            }
-        }
-    }
-}
-
-#[component]
-fn DeleteQueueDialog(
-    cs: Signal<MySbState>,
-    topic_id: String,
-    queue_id: String,
-    on_confirm: EventHandler<()>,
-) -> Element {
-    let mut cs = cs;
-    let label_topic = topic_id.clone();
-    let label_queue = queue_id.clone();
-    rsx! {
-        div { class: "modal-overlay",
-            div { class: "modal-card",
-                h3 { style: "margin-top:0", "Confirm" }
-                p {
-                    "Confirm to delete queue "
-                    b { "{label_topic}/{label_queue}" }
-                    "?"
-                }
-                div { style: "display:flex; justify-content:flex-end; gap:10px; margin-top:16px",
-                    button {
-                        class: "btn btn-secondary",
-                        onclick: move |_| {
-                            cs.write().dialog = None;
-                        },
-                        "Cancel"
-                    }
-                    button {
-                        class: "btn btn-danger",
-                        onclick: move |_| {
-                            on_confirm.call(());
-                        },
-                        "Delete"
-                    }
-                }
-            }
-        }
-    }
-}

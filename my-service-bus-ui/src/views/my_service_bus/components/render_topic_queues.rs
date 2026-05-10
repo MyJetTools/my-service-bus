@@ -1,13 +1,15 @@
 use dioxus::prelude::*;
 
+use crate::dialogs::DialogState;
 use crate::models::*;
 use crate::views::my_service_bus::state::MySbState;
 
 pub fn render_topic_queues(
     data: &MySbHttpContract,
     topic: &TopicHttpModel,
-    mut cs: Signal<MySbState>,
+    cs: Signal<MySbState>,
 ) -> Element {
+    let _ = cs;
     let queues = data.queues.get(&topic.id);
 
     let Some(queues) = queues else {
@@ -99,9 +101,20 @@ pub fn render_topic_queues(
                     class: "btn btn-sm btn-outline-danger ms-2",
                     style: "padding: 0 6px; font-size: 11px;",
                     onclick: move |_| {
-                        cs.write().dialog = Some(super::super::state::DialogState::DeleteQueue {
-                            topic_id: topic_id_owned.clone(),
-                            queue_id: queue_id_owned.clone(),
+                        let t = topic_id_owned.clone();
+                        let q = queue_id_owned.clone();
+                        consume_context::<Signal<DialogState>>().set(DialogState::DeleteQueue {
+                            topic_id: t.clone(),
+                            queue_id: q.clone(),
+                            on_ok: EventHandler::new(move |_| {
+                                let t = t.clone();
+                                let q = q.clone();
+                                spawn(async move {
+                                    if let Err(err) = crate::api::my_sb::delete_queue(&t, &q).await {
+                                        dioxus_logger::tracing::error!("delete_queue failed: {err}");
+                                    }
+                                });
+                            }),
                         });
                     },
                     "Delete"
