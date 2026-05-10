@@ -1,16 +1,21 @@
 use crate::models::MySbHttpContract;
 
 const STATUS_PATH: &str = "/api/Status";
+const QUEUES_PATH: &str = "/api/Queues";
 
-pub async fn get_data() -> Result<MySbHttpContract, String> {
-    // reqwest's wasm backend rejects relative paths ("builder error" from
-    // Url::parse). The SPA is always served from the same origin as the
-    // admin API, so anchor against the page's origin.
-    let origin = web_sys::window()
+fn get_origin() -> Result<String, String> {
+    web_sys::window()
         .ok_or_else(|| "no window in current context".to_string())?
         .location()
         .origin()
-        .map_err(|e| format!("could not read window.location.origin: {e:?}"))?;
+        .map_err(|e| format!("could not read window.location.origin: {e:?}"))
+}
+
+pub async fn get_data() -> Result<MySbHttpContract, String> {
+    // reqwest's wasm backend rejects relative paths ("builder error" from
+    // Url::parse). Anchor against the page's origin — the SPA is always
+    // served from the same origin as the admin API.
+    let origin = get_origin()?;
     let url = format!("{origin}{STATUS_PATH}");
 
     let resp = reqwest::get(&url)
@@ -24,4 +29,23 @@ pub async fn get_data() -> Result<MySbHttpContract, String> {
     resp.json::<MySbHttpContract>()
         .await
         .map_err(|e| format!("decoding {url} response failed: {e}"))
+}
+
+pub async fn delete_queue(topic_id: &str, queue_id: &str) -> Result<(), String> {
+    let origin = get_origin()?;
+    let topic_enc: String = js_sys::encode_uri_component(topic_id).into();
+    let queue_enc: String = js_sys::encode_uri_component(queue_id).into();
+    let url = format!("{origin}{QUEUES_PATH}?topicId={topic_enc}&queueId={queue_enc}");
+
+    let resp = reqwest::Client::new()
+        .delete(&url)
+        .send()
+        .await
+        .map_err(|e| format!("DELETE {url} failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("DELETE {url} returned {}", resp.status()));
+    }
+
+    Ok(())
 }

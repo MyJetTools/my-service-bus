@@ -1,8 +1,13 @@
 use dioxus::prelude::*;
 
 use crate::models::*;
+use crate::views::my_service_bus::state::MySbState;
 
-pub fn render_topic_queues(data: &MySbHttpContract, topic: &TopicHttpModel) -> Element {
+pub fn render_topic_queues(
+    data: &MySbHttpContract,
+    topic: &TopicHttpModel,
+    mut cs: Signal<MySbState>,
+) -> Element {
     let queues = data.queues.get(&topic.id);
 
     let Some(queues) = queues else {
@@ -10,15 +15,21 @@ pub fn render_topic_queues(data: &MySbHttpContract, topic: &TopicHttpModel) -> E
     };
 
     let to_render = queues.queues.iter().map(|topic_queue| {
-        let subs_amount = topic.subscribers.len();
-        let subscribers_amount = if subs_amount > 0 {
+        // subscribers attached to THIS queue specifically
+        let queue_subs_count = topic
+            .subscribers
+            .iter()
+            .filter(|s| s.queue_id == topic_queue.id)
+            .count();
+
+        let subscribers_amount = if queue_subs_count > 0 {
             rsx! {
                 span { class: "badge text-bg-success",
                     img {
                         style: "height:9px",
                         src: asset!("/assets/ico/plug.svg"),
                     }
-                    {subs_amount.to_string()}
+                    {queue_subs_count.to_string()}
                 }
             }
         } else {
@@ -28,7 +39,7 @@ pub fn render_topic_queues(data: &MySbHttpContract, topic: &TopicHttpModel) -> E
                         style: "height:9px",
                         src: asset!("/assets/ico/plug.svg"),
                     }
-                    {subs_amount.to_string()}
+                    {queue_subs_count.to_string()}
                 }
             }
         };
@@ -78,6 +89,26 @@ pub fn render_topic_queues(data: &MySbHttpContract, topic: &TopicHttpModel) -> E
             }
         };
 
+        // Show delete button only for permanent queues without active subscribers
+        let can_delete = !is_auto_delete && queue_subs_count == 0;
+        let topic_id_owned = topic.id.clone();
+        let queue_id_owned = topic_queue.id.clone();
+        let delete_button = if can_delete {
+            rsx! {
+                button {
+                    class: "btn btn-sm btn-outline-danger ms-2",
+                    style: "padding: 0 6px; font-size: 11px;",
+                    onclick: move |_| {
+                        cs.write().delete_queue_dialog =
+                            Some((topic_id_owned.clone(), queue_id_owned.clone()));
+                    },
+                    "Delete"
+                }
+            }
+        } else {
+            rsx! {}
+        };
+
         let queue_type = rsx! {
             {delete_mode}
             {connect_mode}
@@ -90,6 +121,7 @@ pub fn render_topic_queues(data: &MySbHttpContract, topic: &TopicHttpModel) -> E
 
                 div {
                     {topic_queue.id.as_str()}
+                    {delete_button}
                     div {
                         {subscribers_amount}
                         {queue_type}

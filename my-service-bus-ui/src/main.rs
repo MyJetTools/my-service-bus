@@ -39,7 +39,9 @@ fn App() -> Element {
                  color: #000; font: 13px -apple-system, sans-serif; font-weight: normal;
                  text-transform: none; letter-spacing: normal;
                  border: 1px solid #999; border-radius: 4px;
-             }}"
+             }}
+             .modal-overlay {{ position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }}
+             .modal-card {{ background: white; padding: 24px; border-radius: 8px; min-width: 420px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }}"
         }
         RenderMyServiceBus {}
     }

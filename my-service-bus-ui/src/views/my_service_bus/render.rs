@@ -47,7 +47,7 @@ pub fn RenderMyServiceBus() -> Element {
             super::components::render_page(page.id, page.amount, page.size, &page.sub_pages)
         });
 
-        let render_queues = super::components::render_topic_queues(data, topic);
+        let render_queues = super::components::render_topic_queues(data, topic, cs);
         rsx! {
             tr {
                 td {
@@ -86,8 +86,12 @@ pub fn RenderMyServiceBus() -> Element {
     let mem_total = crate::utils::format_mem(data.system.totalmem);
 
     let filter_value = cs_ra.filter_string.clone();
+    let dialog = cs_ra.delete_queue_dialog.clone();
 
     rsx! {
+        if let Some((dlg_topic, dlg_queue)) = dialog {
+            {render_delete_dialog(cs, dlg_topic, dlg_queue)}
+        }
         div { class: "layout-with-status-bar",
 
             div { class: "no-scrollbar", style: "overflow-y:auto",
@@ -184,5 +188,49 @@ fn get_data(cs_ra: &MySbState) -> Result<&MySbHttpContract, Element> {
         dioxus_utils::RenderState::Loading => Err(crate::components::render_loading()),
         dioxus_utils::RenderState::Loaded(data) => Ok(data),
         dioxus_utils::RenderState::Error(err) => Err(crate::components::render_error(err)),
+    }
+}
+
+fn render_delete_dialog(
+    mut cs: Signal<MySbState>,
+    topic_id: String,
+    queue_id: String,
+) -> Element {
+    let cancel_topic = topic_id.clone();
+    let cancel_queue = queue_id.clone();
+    rsx! {
+        div { class: "modal-overlay",
+            div { class: "modal-card",
+                h3 { style: "margin-top:0", "Confirm" }
+                p {
+                    "Confirm to delete queue "
+                    b { "{cancel_topic}/{cancel_queue}" }
+                    "?"
+                }
+                div { style: "display:flex; justify-content:flex-end; gap:10px; margin-top:16px",
+                    button {
+                        class: "btn btn-secondary",
+                        onclick: move |_| {
+                            cs.write().delete_queue_dialog = None;
+                        },
+                        "Cancel"
+                    }
+                    button {
+                        class: "btn btn-danger",
+                        onclick: move |_| {
+                            let t = topic_id.clone();
+                            let q = queue_id.clone();
+                            spawn(async move {
+                                if let Err(err) = crate::api::my_sb::delete_queue(&t, &q).await {
+                                    dioxus_logger::tracing::error!("delete_queue failed: {err}");
+                                }
+                            });
+                            cs.write().delete_queue_dialog = None;
+                        },
+                        "Delete"
+                    }
+                }
+            }
+        }
     }
 }

@@ -13,6 +13,7 @@ serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 reqwest = { version = "*", features = ["json"] }
 web-sys = { version = "*", features = ["Window", "Location"] }
+js-sys = "*"
 
 [profile]
 [profile.wasm-dev]
