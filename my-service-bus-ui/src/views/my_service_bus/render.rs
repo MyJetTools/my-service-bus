@@ -304,12 +304,13 @@ fn DeleteTopicDialog(cs: Signal<MySbState>, topic_id: String) -> Element {
                             let date = js_sys::Date::new(&target_ms.into());
                             let iso: String = date.to_iso_string().into();
                             let t = topic_for_delete.clone();
+                            let mut cs = cs;
                             spawn(async move {
                                 if let Err(err) = crate::api::my_sb::delete_topic(&t, &iso).await {
                                     dioxus_logger::tracing::error!("delete_topic failed: {err}");
                                 }
+                                cs.write().delete_topic_dialog = None;
                             });
-                            cs.write().delete_topic_dialog = None;
                         },
                         "Delete"
                     }
@@ -348,12 +349,13 @@ fn render_delete_dialog(
                         onclick: move |_| {
                             let t = topic_id.clone();
                             let q = queue_id.clone();
+                            let mut cs = cs;
                             spawn(async move {
                                 if let Err(err) = crate::api::my_sb::delete_queue(&t, &q).await {
                                     dioxus_logger::tracing::error!("delete_queue failed: {err}");
                                 }
+                                cs.write().delete_queue_dialog = None;
                             });
-                            cs.write().delete_queue_dialog = None;
                         },
                         "Delete"
                     }
