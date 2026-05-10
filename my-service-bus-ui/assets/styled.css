@@ -1,0 +1,143 @@
+:root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --border: #e1e4e8;
+    --header-bg: #f0f3f6;
+    --row-alt: #fafbfc;
+    --row-hover: #eef4fb;
+    --text: #24292e;
+    --text-dim: #6a737d;
+    --accent: #0366d6;
+    --badge-bg: #e1ecf4;
+    --badge-text: #0366d6;
+    --error-bg: #ffeef0;
+    --error-text: #b31d28;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+        sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.dashboard > h2 {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.dashboard > .versions {
+    margin: 0 0 24px 0;
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+.dashboard > .versions span {
+    margin-right: 16px;
+}
+
+.loading,
+.error {
+    padding: 32px;
+    text-align: center;
+    color: var(--text-dim);
+}
+
+.error {
+    background: var(--error-bg);
+    color: var(--error-text);
+    border-radius: 6px;
+    text-align: left;
+}
+
+.error pre {
+    font-family: SFMono-Regular, Consolas, monospace;
+    font-size: 12px;
+    overflow-x: auto;
+}
+
+.section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 12px 16px;
+    background: linear-gradient(180deg, #f6f8fa 0%, #eef1f5 100%);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-header .label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.section-header .count {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+table th {
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+}
+
+table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+table tr:nth-child(even) td {
+    background: var(--row-alt);
+}
+
+table tr:hover td {
+    background: var(--row-hover);
+}
+
+.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.id-string {
+    font-family: SFMono-Regular, Consolas, monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+}
