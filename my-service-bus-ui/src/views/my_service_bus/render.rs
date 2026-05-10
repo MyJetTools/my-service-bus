@@ -1,0 +1,154 @@
+use std::time::Duration;
+
+use dioxus::prelude::*;
+use dioxus_utils::js::sleep;
+
+use crate::models::MySbHttpContract;
+
+use super::state::*;
+
+#[component]
+pub fn RenderMyServiceBus() -> Element {
+    let cs = use_signal(|| MySbState::default());
+    let cs_ra = cs.read();
+
+    start_background(cs, &cs_ra);
+
+    let data = match get_data(&cs_ra) {
+        Ok(data) => data,
+        Err(err) => return err,
+    };
+
+    let topics_to_render = data.topics.items.iter().map(|topic| {
+        let topic_connections = super::components::render_topic_connections(data, topic);
+
+        let graph = super::components::render_graph(true, topic.publish_history.as_slice());
+
+        let rendered_pages = topic.pages.iter().map(|page| {
+            super::components::render_page(page.id, page.amount, page.size, &page.sub_pages)
+        });
+
+        let render_queues = super::components::render_topic_queues(data, topic);
+        rsx! {
+            tr {
+                td {
+                    div { style: "font-size:16px",
+                        b { {topic.id.as_str()} }
+                    }
+                    div { style: "font-size:10px", "MsgId: {topic.message_id.to_string()}" }
+                    div { style: "font-size:10px", "Msg/sec: {topic.messages_per_src.to_string()}" }
+                    div { style: "font-size:10px", "Req/sec: {topic.packet_per_sec.to_string()}" }
+                    div { style: "font-size:10px", "Persist q: {topic.persist_size.to_string()}" }
+                    div { {graph} }
+                    div { {rendered_pages} }
+
+                }
+                td { {topic_connections} }
+                td { {render_queues} }
+            }
+        }
+    });
+
+    let sessions = super::components::render_sessions(data, &cs_ra.filter_string);
+
+    let status_bar = data.get_status_bar_calculated_values();
+
+    let persist_queue = if status_bar.persist_queue < 5000 {
+        rsx! {
+            b { style: "color:green", "{status_bar.persist_queue}" }
+        }
+    } else {
+        rsx! {
+            b { style: "color:red", "{status_bar.persist_queue}" }
+        }
+    };
+
+    let mem_used = crate::utils::format_mem(data.system.usedmem);
+    let mem_total = crate::utils::format_mem(data.system.totalmem);
+
+    rsx! {
+        div { class: "layout-with-status-bar",
+
+            div { style: "overflow-y:auto",
+
+                table {
+                    style: "margin:0",
+                    class: "table table-striped table-dark",
+                    thead {
+                        tr {
+                            th { "Topics" }
+                            th { "Topic Connections" }
+                            th { "Queues" }
+                        }
+                    }
+                    tbody { {topics_to_render} }
+                }
+
+                h1 { style: "background:black; color:white ;margin:0; padding:10px",
+                    "Sessions"
+                }
+
+                table {
+                    style: "margin:0",
+                    class: "table table-striped table-dark",
+                    thead {
+                        tr {
+                            th { "Id" }
+                            th { "Info" }
+                            th { "Publishers" }
+                            th { "Subscribers" }
+                        }
+                    }
+                    tbody { {sessions} }
+                }
+            }
+            div { class: "status-bar",
+                div { class: "item", "Sessions: {data.sessions.items.len()}" }
+                div { class: "item",
+                    "Persist q: "
+                    {persist_queue}
+                }
+
+                div { class: "item", "Msg/sec: {status_bar.msg_per_sec}" }
+                div { class: "item", "Req/sec: {status_bar.packets_per_sec}" }
+                div { class: "item", "Total pages size: {status_bar.total_pages_size}" }
+
+                div { class: "item", "Mem: {mem_used} / {mem_total}" }
+                div { class: "item", "sb-version: {data.version.as_str()}" }
+                div { class: "item", "persistence: {data.persistence_version.as_str()}" }
+            }
+        }
+
+    }
+}
+
+fn start_background(mut cs: Signal<MySbState>, cs_ra: &MySbState) {
+    if cs_ra.started {
+        return;
+    }
+    spawn(async move {
+        cs.write().started = true;
+
+        loop {
+            match crate::api::my_sb::get_data().await {
+                Ok(data) => {
+                    cs.write().data.set_loaded(data);
+                }
+                Err(err) => {
+                    cs.write().data.set_error(err);
+                }
+            }
+
+            sleep(Duration::from_secs(1)).await;
+        }
+    });
+}
+
+fn get_data(cs_ra: &MySbState) -> Result<&MySbHttpContract, Element> {
+    match cs_ra.data.as_ref() {
+        dioxus_utils::RenderState::None => Err(rsx! {}),
+        dioxus_utils::RenderState::Loading => Err(crate::components::render_loading()),
+        dioxus_utils::RenderState::Loaded(data) => Ok(data),
+        dioxus_utils::RenderState::Error(err) => Err(crate::components::render_error(err)),
+    }
+}

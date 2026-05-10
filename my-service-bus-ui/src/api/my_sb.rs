@@ -1,8 +1,8 @@
-use crate::models::StatusJsonResult;
+use crate::models::MySbHttpContract;
 
 const STATUS_PATH: &str = "/api/Status";
 
-pub async fn get_status() -> Result<StatusJsonResult, String> {
+pub async fn get_data() -> Result<MySbHttpContract, String> {
     // reqwest's wasm backend rejects relative paths ("builder error" from
     // Url::parse). The SPA is always served from the same origin as the
     // admin API, so anchor against the page's origin.
@@ -21,7 +21,7 @@ pub async fn get_status() -> Result<StatusJsonResult, String> {
         return Err(format!("GET {url} returned {}", resp.status()));
     }
 
-    resp.json::<StatusJsonResult>()
+    resp.json::<MySbHttpContract>()
         .await
         .map_err(|e| format!("decoding {url} response failed: {e}"))
 }

@@ -24,9 +24,16 @@ fi
 
 # Wipe previous bundle so files removed from the UI don't linger.
 rm -rf "$WWWROOT"
-mkdir -p "$WWWROOT"
+mkdir -p "$WWWROOT/assets"
 
 cp -R "$DX_OUT"/. "$WWWROOT/"
+
+# Dioxus.toml `[web.resource].style` injects raw `<link href="/assets/x.css">`
+# into index.html. dx hashes assets referenced via `asset!()` but does not
+# emit raw copies. Mirror them ourselves so both the static `<link>` and the
+# hashed runtime asset references resolve.
+cp "$SCRIPT_DIR/assets/styled.css" "$WWWROOT/assets/styled.css"
+cp "$SCRIPT_DIR/assets/app.css" "$WWWROOT/assets/app.css"
 
 echo
 echo "UI built  → $DX_OUT"
