@@ -143,10 +143,38 @@ pub fn RenderMyServiceBus() -> Element {
 
     rsx! {
         if let Some((dlg_topic, dlg_queue)) = queue_dialog {
-            {render_delete_dialog(cs, dlg_topic, dlg_queue)}
+            DeleteQueueDialog {
+                cs,
+                topic_id: dlg_topic.clone(),
+                queue_id: dlg_queue.clone(),
+                on_confirm: move |_| {
+                    let t = dlg_topic.clone();
+                    let q = dlg_queue.clone();
+                    let mut cs = cs;
+                    spawn(async move {
+                        if let Err(err) = crate::api::my_sb::delete_queue(&t, &q).await {
+                            dioxus_logger::tracing::error!("delete_queue failed: {err}");
+                        }
+                    });
+                    cs.write().delete_queue_dialog = None;
+                },
+            }
         }
         if let Some(dlg_topic) = topic_dialog {
-            {render_delete_topic_dialog(cs, dlg_topic)}
+            DeleteTopicDialog {
+                cs,
+                topic_id: dlg_topic.clone(),
+                on_confirm: move |iso: String| {
+                    let t = dlg_topic.clone();
+                    let mut cs = cs;
+                    spawn(async move {
+                        if let Err(err) = crate::api::my_sb::delete_topic(&t, &iso).await {
+                            dioxus_logger::tracing::error!("delete_topic failed: {err}");
+                        }
+                    });
+                    cs.write().delete_topic_dialog = None;
+                },
+            }
         }
         div { class: "layout-with-status-bar",
 
@@ -247,18 +275,15 @@ fn get_data(cs_ra: &MySbState) -> Result<&MySbHttpContract, Element> {
     }
 }
 
-fn render_delete_topic_dialog(cs: Signal<MySbState>, topic_id: String) -> Element {
-    rsx! {
-        DeleteTopicDialog { cs, topic_id }
-    }
-}
-
 #[component]
-fn DeleteTopicDialog(cs: Signal<MySbState>, topic_id: String) -> Element {
+fn DeleteTopicDialog(
+    cs: Signal<MySbState>,
+    topic_id: String,
+    on_confirm: EventHandler<String>,
+) -> Element {
     let mut hard_24h = use_signal(|| false);
     let mut cs = cs;
     let topic_label = topic_id.clone();
-    let topic_for_delete = topic_id.clone();
     rsx! {
         div { class: "modal-overlay",
             div { class: "modal-card",
@@ -303,14 +328,7 @@ fn DeleteTopicDialog(cs: Signal<MySbState>, topic_id: String) -> Element {
                             let target_ms = if hard_24h() { now_ms + 86_400_000.0 } else { now_ms };
                             let date = js_sys::Date::new(&target_ms.into());
                             let iso: String = date.to_iso_string().into();
-                            let t = topic_for_delete.clone();
-                            let mut cs = cs;
-                            spawn(async move {
-                                if let Err(err) = crate::api::my_sb::delete_topic(&t, &iso).await {
-                                    dioxus_logger::tracing::error!("delete_topic failed: {err}");
-                                }
-                                cs.write().delete_topic_dialog = None;
-                            });
+                            on_confirm.call(iso);
                         },
                         "Delete"
                     }
@@ -320,20 +338,23 @@ fn DeleteTopicDialog(cs: Signal<MySbState>, topic_id: String) -> Element {
     }
 }
 
-fn render_delete_dialog(
-    mut cs: Signal<MySbState>,
+#[component]
+fn DeleteQueueDialog(
+    cs: Signal<MySbState>,
     topic_id: String,
     queue_id: String,
+    on_confirm: EventHandler<()>,
 ) -> Element {
-    let cancel_topic = topic_id.clone();
-    let cancel_queue = queue_id.clone();
+    let mut cs = cs;
+    let label_topic = topic_id.clone();
+    let label_queue = queue_id.clone();
     rsx! {
         div { class: "modal-overlay",
             div { class: "modal-card",
                 h3 { style: "margin-top:0", "Confirm" }
                 p {
                     "Confirm to delete queue "
-                    b { "{cancel_topic}/{cancel_queue}" }
+                    b { "{label_topic}/{label_queue}" }
                     "?"
                 }
                 div { style: "display:flex; justify-content:flex-end; gap:10px; margin-top:16px",
@@ -347,15 +368,7 @@ fn render_delete_dialog(
                     button {
                         class: "btn btn-danger",
                         onclick: move |_| {
-                            let t = topic_id.clone();
-                            let q = queue_id.clone();
-                            let mut cs = cs;
-                            spawn(async move {
-                                if let Err(err) = crate::api::my_sb::delete_queue(&t, &q).await {
-                                    dioxus_logger::tracing::error!("delete_queue failed: {err}");
-                                }
-                                cs.write().delete_queue_dialog = None;
-                            });
+                            on_confirm.call(());
                         },
                         "Delete"
                     }
