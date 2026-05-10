@@ -6,7 +6,7 @@ use dioxus_utils::js::sleep;
 use crate::models::MySbHttpContract;
 use crate::utils::format_unix_micros;
 
-use super::state::*;
+use super::state::{DialogState, MySbState};
 
 #[component]
 pub fn RenderMyServiceBus() -> Element {
@@ -90,7 +90,9 @@ pub fn RenderMyServiceBus() -> Element {
                     class: "btn btn-sm btn-outline-danger",
                     style: "padding: 0 6px; font-size: 11px; margin-top: 4px;",
                     onclick: move |_| {
-                        cs.write().delete_topic_dialog = Some(topic_id_for_btn.clone());
+                        cs.write().dialog = Some(DialogState::DeleteTopic {
+                            topic_id: topic_id_for_btn.clone(),
+                        });
                     },
                     "Delete topic"
                 }
@@ -138,43 +140,45 @@ pub fn RenderMyServiceBus() -> Element {
     let mem_total = crate::utils::format_mem(data.system.totalmem);
 
     let filter_value = cs_ra.filter_string.clone();
-    let queue_dialog = cs_ra.delete_queue_dialog.clone();
-    let topic_dialog = cs_ra.delete_topic_dialog.clone();
+    let dialog = cs_ra.dialog.clone();
 
     rsx! {
-        if let Some((dlg_topic, dlg_queue)) = queue_dialog {
-            DeleteQueueDialog {
-                cs,
-                topic_id: dlg_topic.clone(),
-                queue_id: dlg_queue.clone(),
-                on_confirm: move |_| {
-                    let t = dlg_topic.clone();
-                    let q = dlg_queue.clone();
-                    let mut cs = cs;
-                    spawn(async move {
-                        if let Err(err) = crate::api::my_sb::delete_queue(&t, &q).await {
-                            dioxus_logger::tracing::error!("delete_queue failed: {err}");
-                        }
-                    });
-                    cs.write().delete_queue_dialog = None;
-                },
-            }
-        }
-        if let Some(dlg_topic) = topic_dialog {
-            DeleteTopicDialog {
-                cs,
-                topic_id: dlg_topic.clone(),
-                on_confirm: move |iso: String| {
-                    let t = dlg_topic.clone();
-                    let mut cs = cs;
-                    spawn(async move {
-                        if let Err(err) = crate::api::my_sb::delete_topic(&t, &iso).await {
-                            dioxus_logger::tracing::error!("delete_topic failed: {err}");
-                        }
-                    });
-                    cs.write().delete_topic_dialog = None;
-                },
-            }
+        match dialog {
+            Some(DialogState::DeleteQueue { topic_id, queue_id }) => rsx! {
+                DeleteQueueDialog {
+                    cs,
+                    topic_id: topic_id.clone(),
+                    queue_id: queue_id.clone(),
+                    on_confirm: move |_| {
+                        let t = topic_id.clone();
+                        let q = queue_id.clone();
+                        let mut cs = cs;
+                        spawn(async move {
+                            if let Err(err) = crate::api::my_sb::delete_queue(&t, &q).await {
+                                dioxus_logger::tracing::error!("delete_queue failed: {err}");
+                            }
+                        });
+                        cs.write().dialog = None;
+                    },
+                }
+            },
+            Some(DialogState::DeleteTopic { topic_id }) => rsx! {
+                DeleteTopicDialog {
+                    cs,
+                    topic_id: topic_id.clone(),
+                    on_confirm: move |iso: String| {
+                        let t = topic_id.clone();
+                        let mut cs = cs;
+                        spawn(async move {
+                            if let Err(err) = crate::api::my_sb::delete_topic(&t, &iso).await {
+                                dioxus_logger::tracing::error!("delete_topic failed: {err}");
+                            }
+                        });
+                        cs.write().dialog = None;
+                    },
+                }
+            },
+            None => rsx! {},
         }
         div { class: "layout-with-status-bar",
 
@@ -317,7 +321,7 @@ fn DeleteTopicDialog(
                     button {
                         class: "btn btn-secondary",
                         onclick: move |_| {
-                            cs.write().delete_topic_dialog = None;
+                            cs.write().dialog = None;
                         },
                         "Cancel"
                     }
@@ -361,7 +365,7 @@ fn DeleteQueueDialog(
                     button {
                         class: "btn btn-secondary",
                         onclick: move |_| {
-                            cs.write().delete_queue_dialog = None;
+                            cs.write().dialog = None;
                         },
                         "Cancel"
                     }

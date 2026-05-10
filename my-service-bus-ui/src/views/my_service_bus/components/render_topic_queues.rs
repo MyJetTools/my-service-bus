@@ -99,8 +99,10 @@ pub fn render_topic_queues(
                     class: "btn btn-sm btn-outline-danger ms-2",
                     style: "padding: 0 6px; font-size: 11px;",
                     onclick: move |_| {
-                        cs.write().delete_queue_dialog =
-                            Some((topic_id_owned.clone(), queue_id_owned.clone()));
+                        cs.write().dialog = Some(super::super::state::DialogState::DeleteQueue {
+                            topic_id: topic_id_owned.clone(),
+                            queue_id: queue_id_owned.clone(),
+                        });
                     },
                     "Delete"
                 }

@@ -7,8 +7,11 @@ pub struct MySbState {
     pub started: bool,
     pub data: DataState<MySbHttpContract>,
     pub filter_string: String,
-    /// (topic_id, queue_id) of the queue being confirmed for deletion.
-    pub delete_queue_dialog: Option<(String, String)>,
-    /// topic_id of the topic being confirmed for deletion.
-    pub delete_topic_dialog: Option<String>,
+    pub dialog: Option<DialogState>,
+}
+
+#[derive(Clone)]
+pub enum DialogState {
+    DeleteTopic { topic_id: String },
+    DeleteQueue { topic_id: String, queue_id: String },
 }
