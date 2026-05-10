@@ -120,7 +120,7 @@ pub fn render_topic_queues(
             div { class: "topic-queue",
 
                 div {
-                    {topic_queue.id.as_str()}
+                    span { class: "selectable", {topic_queue.id.as_str()} }
                     {delete_button}
                     div {
                         {subscribers_amount}

@@ -2,6 +2,7 @@ use crate::models::MySbHttpContract;
 
 const STATUS_PATH: &str = "/api/Status";
 const QUEUES_PATH: &str = "/api/Queues";
+const DELETE_TOPIC_PATH: &str = "/api/Topics/Delete";
 
 fn get_origin() -> Result<String, String> {
     web_sys::window()
@@ -36,6 +37,27 @@ pub async fn delete_queue(topic_id: &str, queue_id: &str) -> Result<(), String> 
     let topic_enc: String = js_sys::encode_uri_component(topic_id).into();
     let queue_enc: String = js_sys::encode_uri_component(queue_id).into();
     let url = format!("{origin}{QUEUES_PATH}?topicId={topic_enc}&queueId={queue_enc}");
+
+    let resp = reqwest::Client::new()
+        .delete(&url)
+        .send()
+        .await
+        .map_err(|e| format!("DELETE {url} failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("DELETE {url} returned {}", resp.status()));
+    }
+
+    Ok(())
+}
+
+pub async fn delete_topic(topic_id: &str, hard_delete_moment_iso: &str) -> Result<(), String> {
+    let origin = get_origin()?;
+    let topic_enc: String = js_sys::encode_uri_component(topic_id).into();
+    let moment_enc: String = js_sys::encode_uri_component(hard_delete_moment_iso).into();
+    let url = format!(
+        "{origin}{DELETE_TOPIC_PATH}?topicId={topic_enc}&hardDeleteMoment={moment_enc}"
+    );
 
     let resp = reqwest::Client::new()
         .delete(&url)

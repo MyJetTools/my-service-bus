@@ -25,6 +25,7 @@ fn App() -> Element {
         document::Stylesheet { href: APP_CSS }
         style {
             "html, body, #main {{ height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; }}
+             .selectable {{ user-select: text; -webkit-user-select: text; -ms-user-select: text; cursor: text; }}
              .no-scrollbar {{ scrollbar-width: none; -ms-overflow-style: none; }}
              .no-scrollbar::-webkit-scrollbar {{ width: 0; height: 0; }}
              .sticky-thead thead th {{ position: sticky; top: 0; z-index: 5; }}

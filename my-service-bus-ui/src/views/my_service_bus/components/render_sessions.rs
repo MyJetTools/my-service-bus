@@ -92,11 +92,11 @@ pub fn render_sessions(data: &MySbHttpContract,  filter_string: &str) -> Element
         rsx! {
             tr { style: "--bg-color:var({bg_color}); background-color:var({bg_color}); vertical-align: top;border-bottom: 1px solid black;",
                 td {
-                    div { class: "info-line", "{session.id}" }
+                    div { class: "info-line selectable", "{session.id}" }
                     div { class: "info-line", {session_type} }
                 }
                 td {
-                    div { class: "info-line-bold", "{session.name}" }
+                    div { class: "info-line-bold selectable", "{session.name}" }
 
                     div { class: "info-line-xs",
                         b { "MY-SB-SDK ver: " }

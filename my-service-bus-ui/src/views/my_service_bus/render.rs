@@ -48,11 +48,34 @@ pub fn RenderMyServiceBus() -> Element {
         });
 
         let render_queues = super::components::render_topic_queues(data, topic, cs);
+
+        // Delete-topic button shown only for orphan topics: no publishers AND no queues.
+        let queues_for_topic = data.queues.get(&topic.id);
+        let has_queues = queues_for_topic
+            .map(|qs| !qs.queues.is_empty())
+            .unwrap_or(false);
+        let can_delete_topic = topic.publishers.is_empty() && !has_queues;
+        let topic_id_for_btn = topic.id.clone();
+        let delete_topic_button = if can_delete_topic {
+            rsx! {
+                button {
+                    class: "btn btn-sm btn-outline-danger",
+                    style: "padding: 0 6px; font-size: 11px; margin-top: 4px;",
+                    onclick: move |_| {
+                        cs.write().delete_topic_dialog = Some(topic_id_for_btn.clone());
+                    },
+                    "Delete topic"
+                }
+            }
+        } else {
+            rsx! {}
+        };
+
         rsx! {
             tr {
                 td {
                     div { style: "font-size:16px",
-                        b { {topic.id.as_str()} }
+                        b { class: "selectable", {topic.id.as_str()} }
                     }
                     div { style: "font-size:10px", "MsgId: {topic.message_id.to_string()}" }
                     div { style: "font-size:10px", "Msg/sec: {topic.messages_per_src.to_string()}" }
@@ -60,6 +83,7 @@ pub fn RenderMyServiceBus() -> Element {
                     div { style: "font-size:10px", "Persist q: {topic.persist_size.to_string()}" }
                     div { {graph} }
                     div { {rendered_pages} }
+                    {delete_topic_button}
 
                 }
                 td { {topic_connections} }
@@ -86,11 +110,15 @@ pub fn RenderMyServiceBus() -> Element {
     let mem_total = crate::utils::format_mem(data.system.totalmem);
 
     let filter_value = cs_ra.filter_string.clone();
-    let dialog = cs_ra.delete_queue_dialog.clone();
+    let queue_dialog = cs_ra.delete_queue_dialog.clone();
+    let topic_dialog = cs_ra.delete_topic_dialog.clone();
 
     rsx! {
-        if let Some((dlg_topic, dlg_queue)) = dialog {
+        if let Some((dlg_topic, dlg_queue)) = queue_dialog {
             {render_delete_dialog(cs, dlg_topic, dlg_queue)}
+        }
+        if let Some(dlg_topic) = topic_dialog {
+            {render_delete_topic_dialog(cs, dlg_topic)}
         }
         div { class: "layout-with-status-bar",
 
@@ -188,6 +216,78 @@ fn get_data(cs_ra: &MySbState) -> Result<&MySbHttpContract, Element> {
         dioxus_utils::RenderState::Loading => Err(crate::components::render_loading()),
         dioxus_utils::RenderState::Loaded(data) => Ok(data),
         dioxus_utils::RenderState::Error(err) => Err(crate::components::render_error(err)),
+    }
+}
+
+fn render_delete_topic_dialog(cs: Signal<MySbState>, topic_id: String) -> Element {
+    rsx! {
+        DeleteTopicDialog { cs, topic_id }
+    }
+}
+
+#[component]
+fn DeleteTopicDialog(cs: Signal<MySbState>, topic_id: String) -> Element {
+    let mut hard_24h = use_signal(|| false);
+    let mut cs = cs;
+    let topic_label = topic_id.clone();
+    let topic_for_delete = topic_id.clone();
+    rsx! {
+        div { class: "modal-overlay",
+            div { class: "modal-card",
+                h3 { style: "margin-top:0", "Confirm" }
+                p {
+                    "Confirm to delete topic "
+                    b { "{topic_label}" }
+                    "?"
+                }
+                div { style: "display:flex; flex-direction: column; gap:6px; margin: 12px 0;",
+                    label { style: "cursor: pointer;",
+                        input {
+                            r#type: "radio",
+                            name: "hard_delete_moment",
+                            checked: !hard_24h(),
+                            onchange: move |_| hard_24h.set(false),
+                        }
+                        " Now (immediate hard delete)"
+                    }
+                    label { style: "cursor: pointer;",
+                        input {
+                            r#type: "radio",
+                            name: "hard_delete_moment",
+                            checked: hard_24h(),
+                            onchange: move |_| hard_24h.set(true),
+                        }
+                        " After 24 hours (allows restore)"
+                    }
+                }
+                div { style: "display:flex; justify-content:flex-end; gap:10px; margin-top:16px",
+                    button {
+                        class: "btn btn-secondary",
+                        onclick: move |_| {
+                            cs.write().delete_topic_dialog = None;
+                        },
+                        "Cancel"
+                    }
+                    button {
+                        class: "btn btn-danger",
+                        onclick: move |_| {
+                            let now_ms = js_sys::Date::now();
+                            let target_ms = if hard_24h() { now_ms + 86_400_000.0 } else { now_ms };
+                            let date = js_sys::Date::new(&target_ms.into());
+                            let iso: String = date.to_iso_string().into();
+                            let t = topic_for_delete.clone();
+                            spawn(async move {
+                                if let Err(err) = crate::api::my_sb::delete_topic(&t, &iso).await {
+                                    dioxus_logger::tracing::error!("delete_topic failed: {err}");
+                                }
+                            });
+                            cs.write().delete_topic_dialog = None;
+                        },
+                        "Delete"
+                    }
+                }
+            }
+        }
     }
 }
 

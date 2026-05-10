@@ -9,4 +9,6 @@ pub struct MySbState {
     pub filter_string: String,
     /// (topic_id, queue_id) of the queue being confirmed for deletion.
     pub delete_queue_dialog: Option<(String, String)>,
+    /// topic_id of the topic being confirmed for deletion.
+    pub delete_topic_dialog: Option<String>,
 }
