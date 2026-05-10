@@ -1,36 +1,49 @@
 use dioxus::prelude::*;
+
 const WIDTH: i64 = 200;
-const HEIGHT: i64 = 20;
+const HEIGHT: i64 = 16;
 
 pub fn render_page(page_no: i64, amount: i64, size: i64, sub_pages: &[i32]) -> Element {
-    let items = sub_pages.iter().map(|page| {
-        let page = *page as i64;
-        let x = page * 2;
+    let bars = sub_pages.iter().map(|p| {
+        let p = *p as i64;
+        let x = p * 2;
         rsx! {
             line {
                 x1: x,
                 y1: 0,
                 x2: x,
                 y2: HEIGHT,
-                style: "stroke:blue;stroke-width:1",
+                stroke: "var(--accent)",
+                stroke_width: 1,
             }
         }
     });
+
     rsx! {
-        div { style: "background-color:var(--bg-color);padding:5px;",
-            div { class: "info-line-xs", "Page:{page_no}; Amount: {amount}; Size: {size}" }
+        div { class: "msb-page",
+            div { class: "msb-page__head",
+                span { class: "label", "Page" }
+                span { class: "value", "{page_no}" }
+                span { class: "label", "Amount" }
+                span { class: "value", "{amount}" }
+                span { class: "label", "Size" }
+                span { class: "value", "{size}" }
+            }
             svg {
-                width: WIDTH,
-                height: HEIGHT,
-                style: "fill:white;stroke-width:;stroke:black",
+                width: "{WIDTH}",
+                height: "{HEIGHT}",
+                view_box: "0 0 {WIDTH} {HEIGHT}",
+                preserve_aspect_ratio: "none",
                 rect {
-                    width: WIDTH,
-                    height: HEIGHT,
-                    rx: 5,
-                    ry: 5,
-                    style: "fill:white;stroke-width:;stroke:black",
+                    width: "{WIDTH}",
+                    height: "{HEIGHT}",
+                    rx: 3,
+                    ry: 3,
+                    fill: "var(--bg-3)",
+                    stroke: "var(--border)",
+                    stroke_width: 1,
                 }
-                {items}
+                {bars}
             }
         }
     }

@@ -1,5 +1,7 @@
 use dioxus::prelude::*;
 
+use crate::components::ui::{BtnVariant, Button};
+
 const DIALOG_TITLE: &str = "Delete queue";
 
 #[component]
@@ -20,8 +22,8 @@ pub fn DeleteQueueDialog(
     };
 
     let ok_button = rsx! {
-        button {
-            class: "btn btn-danger",
+        Button {
+            variant: BtnVariant::Danger,
             onclick: move |_| {
                 consume_context::<Signal<super::DialogState>>().set(super::DialogState::None);
                 on_ok.call(());

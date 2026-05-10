@@ -15,6 +15,9 @@ reqwest = { version = "*", features = ["json"] }
 web-sys = { version = "*", features = ["Window", "Location"] }
 js-sys = "*"
 
+[build-dependencies]
+ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.3" }
+
 [profile]
 [profile.wasm-dev]
 inherits = "dev"

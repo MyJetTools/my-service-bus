@@ -1,144 +1,106 @@
 use dioxus::prelude::*;
 
+use crate::components::ui::{Badge, StatusPill, Tone};
+use crate::models::*;
+use crate::utils::format_mem;
 
-use crate::{models::*, utils::format_mem};
+pub fn render_sessions(data: &MySbHttpContract, filter_string: &str) -> Element {
+    let items: Vec<Element> = data
+        .sessions
+        .items
+        .iter()
+        .filter(|s| s.filter_me(filter_string))
+        .map(|session| render_one(data, session))
+        .collect();
 
-pub fn render_sessions(data: &MySbHttpContract,  filter_string: &str) -> Element{
-
-    let mut odd = false;
-
-    let sessions_to_render = data.sessions.items.iter()
-    .filter(|session|session.filter_me(filter_string))
-    . map(|session| {
-        let bg_color = if odd {
-            "--vz-table-active-bg"
-        } else {
-            "--vz-table-striped-bg"
-        };
-
-        odd = !odd;
-
-        let session_type = match session.get_session_type() {
-            SessionType::Tcp => {
-                rsx! {
-                    span { class: "badge text-bg-success", "Tcp" }
-                }
-            }
-            SessionType::Http => {
-                rsx! {
-                    span {
-                        span { class: "badge text-bg-warning", "Http" }
-                    }
-                }
+    if items.is_empty() {
+        return rsx! {
+            div { class: "empty-state",
+                h4 { "No sessions" }
+                p { "No active sessions match the current filter." }
             }
         };
+    }
 
-        let r_size = format_mem(session.read_size);
-        let w_size = format_mem(session.written_size);
+    rsx! {
+        div { class: "msb-topics", {items.into_iter()} }
+    }
+}
 
-        let r_p_s = format_mem(session.read_per_sec);
-        let w_p_s = format_mem(session.written_per_sec);
+fn render_one(data: &MySbHttpContract, session: &MySbSessionHttpModel) -> Element {
+    let session_type = match session.get_session_type() {
+        SessionType::Tcp => rsx! { StatusPill { tone: Tone::Success, dot: true, "TCP" } },
+        SessionType::Http => rsx! { StatusPill { tone: Tone::Warning, dot: true, "HTTP" } },
+    };
 
+    let r_size = format_mem(session.read_size);
+    let w_size = format_mem(session.written_size);
+    let r_p_s = format_mem(session.read_per_sec);
+    let w_p_s = format_mem(session.written_per_sec);
 
-        
-        let (publishers, subscribers) =  data.get_publishers_and_subscribers(session.id);
+    let (publishers, subscribers) = data.get_publishers_and_subscribers(session.id);
 
-
-        let publishers_to_render = publishers.into_iter().map(|(publisher, active)|{
-
-
-            if active>0{
-                rsx! {
-                    span { class: "badge text-bg-success my-badge", {publisher} }
-                }
-    
-            }else {
-                rsx! {
-                    span { class: "badge text-bg-light my-badge", {publisher} }
-                }
-                    
-            }
-
-        });
-
-
-        let subscribers_to_render = subscribers.into_iter().map(|(topic, queue, active)|{
-            if active>0{
-                rsx! {
-                    span { class: "badge text-bg-success my-badge", "{topic}->{queue}" }
-                }
-    
-            }else {
-                rsx! {
-                    span { class: "badge text-bg-light my-badge", "{topic}->{queue}" }
-                }
-                    
-            }
-        });
-
-        
-        let env_info = if let Some(env_info) = session.env_info.as_ref() {
-            rsx! {
-                span {
-                    style: "background: white;color: black;",
-                    class: "badge badge-light",
-                    "{env_info.as_str()}"
-                }
-            }
-        } else {
-            rsx! {}
-        };
-
-        rsx! {
-            tr { style: "--bg-color:var({bg_color}); background-color:var({bg_color}); vertical-align: top;border-bottom: 1px solid black;",
-                td {
-                    div { class: "info-line selectable", "{session.id}" }
-                    div { class: "info-line", {session_type} }
-                }
-                td {
-                    div { class: "info-line-bold selectable", "{session.name}" }
-
-                    div { class: "info-line-xs",
-                        b { "MY-SB-SDK ver: " }
-                        "{session.get_session_as_string()}"
-                    }
-
-                    div { class: "info-line-xs",
-                        b { "Ip: " }
-                        "{session.ip} "
-                        {env_info}
-                    }
-
-                    div { class: "info-line-xs",
-                        b { "Connected: " }
-                        "{session.connected}"
-                    }
-                    div { class: "info-line-xs",
-                        b { "Read: " }
-                        {r_size}
-                    }
-                    div { class: "info-line-xs",
-                        b { "Written: " }
-                        {w_size}
-                    }
-                    div { class: "info-line-xs",
-                        b { "R/sec: " }
-                        {r_p_s}
-                    }
-                    div { class: "info-line-xs",
-                        b { "W/sec: " }
-                        {w_p_s}
-                    }
-                }
-                td { {publishers_to_render} }
-                td { {subscribers_to_render} }
-            }
-        }
+    let pub_chips = publishers.into_iter().map(|(name, active)| {
+        let tone = if active > 0 { Tone::Success } else { Tone::Neutral };
+        rsx! { Badge { tone, "{name}" } }
     });
 
+    let sub_chips = subscribers.into_iter().map(|(topic, queue, active)| {
+        let tone = if active > 0 { Tone::Accent } else { Tone::Neutral };
+        rsx! { Badge { tone, "{topic} → {queue}" } }
+    });
 
-    rsx!{
-        {sessions_to_render}
+    let env_info = session.env_info.as_deref().unwrap_or("");
+    let sdk_ver = session.get_session_as_string().to_string();
+
+    rsx! {
+        div { class: "msb-session",
+            div { class: "msb-session__col",
+                div { class: "msb-session__id selectable", "{session.id}" }
+                {session_type}
+            }
+            div { class: "msb-session__col",
+                div { class: "name selectable", "{session.name}" }
+                div { class: "row",
+                    span { class: "label", "SDK" }
+                    span { class: "value", "{sdk_ver}" }
+                }
+                div { class: "row",
+                    span { class: "label", "IP" }
+                    span { class: "value", "{session.ip}" }
+                    if !env_info.is_empty() {
+                        Badge { tone: Tone::Accent, "{env_info}" }
+                    }
+                }
+                div { class: "row",
+                    span { class: "label", "Connected" }
+                    span { class: "value", "{session.connected}" }
+                }
+                div { class: "row",
+                    span { class: "label", "R" }
+                    span { class: "value", "{r_size}" }
+                    span { class: "label", "W" }
+                    span { class: "value", "{w_size}" }
+                }
+                div { class: "row",
+                    span { class: "label", "R/sec" }
+                    span { class: "value", "{r_p_s}" }
+                    span { class: "label", "W/sec" }
+                    span { class: "value", "{w_p_s}" }
+                }
+            }
+            div { class: "msb-session__col",
+                div { class: "row",
+                    span { class: "label", "Publishers" }
+                }
+                div { class: "msb-session__chips", {pub_chips} }
+            }
+            div { class: "msb-session__col",
+                div { class: "row",
+                    span { class: "label", "Subscribers" }
+                }
+                div { class: "msb-session__chips", {sub_chips} }
+            }
+        }
     }
-    
 }

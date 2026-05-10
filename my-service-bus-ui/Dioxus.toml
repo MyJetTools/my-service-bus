@@ -11,7 +11,7 @@ reload_html = false
 index_on_404 = true
 
 [web.resource]
-style = ["/assets/styled.css", "/assets/app.css"]
+style = ["/assets/app.css"]
 script = []
 
 [web.resource.dev]

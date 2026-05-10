@@ -1,5 +1,7 @@
 use dioxus::prelude::*;
 
+use crate::components::ui::{BtnVariant, Button};
+
 const DIALOG_TITLE: &str = "Delete topic";
 
 #[derive(Default, Clone, Copy)]
@@ -20,30 +22,32 @@ pub fn DeleteTopicDialog(topic_id: String, on_ok: EventHandler<String>) -> Eleme
             "?"
         }
         div { style: "display:flex; flex-direction: column; gap:6px; margin: 12px 0;",
-            label { style: "cursor: pointer;",
+            label { class: "msb-radio-label",
                 input {
+                    class: "msb-radio",
                     r#type: "radio",
                     name: "hard_delete_moment",
                     checked: !hard_24h,
                     onchange: move |_| cs.write().hard_24h = false,
                 }
-                " Now (immediate hard delete)"
+                "Now (immediate hard delete)"
             }
-            label { style: "cursor: pointer;",
+            label { class: "msb-radio-label",
                 input {
+                    class: "msb-radio",
                     r#type: "radio",
                     name: "hard_delete_moment",
                     checked: hard_24h,
                     onchange: move |_| cs.write().hard_24h = true,
                 }
-                " After 24 hours (allows restore)"
+                "After 24 hours (allows restore)"
             }
         }
     };
 
     let ok_button = rsx! {
-        button {
-            class: "btn btn-danger",
+        Button {
+            variant: BtnVariant::Danger,
             onclick: move |_| {
                 let now_ms = js_sys::Date::now();
                 let target_ms = if cs.read().hard_24h {

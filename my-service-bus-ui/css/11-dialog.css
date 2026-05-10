@@ -1,0 +1,49 @@
+.msb-dialog__backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: var(--z-dialog);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.msb-dialog__card {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-overlay);
+    min-width: 440px;
+    max-width: min(560px, 92vw);
+    color: var(--fg-0);
+    overflow: hidden;
+}
+
+.msb-dialog__header {
+    padding: 16px 20px 12px;
+    color: var(--fg-0);
+    font-size: var(--fs-lg);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+}
+
+.msb-dialog__body {
+    padding: 16px 20px;
+    color: var(--fg-1);
+    font-size: var(--fs-base);
+    line-height: 1.5;
+}
+.msb-dialog__body p { margin: 0 0 10px; }
+.msb-dialog__body p:last-child { margin: 0; }
+.msb-dialog__body b { color: var(--fg-0); }
+
+.msb-dialog__footer {
+    padding: 12px 20px 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-2);
+}
