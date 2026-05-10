@@ -8,18 +8,15 @@ on:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
       - name: Install Protoc
-        uses: arduino/setup-protoc@v1          
-      - name: Test out our build     
+        uses: arduino/setup-protoc@v3
+      - name: Test build
         run: |
-          ver=$(cat Cargo.toml | grep -m1 version | grep  -Eo '["\047].*["\047]' | tr -d '"')
-          echo $ver
+          cd my-service-bus
           cargo test
