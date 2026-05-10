@@ -18,7 +18,16 @@ pub async fn delete_topic(
             topic_id: topic_id.to_string(),
         })?;
 
-    topic.set_deleted(hard_delete_moment.unix_microseconds);
+    // If hard_delete_moment is now or in the past, mark as 1 so GC picks it up
+    // on the next tick regardless of clock skew or rounding.
+    let now = DateTimeAsMicroseconds::now();
+    let deleted = if hard_delete_moment.unix_microseconds <= now.unix_microseconds {
+        1
+    } else {
+        hard_delete_moment.unix_microseconds
+    };
+
+    topic.set_deleted(deleted);
 
     let topic_list = app.topic_list.get_all();
     crate::operations::persist_topics_and_queues(app, topic_list.as_slice()).await;
