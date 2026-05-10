@@ -1,8 +1,8 @@
 use app::AppContext;
 
 use background::{
-    DeadSubscribersKickerTimer, GcTimer, ImmediatelyPersistEventLoop, MetricsTimer,
-    PersistTopicsAndQueuesTimer,
+    DeadSubscribersKickerTimer, GcDeletedTopicsTimer, GcTimer, ImmediatelyPersistEventLoop,
+    MetricsTimer, PersistTopicsAndQueuesTimer,
 };
 use my_tcp_sockets::{unix_socket_server::UnixSocketServer, TcpServer};
 use rust_extensions::MyTimer;
@@ -110,9 +110,16 @@ async fn main() {
         Arc::new(DeadSubscribersKickerTimer::new(app.clone())),
     );
 
+    let mut gc_deleted_topics_timer = MyTimer::new(Duration::from_secs(60));
+    gc_deleted_topics_timer.register_timer(
+        "GcDeletedTopics",
+        Arc::new(GcDeletedTopicsTimer::new(app.clone())),
+    );
+
     metrics_timer.start(app.clone(), my_logger::LOGGER.clone());
     persist_timer.start(app.clone(), my_logger::LOGGER.clone());
     gc_timer.start(app.clone(), my_logger::LOGGER.clone());
+    gc_deleted_topics_timer.start(app.clone(), my_logger::LOGGER.clone());
     app.immediately_persist_event_loop.start(app.clone()).await;
 
     #[cfg(not(test))]

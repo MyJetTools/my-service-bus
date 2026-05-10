@@ -5,6 +5,7 @@ use crate::queue_subscribers::SubscriberId;
 #[derive(Debug)]
 pub enum OperationFailResult {
     TopicNotFound { topic_id: String },
+    TopicIsDeleted { topic_id: String },
     QueueNotFound { queue_id: String },
     SubscriberNotFound { id: SubscriberId },
     SessionIsDisconnected,

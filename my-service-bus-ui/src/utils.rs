@@ -18,3 +18,10 @@ pub fn format_mem(mem: i64) -> String {
 
     return format!("{:.3}GB", mem);
 }
+
+pub fn format_unix_micros(unix_micros: i64) -> String {
+    let ms = (unix_micros / 1000) as f64;
+    let date = js_sys::Date::new(&ms.into());
+    let iso: String = date.to_iso_string().into();
+    iso
+}

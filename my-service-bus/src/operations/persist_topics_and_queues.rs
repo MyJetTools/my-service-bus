@@ -39,6 +39,7 @@ pub async fn persist_topics_and_queues(app: &Arc<AppContext>, topic_list: &[Arc<
                         queue_type: itm.queue_type.into_u8() as i32,
                     }),
                 persist: Some(topic_data.persist),
+                deleted: topic_data.deleted,
             }
         }));
     }

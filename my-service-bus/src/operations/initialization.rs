@@ -20,6 +20,7 @@ pub async fn init(app: Arc<AppContext>) {
             topic_and_queues.topic_id.as_str(),
             topic_and_queues.message_id.into(),
             topic_and_queues.persist,
+            topic_and_queues.deleted,
         );
 
         for queue in topic_and_queues.queues {

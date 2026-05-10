@@ -15,4 +15,5 @@ pub struct TopicSnapshot {
     pub message_id: i64,
     pub queues: Vec<TopicQueueSnapshot>,
     pub persist: bool,
+    pub deleted: i64,
 }

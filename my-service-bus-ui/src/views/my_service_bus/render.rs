@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 use dioxus_utils::js::sleep;
 
 use crate::models::MySbHttpContract;
+use crate::utils::format_unix_micros;
 
 use super::state::*;
 
@@ -54,9 +55,36 @@ pub fn RenderMyServiceBus() -> Element {
         let has_queues = queues_for_topic
             .map(|qs| !qs.queues.is_empty())
             .unwrap_or(false);
+        let is_deleted = topic.deleted != 0;
         let can_delete_topic = topic.publishers.is_empty() && !has_queues;
         let topic_id_for_btn = topic.id.clone();
-        let delete_topic_button = if can_delete_topic {
+        let topic_id_for_restore = topic.id.clone();
+        let delete_topic_button = if is_deleted {
+            let deleted_until = format_unix_micros(topic.deleted);
+            rsx! {
+                div {
+                    style: "display:flex; flex-direction: column; gap:4px; margin-top:4px;",
+                    span {
+                        class: "badge",
+                        style: "background:#a02020; color:white; padding:2px 6px; font-size:10px; align-self: flex-start;",
+                        "Deleted until {deleted_until}"
+                    }
+                    button {
+                        class: "btn btn-sm btn-outline-success",
+                        style: "padding: 0 6px; font-size: 11px;",
+                        onclick: move |_| {
+                            let t = topic_id_for_restore.clone();
+                            spawn(async move {
+                                if let Err(err) = crate::api::my_sb::restore_topic(&t).await {
+                                    dioxus_logger::tracing::error!("restore_topic failed: {err}");
+                                }
+                            });
+                        },
+                        "Restore"
+                    }
+                }
+            }
+        } else if can_delete_topic {
             rsx! {
                 button {
                     class: "btn btn-sm btn-outline-danger",

@@ -100,6 +100,9 @@ pub struct TopicHttpModel {
 
     pub publishers: Vec<TopicPublisher>,
     pub subscribers: Vec<TopicSubscriber>,
+
+    #[serde(default)]
+    pub deleted: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

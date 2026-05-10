@@ -28,11 +28,12 @@ pub struct TopicInner {
     pub pages: MessagesPageList,
     pub publishers: TopicPublishers,
     pub persist: bool,
+    pub deleted: i64,
     pub avg_size: AvgValue,
 }
 
 impl TopicInner {
-    pub fn new(topic_id: TopicId, message_id: i64, persist: bool) -> Self {
+    pub fn new(topic_id: TopicId, message_id: i64, persist: bool, deleted: i64) -> Self {
         Self {
             topic_id,
             message_id: message_id.into(),
@@ -41,6 +42,7 @@ impl TopicInner {
             pages: MessagesPageList::new(),
             publishers: TopicPublishers::new(),
             persist,
+            deleted,
             avg_size: AvgValue::new(),
         }
     }
@@ -256,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_we_deliver_then_persist_then_gc_message() {
-        let mut topic_inner = super::TopicInner::new("test".into(), 0, true);
+        let mut topic_inner = super::TopicInner::new("test".into(), 0, true, 0);
 
         topic_inner.queues.add_queue_if_not_exists(
             "test".into(),
@@ -300,7 +302,7 @@ mod tests {
 
     #[test]
     fn persist_false_protects_all_sub_pages_in_queue_intervals() {
-        let mut topic_inner = super::TopicInner::new("test".into(), 6_000, false);
+        let mut topic_inner = super::TopicInner::new("test".into(), 6_000, false, 0);
 
         let queue = QueueWithIntervals::from_single_interval(1_000, 5_999);
 
@@ -325,7 +327,7 @@ mod tests {
 
     #[test]
     fn persist_true_only_protects_min_sub_page() {
-        let mut topic_inner = super::TopicInner::new("test".into(), 6_000, true);
+        let mut topic_inner = super::TopicInner::new("test".into(), 6_000, true, 0);
 
         let queue = QueueWithIntervals::from_single_interval(1_000, 5_999);
 
@@ -355,7 +357,7 @@ mod tests {
     #[test]
     fn no_queues_only_current_sub_page_survives_gc() {
         // Pre-populate stale sub_pages, then run gc() with no queues.
-        let mut topic_inner = super::TopicInner::new("test".into(), 7_150_000, false);
+        let mut topic_inner = super::TopicInner::new("test".into(), 7_150_000, false, 0);
 
         // Force creation of an old sub_page like the user observed in the UI.
         let old_sub_page_id = my_service_bus::shared::sub_page::SubPageId::new(6_567);

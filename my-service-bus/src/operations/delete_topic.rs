@@ -11,19 +11,14 @@ pub async fn delete_topic(
     topic_id: &str,
     hard_delete_moment: DateTimeAsMicroseconds,
 ) -> Result<(), OperationFailResult> {
-    let topic = app.topic_list.get(topic_id);
-
-    if topic.is_none() {
-        return Err(OperationFailResult::TopicNotFound {
+    let topic = app
+        .topic_list
+        .get(topic_id)
+        .ok_or_else(|| OperationFailResult::TopicNotFound {
             topic_id: topic_id.to_string(),
-        });
-    }
+        })?;
 
-    app.persistence_client
-        .delete_topic(topic_id, hard_delete_moment)
-        .await;
-
-    app.topic_list.delete_topic(topic_id);
+    topic.set_deleted(hard_delete_moment.unix_microseconds);
 
     let topic_list = app.topic_list.get_all();
     crate::operations::persist_topics_and_queues(app, topic_list.as_slice()).await;

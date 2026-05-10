@@ -3,6 +3,7 @@ use crate::models::MySbHttpContract;
 const STATUS_PATH: &str = "/api/Status";
 const QUEUES_PATH: &str = "/api/Queues";
 const DELETE_TOPIC_PATH: &str = "/api/Topics/Delete";
+const RESTORE_TOPIC_PATH: &str = "/api/Topics/Restore";
 
 fn get_origin() -> Result<String, String> {
     web_sys::window()
@@ -67,6 +68,24 @@ pub async fn delete_topic(topic_id: &str, hard_delete_moment_iso: &str) -> Resul
 
     if !resp.status().is_success() {
         return Err(format!("DELETE {url} returned {}", resp.status()));
+    }
+
+    Ok(())
+}
+
+pub async fn restore_topic(topic_id: &str) -> Result<(), String> {
+    let origin = get_origin()?;
+    let topic_enc: String = js_sys::encode_uri_component(topic_id).into();
+    let url = format!("{origin}{RESTORE_TOPIC_PATH}?topicId={topic_enc}");
+
+    let resp = reqwest::Client::new()
+        .put(&url)
+        .send()
+        .await
+        .map_err(|e| format!("PUT {url} failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("PUT {url} returned {}", resp.status()));
     }
 
     Ok(())

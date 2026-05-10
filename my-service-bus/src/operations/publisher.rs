@@ -31,6 +31,12 @@ pub async fn publish(
 
     let topic = topic.unwrap();
 
+    if topic.get_deleted() != 0 {
+        return Err(OperationFailResult::TopicIsDeleted {
+            topic_id: topic_id.to_string(),
+        });
+    }
+
     let mut topic_data = topic.get_access();
 
     let messages_count = messages.len();

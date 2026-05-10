@@ -17,7 +17,6 @@ pub struct AppContext {
     pub topic_list: TopicsList,
     pub persistence_client: Arc<PersistenceGrpcService>,
     pub sessions: SessionsList,
-    pub process_id: String,
     pub subscriber_id_generator: SubscriberIdGenerator,
 
     pub prometheus: PrometheusMetrics,
@@ -45,7 +44,6 @@ impl AppContext {
 
             persistence_client: Arc::new(messages_repo),
             sessions: SessionsList::new(),
-            process_id: uuid::Uuid::new_v4().to_string(),
 
             subscriber_id_generator: SubscriberIdGenerator::new(),
             prometheus: PrometheusMetrics::new(),

@@ -20,11 +20,13 @@ pub struct Topic {
 }
 
 impl Topic {
-    pub fn new(topic_id: String, message_id: i64, persist: bool) -> Self {
+    pub fn new(topic_id: String, message_id: i64, persist: bool, deleted: i64) -> Self {
         let topic_id = TopicId::new(topic_id);
         Self {
             topic_id: topic_id.clone(),
-            inner: Mutex::new(TopicInner::new(topic_id, message_id, persist)),
+            inner: Mutex::new(TopicInner::new(
+                topic_id, message_id, persist, deleted,
+            )),
             immediately_persist_is_charged: AtomicBool::new(false),
         }
     }
@@ -91,6 +93,14 @@ impl Topic {
     pub fn update_persist(&self, persist: bool) {
         let mut write_access = self.get_access();
         write_access.persist = persist;
+    }
+
+    pub fn get_deleted(&self) -> i64 {
+        self.inner.lock().deleted
+    }
+
+    pub fn set_deleted(&self, deleted: i64) {
+        self.inner.lock().deleted = deleted;
     }
 }
 

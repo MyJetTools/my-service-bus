@@ -117,11 +117,11 @@ table:focus {
 }
 
 .topic-queue {
-    background: rgb(47, 47, 47);
-    padding: 10px;
+    background: #2f2f2f;
+    grid-template-columns: 1fr 300px;
     margin-bottom: 3px;
+    padding: 10px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
 }
 
 .topic-subscriber {

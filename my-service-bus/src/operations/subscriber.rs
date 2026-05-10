@@ -34,6 +34,10 @@ pub async fn subscribe_to_queue(
         }
     };
 
+    if topic.get_deleted() != 0 {
+        return Err(OperationFailResult::TopicIsDeleted { topic_id });
+    }
+
     let mut topic_data = topic.get_access();
 
     let topic_queue = topic_data.queues.add_queue_if_not_exists(

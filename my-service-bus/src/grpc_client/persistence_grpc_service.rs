@@ -4,7 +4,6 @@ use std::sync::Arc;
 use my_grpc_extensions::GrpcReadError;
 use my_service_bus::abstractions::MessageId;
 use my_service_bus::shared::{page_id::PageId, protobuf_models::MessageProtobufModel};
-use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::grpc_client::PersistenceGrpcClient;
 use crate::persistence_grpc::*;
@@ -98,31 +97,19 @@ impl PersistenceGrpcService {
         }
     }
 
-    pub async fn delete_topic(&self, topic_id: &str, hard_delete_moment: DateTimeAsMicroseconds) {
+    pub async fn hard_delete_topic(&self, topic_id: &str) -> Result<(), GrpcReadError> {
         match self {
             PersistenceGrpcService::Grpc(repo) => {
-                repo.delete_topic(DeleteTopicGrpcRequest {
+                repo.hard_delete_topic(HardDeleteTopicGrpcRequest {
                     topic_id: topic_id.to_string(),
-                    delete_after: hard_delete_moment.unix_microseconds,
                 })
-                .await
-                .unwrap();
+                .await?;
+                Ok(())
             }
             #[cfg(test)]
             PersistenceGrpcService::Mock(_) => {
-                println!("Delete topic {} is invoked", topic_id);
-            }
-        }
-    }
-
-    pub async fn restore_topic(&self, _topic_id: &str) -> Option<MessageId> {
-        match self {
-            PersistenceGrpcService::Grpc(_) => {
-                todo!("Not Implemented yet");
-            }
-            #[cfg(test)]
-            PersistenceGrpcService::Mock(_) => {
-                panic!("Restore topic topic {} is invoked", _topic_id);
+                println!("Hard delete topic {} is invoked", topic_id);
+                Ok(())
             }
         }
     }

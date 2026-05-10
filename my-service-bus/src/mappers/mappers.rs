@@ -37,6 +37,7 @@ impl From<&TopicSnapshot> for TopicAndQueuesSnapshotGrpcModel {
             message_id: src.message_id,
             queue_snapshots: src.queues.iter().map(|itm| itm.into()).collect(),
             persist: Some(src.persist),
+            deleted: src.deleted,
         }
     }
 }
@@ -51,6 +52,7 @@ impl From<TopicAndQueuesSnapshotGrpcModel> for TopicSnapshot {
             } else {
                 true
             },
+            deleted: src.deleted,
             queues: src
                 .queue_snapshots
                 .into_iter()

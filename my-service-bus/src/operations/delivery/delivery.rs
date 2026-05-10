@@ -275,7 +275,7 @@ mod tests {
         let app = crate::test_tools::create_app_context().await;
         let test_session = app.sessions.add_test();
 
-        app.topic_list.add(TOPIC_NAME, 3.into(), true);
+        app.topic_list.add(TOPIC_NAME, 3.into(), true, 0);
 
         //Simulate that we have persisted messages
         let msg1 = MessageProtobufModel::new(

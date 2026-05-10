@@ -77,7 +77,7 @@ impl TopicsList {
             return Ok(existing.clone());
         }
 
-        let topic = Arc::new(Topic::new(topic_id.to_string(), 0, true));
+        let topic = Arc::new(Topic::new(topic_id.to_string(), 0, true, 0));
         let mut new_sorted = current.sorted.clone();
         new_sorted.insert_or_replace(topic.clone());
 
@@ -89,7 +89,13 @@ impl TopicsList {
         Ok(topic)
     }
 
-    pub fn add(&self, topic_id: &str, message_id: MessageId, persist: bool) -> Arc<Topic> {
+    pub fn add(
+        &self,
+        topic_id: &str,
+        message_id: MessageId,
+        persist: bool,
+        deleted: i64,
+    ) -> Arc<Topic> {
         let _guard = self.write_lock.lock().unwrap();
         let current = self.inner.load_full();
 
@@ -97,6 +103,7 @@ impl TopicsList {
             topic_id.to_string(),
             message_id.get_value(),
             persist,
+            deleted,
         ));
         let mut new_sorted = current.sorted.clone();
         new_sorted.insert_or_replace(topic.clone());

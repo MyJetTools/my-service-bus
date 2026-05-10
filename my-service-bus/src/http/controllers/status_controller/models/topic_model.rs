@@ -34,6 +34,7 @@ pub struct TopicJsonContract {
     pub publishers: Vec<TopicPublisherJsonModel>,
     pub subscribers: Vec<TopicQueueSubscriberJsonModel>,
     pub persist: bool,
+    pub deleted: i64,
 }
 
 impl TopicJsonContract {
@@ -68,6 +69,7 @@ impl TopicJsonContract {
             pages: TopicPageJsonContract::as_vec(&topic_data.pages),
             subscribers,
             persist: topic_data.persist,
+            deleted: topic_data.deleted,
             mean_message_size: topic_data.statistics.size_metrics.avg_message_size,
         }
     }
