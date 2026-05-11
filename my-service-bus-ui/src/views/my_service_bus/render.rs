@@ -181,18 +181,11 @@ fn render_topics_section(
     filter: &str,
     cs: Signal<MySbState>,
 ) -> Element {
-    let topics: Vec<&TopicHttpModel> = data
-        .topics
-        .items
-        .iter()
-        .filter(|topic| topic_matches_filter(data, topic, filter))
-        .collect();
-
-    if topics.is_empty() {
+    if data.topics.items.is_empty() {
         return rsx! {
             div { class: "empty-state",
                 h4 { "No topics" }
-                p { "Nothing matches the current filter." }
+                p { "No topics on this broker yet." }
             }
         };
     }
@@ -205,12 +198,40 @@ fn render_topics_section(
         }
     };
 
-    let rows = topics.into_iter().map(|topic| render_topic_row(data, topic, cs));
+    let filter_active = !filter.is_empty();
+    let rows = data.topics.items.iter().map(|topic| {
+        let is_match = filter_active && topic_matches_filter(data, topic, filter);
+        let highlight = if !filter_active {
+            HighlightState::None
+        } else if is_match {
+            HighlightState::Match
+        } else {
+            HighlightState::Dim
+        };
+        render_topic_row(data, topic, cs, highlight)
+    });
 
     rsx! {
         div { class: "msb-topics",
             {head}
             {rows}
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum HighlightState {
+    None,
+    Match,
+    Dim,
+}
+
+impl HighlightState {
+    fn class_suffix(self) -> &'static str {
+        match self {
+            Self::None => "",
+            Self::Match => " is-match",
+            Self::Dim => " is-dim",
         }
     }
 }
@@ -236,7 +257,9 @@ fn render_topic_row(
     data: &MySbHttpContract,
     topic: &TopicHttpModel,
     cs: Signal<MySbState>,
+    highlight: HighlightState,
 ) -> Element {
+    let highlight_class = highlight.class_suffix();
     let topic_connections = super::components::render_topic_connections(data, topic);
     let render_queues = super::components::render_topic_queues(data, topic, cs);
     let publish_history = topic.publish_history.clone();
@@ -313,7 +336,7 @@ fn render_topic_row(
     let msg_class = if topic.messages_per_src > 0 { "value is-active" } else { "value" };
 
     rsx! {
-        div { class: "msb-topic",
+        div { class: "msb-topic{highlight_class}",
             div { class: "msb-topic__head",
                 div { class: "msb-topic__title",
                     span { class: "{dot_class}" }

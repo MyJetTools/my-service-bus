@@ -9,8 +9,20 @@
     margin-bottom: 8px;
     font-size: var(--fs-sm);
     color: var(--fg-1);
+    transition:
+        border-color var(--dur-fast) var(--ease-out),
+        box-shadow var(--dur-base) var(--ease-out),
+        opacity var(--dur-base) var(--ease-out);
 }
 .msb-session:hover { border-color: var(--border-strong); }
+.msb-session.is-dim { opacity: 0.5; }
+.msb-session.is-dim:hover { opacity: 0.85; }
+.msb-session.is-match {
+    border-color: var(--accent);
+    box-shadow:
+        0 0 0 1px rgba(124, 158, 255, 0.55),
+        0 0 16px rgba(124, 158, 255, 0.22);
+}
 
 .msb-session__id {
     font-family: var(--font-mono);

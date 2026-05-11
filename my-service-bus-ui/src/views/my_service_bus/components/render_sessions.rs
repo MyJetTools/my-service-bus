@@ -5,29 +5,34 @@ use crate::models::*;
 use crate::utils::format_mem;
 
 pub fn render_sessions(data: &MySbHttpContract, filter_string: &str) -> Element {
-    let items: Vec<Element> = data
-        .sessions
-        .items
-        .iter()
-        .filter(|s| s.filter_me(filter_string))
-        .map(|session| render_one(data, session))
-        .collect();
-
-    if items.is_empty() {
+    if data.sessions.items.is_empty() {
         return rsx! {
             div { class: "empty-state",
                 h4 { "No sessions" }
-                p { "No active sessions match the current filter." }
+                p { "No active sessions." }
             }
         };
     }
 
+    let filter_active = !filter_string.is_empty();
+    let items = data.sessions.items.iter().map(|session| {
+        let is_match = filter_active && session.filter_me(filter_string);
+        let class = if !filter_active {
+            "msb-session"
+        } else if is_match {
+            "msb-session is-match"
+        } else {
+            "msb-session is-dim"
+        };
+        render_one(data, session, class)
+    });
+
     rsx! {
-        div { class: "msb-topics", {items.into_iter()} }
+        div { class: "msb-topics", {items} }
     }
 }
 
-fn render_one(data: &MySbHttpContract, session: &MySbSessionHttpModel) -> Element {
+fn render_one(data: &MySbHttpContract, session: &MySbSessionHttpModel, row_class: &str) -> Element {
     let session_type = match session.get_session_type() {
         SessionType::Tcp => rsx! { StatusPill { tone: Tone::Success, dot: true, "TCP" } },
         SessionType::Http => rsx! { StatusPill { tone: Tone::Warning, dot: true, "HTTP" } },
@@ -54,7 +59,7 @@ fn render_one(data: &MySbHttpContract, session: &MySbSessionHttpModel) -> Elemen
     let sdk_ver = session.get_session_as_string().to_string();
 
     rsx! {
-        div { class: "msb-session",
+        div { class: "{row_class}",
             div { class: "msb-session__col",
                 div { class: "msb-session__id selectable", "{session.id}" }
                 {session_type}
