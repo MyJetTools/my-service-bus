@@ -11,6 +11,7 @@ use dioxus_logger::tracing::{info, Level};
 use crate::views::RenderMyServiceBus;
 
 const APP_CSS: Asset = asset!("/assets/app.css");
+const FAVICON: Asset = asset!("/assets/favicon.svg");
 
 fn main() {
     dioxus_logger::init(Level::INFO).expect("failed to init logger");
@@ -24,6 +25,7 @@ fn App() -> Element {
 
     rsx! {
         document::Stylesheet { href: APP_CSS }
+        document::Link { rel: "icon", r#type: "image/svg+xml", href: FAVICON }
         RenderMyServiceBus {}
     }
 }

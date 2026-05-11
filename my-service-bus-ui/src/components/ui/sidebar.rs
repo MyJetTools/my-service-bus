@@ -14,7 +14,11 @@ pub fn Sidebar(
     rsx! {
         div { class: "msb-sidebar",
             div { class: "msb-sidebar__brand",
-                div { class: "msb-sidebar__logo" }
+                img {
+                    class: "msb-sidebar__logo",
+                    src: asset!("/assets/favicon.svg"),
+                    alt: "MyServiceBus",
+                }
                 div {
                     div { class: "msb-sidebar__name", "MyServiceBus" }
                     div { class: "msb-sidebar__sub", "admin" }

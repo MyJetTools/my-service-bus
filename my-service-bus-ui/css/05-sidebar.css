@@ -16,15 +16,11 @@
 }
 
 .msb-sidebar__logo {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
-    background:
-        radial-gradient(circle at 30% 30%, #8ba6ff 0%, #5b8def 55%, #7c4dff 100%);
-    box-shadow:
-        0 4px 12px rgba(91, 141, 239, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    width: 30px;
+    height: 30px;
     flex: none;
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(91, 141, 239, 0.35));
 }
 
 .msb-sidebar__name {
