@@ -36,6 +36,12 @@ my-grpc-extensions = { tag = "0.6.6", git = "https://github.com/MyJetTools/my-gr
 ] }
 
 
+mcp-server-middleware = { tag = "0.8.3", git = "https://github.com/my-ai-utils/mcp-server-middleware.git" }
+my-ai-agent = { tag = "0.1.0", git = "https://github.com/my-ai-utils/my-ai-agent.git", features = [
+    "agent",
+] }
+
+
 tonic = { version = "*" }
 tonic-prost = "*"
 
@@ -56,8 +62,6 @@ prost-types = "*"
 tokio-stream = "*"
 async-trait = "*"
 futures-util = "*"
-tokio-signal = "*"
-signal-hook = "*"
 rand = "*"
 sysinfo = "*"
 prometheus = "*"

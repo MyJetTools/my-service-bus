@@ -23,6 +23,8 @@ pub fn setup_server(app: &Arc<AppContext>) -> HttpConnectionsCounter {
 
     http_server.add_middleware(Arc::new(AuthMiddleware));
 
+    http_server.add_middleware(Arc::new(crate::mcp::build_middleware(app.clone())));
+
     http_server.add_middleware(controllers);
 
     let static_files = StaticFilesMiddleware::new()

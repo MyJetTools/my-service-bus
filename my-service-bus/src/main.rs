@@ -17,6 +17,7 @@ mod errors;
 mod grpc_client;
 mod http;
 mod mappers;
+mod mcp;
 mod messages_page;
 mod metric_data;
 mod operations;
