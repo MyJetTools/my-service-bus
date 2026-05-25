@@ -66,6 +66,31 @@ impl PersistenceGrpcService {
         }
     }
 
+    pub async fn get_message(
+        &self,
+        topic_id: &str,
+        message_id: MessageId,
+    ) -> Result<Option<MessageContentGrpcModel>, PersistenceError> {
+        match self {
+            PersistenceGrpcService::Grpc(repo) => {
+                let result = repo
+                    .get_message(GetMessageGrpcRequest {
+                        topic_id: topic_id.to_string(),
+                        message_id: message_id.get_value(),
+                    })
+                    .await?;
+
+                if result.message_id != message_id.get_value() {
+                    return Ok(None);
+                }
+
+                Ok(Some(result))
+            }
+            #[cfg(test)]
+            PersistenceGrpcService::Mock(_) => Ok(None),
+        }
+    }
+
     pub async fn save_messages(
         &self,
         topic_id: &str,
