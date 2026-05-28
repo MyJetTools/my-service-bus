@@ -1,8 +1,7 @@
 use app::AppContext;
 
 use background::{
-    DeadSubscribersKickerTimer, GcDeletedTopicsTimer, GcTimer, ImmediatelyPersistEventLoop,
-    MetricsTimer, PersistTopicsAndQueuesTimer,
+    DeadSubscribersKickerTimer, GcDeletedTopicsTimer, GcTimer, MetricsTimer, PersistJob,
 };
 use my_tcp_sockets::{unix_socket_server::UnixSocketServer, TcpServer};
 use rust_extensions::MyTimer;
@@ -50,8 +49,8 @@ async fn main() {
 
     let app = Arc::new(AppContext::new(messages_repo, settings).await);
 
-    app.immediately_persist_event_loop
-        .register_event_loop(Arc::new(ImmediatelyPersistEventLoop::new(app.clone()))).await;
+    app.persist_executor
+        .register(Arc::new(PersistJob::new(app.clone())));
 
     tokio::task::spawn(crate::operations::initialization::init(app.clone()));
 
@@ -98,12 +97,6 @@ async fn main() {
         )),
     );
 
-    let mut persist_timer = MyTimer::new(app.settings.persist_timer_interval);
-    persist_timer.register_timer(
-        "PersistTopicsAndQueues",
-        Arc::new(PersistTopicsAndQueuesTimer::new(app.clone())),
-    );
-
     let mut gc_timer = MyTimer::new(Duration::from_secs(3));
     gc_timer.register_timer("GC", Arc::new(GcTimer::new(app.clone())));
     gc_timer.register_timer(
@@ -118,10 +111,9 @@ async fn main() {
     );
 
     metrics_timer.start(app.clone(), my_logger::LOGGER.clone());
-    persist_timer.start(app.clone(), my_logger::LOGGER.clone());
     gc_timer.start(app.clone(), my_logger::LOGGER.clone());
     gc_deleted_topics_timer.start(app.clone(), my_logger::LOGGER.clone());
-    app.immediately_persist_event_loop.start(app.clone()).await;
+    app.persist_executor.start(my_logger::LOGGER.clone());
 
     #[cfg(not(test))]
     app.restore_page_scheduler

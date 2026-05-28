@@ -8,7 +8,7 @@ use crate::{
     utils::MultiThreadedShortString,
 };
 
-use super::{prometheus_metrics::PrometheusMetrics, ImmediatelyPersistEventLoop};
+use super::prometheus_metrics::PrometheusMetrics;
 
 pub const APP_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -23,7 +23,7 @@ pub struct AppContext {
 
     pub delivery_timeout: Duration,
 
-    pub immediately_persist_event_loop: ImmediatelyPersistEventLoop,
+    pub persist_executor: rust_extensions::background_executor::BackgroundExecutor,
 
     pub persistence_version: MultiThreadedShortString,
 
@@ -53,7 +53,9 @@ impl AppContext {
             } else {
                 Duration::from_secs(30)
             },
-            immediately_persist_event_loop: ImmediatelyPersistEventLoop::new(),
+            persist_executor: rust_extensions::background_executor::BackgroundExecutor::new(
+                "Persist",
+            ),
             persistence_version: MultiThreadedShortString::new(),
 
             restore_page_scheduler: Default::default(),

@@ -1,4 +1,3 @@
-use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use my_service_bus::abstractions::MessageId;
@@ -16,7 +15,6 @@ use super::{TopicId, TopicInner};
 pub struct Topic {
     pub topic_id: TopicId,
     inner: Mutex<TopicInner>,
-    pub immediately_persist_is_charged: AtomicBool,
 }
 
 impl Topic {
@@ -27,7 +25,6 @@ impl Topic {
             inner: Mutex::new(TopicInner::new(
                 topic_id, message_id, persist, deleted,
             )),
-            immediately_persist_is_charged: AtomicBool::new(false),
         }
     }
 

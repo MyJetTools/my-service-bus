@@ -7,18 +7,14 @@ use crate::{
     persistence_grpc::{
         QueueIndexRangeGrpcModel, QueueSnapshotGrpcModel, TopicAndQueuesSnapshotGrpcModel,
     },
-    topics::Topic,
 };
 
-pub async fn persist_topics_and_queues(app: &Arc<AppContext>, topic_list: &[Arc<Topic>]) {
-    if let Some(get_persistence_version) = app.persistence_client.get_persistence_version().await {
-        app.persistence_version
-            .update(get_persistence_version.as_str());
-    }
+pub async fn persist_all(app: &Arc<AppContext>) {
+    let topic_list = app.topic_list.get_all();
 
     let mut topics_snapshots = Vec::with_capacity(topic_list.len());
 
-    for topic in topic_list {
+    for topic in topic_list.iter() {
         topics_snapshots.push(topic.get_topic_info(|topic_data| {
             TopicAndQueuesSnapshotGrpcModel {
                 topic_id: topic_data.topic_id.to_string(),
@@ -51,13 +47,13 @@ pub async fn persist_topics_and_queues(app: &Arc<AppContext>, topic_list: &[Arc<
 
     if let Err(err) = result {
         my_logger::LOGGER.write_error(
-            "persist_topics_and_queues",
+            "persist_all",
             format!("Failed to save topics and queues snapshot: {:?}", err),
             LogEventCtx::new(),
         );
     }
 
-    for topic in topic_list {
-        crate::operations::persist_topic_messages(&app, topic).await;
+    for topic in topic_list.iter() {
+        crate::operations::persist_topic_messages(app, topic).await;
     }
 }

@@ -42,6 +42,10 @@ pub async fn init(app: Arc<AppContext>) {
        }
     */
 
+    if let Some(persistence_version) = app.persistence_client.get_persistence_version().await {
+        app.persistence_version.update(persistence_version.as_str());
+    }
+
     app.states.set_initialized();
 
     my_logger::LOGGER.write_info(

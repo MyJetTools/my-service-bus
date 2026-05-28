@@ -13,8 +13,7 @@ pub async fn restore_topic(app: &Arc<AppContext>, topic_id: &str) -> bool {
 
     topic.set_deleted(0);
 
-    let topic_list = app.topic_list.get_all();
-    crate::operations::persist_topics_and_queues(app, topic_list.as_slice()).await;
+    crate::operations::persist_all(app).await;
 
     true
 }

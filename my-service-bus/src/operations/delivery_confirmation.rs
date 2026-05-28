@@ -44,6 +44,8 @@ pub async fn all_confirmed(
         }
     }
 
+    app.persist_executor.trigger();
+
     crate::operations::delivery::try_to_deliver_to_subscribers(
         app.as_ref(),
         &topic,
@@ -81,6 +83,8 @@ pub async fn all_fail(
             topic_queue.confirm_non_delivered(&delivery_bucket.to_be_confirmed);
         }
     }
+
+    app.persist_executor.trigger();
 
     crate::operations::delivery::try_to_deliver_to_subscribers(
         app.as_ref(),
@@ -134,6 +138,8 @@ pub async fn intermediary_confirm(
         topic_queue.confirm_delivered(&confirmed_ids);
     }
 
+    app.persist_executor.trigger();
+
     crate::operations::delivery::try_to_deliver_to_subscribers(
         app.as_ref(),
         &topic,
@@ -172,6 +178,8 @@ pub async fn some_messages_are_confirmed(
             topic_queue.confirm_non_delivered(&delivery_bucket.to_be_confirmed);
         }
     }
+
+    app.persist_executor.trigger();
 
     crate::operations::delivery::try_to_deliver_to_subscribers(
         app.as_ref(),

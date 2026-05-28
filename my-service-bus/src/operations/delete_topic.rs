@@ -29,8 +29,7 @@ pub async fn delete_topic(
 
     topic.set_deleted(deleted);
 
-    let topic_list = app.topic_list.get_all();
-    crate::operations::persist_topics_and_queues(app, topic_list.as_slice()).await;
+    crate::operations::persist_all(app).await;
 
     Ok(())
 }

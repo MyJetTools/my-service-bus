@@ -63,6 +63,13 @@ impl SubPageLoaderSchedulerMock {
     }
 }
 
+struct NoOpBackgroundJob;
+
+#[async_trait::async_trait]
+impl rust_extensions::background_executor::BackgroundJob for NoOpBackgroundJob {
+    async fn execute(&self) {}
+}
+
 pub async fn create_app_context() -> Arc<AppContext> {
     const DELIVERY_SIZE: usize = 16;
 
@@ -75,6 +82,11 @@ pub async fn create_app_context() -> Arc<AppContext> {
         )
         .await,
     );
+
+    // Tests don't exercise the persist path; register a no-op so publish's
+    // persist_executor.trigger() doesn't panic on an unstarted executor.
+    app.persist_executor.register(Arc::new(NoOpBackgroundJob));
+    app.persist_executor.start(my_logger::LOGGER.clone());
 
     app.restore_page_scheduler.apply_app_ctx(app.clone());
 

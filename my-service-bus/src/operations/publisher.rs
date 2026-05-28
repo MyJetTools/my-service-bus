@@ -10,7 +10,7 @@ pub async fn publish(
     app: &Arc<AppContext>,
     topic_id: &str,
     messages: Vec<MessageToPublish>,
-    persist_immediately: bool,
+    _persist_immediately: bool,
     session_id: SessionId,
 ) -> Result<(), OperationFailResult> {
     if app.states.is_shutting_down() {
@@ -45,15 +45,7 @@ pub async fn publish(
 
     topic_data.statistics.update_messages_count(messages_count);
 
-    if persist_immediately {
-        let prev = topic
-            .immediately_persist_is_charged
-            .swap(true, std::sync::atomic::Ordering::SeqCst);
-
-        if !prev {
-            app.immediately_persist_event_loop.send(topic.clone());
-        }
-    }
+    app.persist_executor.trigger();
 
     crate::operations::delivery::try_to_deliver_to_subscribers(
         app.as_ref(),

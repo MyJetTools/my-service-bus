@@ -5,8 +5,8 @@ mod gc_http_connections;
 
 pub mod initialization;
 pub mod page_loader;
+mod persist_all;
 mod persist_topic_messages;
-mod persist_topics_and_queues;
 pub mod send_package;
 
 pub mod delivery_confirmation;
@@ -19,8 +19,8 @@ pub use delete_topic::*;
 pub use fail_result::*;
 pub use gc_http_connections::gc_http_connections;
 
+pub use persist_all::persist_all;
 pub use persist_topic_messages::*;
-pub use persist_topics_and_queues::persist_topics_and_queues;
 mod restore_topic;
 pub use restore_topic::*;
 mod update_topic_persist;

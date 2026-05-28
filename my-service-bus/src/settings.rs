@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use my_grpc_extensions::*;
-use rust_extensions::duration_utils::DurationExtensions;
 use serde::{Deserialize, Serialize};
 use tokio::{fs::File, io::AsyncReadExt};
 
@@ -24,8 +23,6 @@ pub struct SettingsModelYaml {
 
     pub auto_create_topic_on_subscribe: Option<bool>,
 
-    pub persist_timer_interval: String,
-
     pub listen_unix_socket: Option<String>,
 }
 
@@ -39,7 +36,6 @@ pub struct SettingsModel {
 
     pub auto_create_topic_on_publish: bool,
     pub auto_create_topic_on_subscribe: bool,
-    pub persist_timer_interval: Duration,
 
     pub listen_unix_socket: Option<String>,
 }
@@ -92,7 +88,6 @@ impl SettingsModel {
             delivery_timeout: None,
             auto_create_topic_on_publish: true,
             auto_create_topic_on_subscribe: true,
-            persist_timer_interval: Duration::from_secs(1),
             listen_unix_socket: None,
         }
     }
@@ -174,7 +169,6 @@ impl Into<SettingsModel> for SettingsModelYaml {
             delivery_timeout,
             auto_create_topic_on_publish,
             auto_create_topic_on_subscribe,
-            persist_timer_interval: Duration::from_str(&self.persist_timer_interval).unwrap(),
             listen_unix_socket: self.listen_unix_socket,
         }
     }
