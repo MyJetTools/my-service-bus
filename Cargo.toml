@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = [
+    "my-service-bus",
+    "my-service-bus-node",
+]
+exclude = ["my-service-bus-ui"]
+
+# Local development override: redirect git-pinned SDK to a sibling checkout so
+# we can iterate on packet contracts without bumping a git tag every time.
+# When publishing, remove this section and rely on the git tag inside each
+# member's Cargo.toml.
+[patch."https://github.com/MyJetTools/my-service-bus-sdk.git"]
+my-service-bus = { path = "../my-service-bus-sdk/my-service-bus" }

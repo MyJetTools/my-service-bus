@@ -19,6 +19,11 @@ pub struct MyServiceBusTcpSession {
     pub name: String,
     pub version: Option<String>,
     pub env_info: Option<String>,
+    /// True when the peer connected with `NodeGreeting` — this is a
+    /// my-service-bus-node accumulator, not a plain client. Drives whether
+    /// node-mode packets (NodePublish, NodeSubscribe, NodeNewMessages, etc.)
+    /// are accepted and whether delivery goes through `NodeNewMessages`.
+    pub is_node: bool,
 }
 
 impl MyServiceBusTcpSession {
@@ -29,6 +34,7 @@ impl MyServiceBusTcpSession {
         version: Option<String>,
         env_info: Option<String>,
         protocol_version: i32,
+        is_node: bool,
     ) -> Self {
         Self {
             session_id,
@@ -38,6 +44,7 @@ impl MyServiceBusTcpSession {
             name,
             version,
             env_info,
+            is_node,
         }
     }
 

@@ -52,10 +52,24 @@ impl TopicInner {
         self.publishers.add(session_id, BADGE_HIGHLIGHT_TIME_OUT);
     }
 
-    pub fn publish_messages(&mut self, session_id: SessionId, messages: Vec<MessageToPublish>) {
+    /// Publish messages into the topic. Returns the inclusive `(first, last)`
+    /// range of message IDs the topic assigned, or `None` if `messages` was
+    /// empty. The range is contiguous because `self.message_id` is incremented
+    /// once per accepted message.
+    pub fn publish_messages(
+        &mut self,
+        session_id: SessionId,
+        messages: Vec<MessageToPublish>,
+    ) -> Option<(i64, i64)> {
         self.set_publisher_as_active(session_id);
 
+        if messages.is_empty() {
+            return None;
+        }
+
         let mut ids = QueueWithIntervals::new();
+        let first_id: i64 = self.message_id.into();
+        let mut last_id: i64 = first_id;
 
         for msg in messages {
             let message = MySbMessageContent {
@@ -67,6 +81,7 @@ impl TopicInner {
 
             self.avg_size.add(message.content.len());
 
+            last_id = message.id.into();
             ids.enqueue(message.id.into());
 
             let page_id: SubPageId = message.id.into();
@@ -81,6 +96,8 @@ impl TopicInner {
         for topic_queue in self.queues.get_all_mut() {
             topic_queue.enqueue_messages(&ids);
         }
+
+        Some((first_id, last_id))
     }
 
     pub fn one_second_tick(&mut self) {

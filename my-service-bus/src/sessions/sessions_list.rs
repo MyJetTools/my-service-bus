@@ -67,6 +67,7 @@ impl SessionsList {
         version: Option<String>,
         env_info: Option<String>,
         protocol_version: i32,
+        is_node: bool,
     ) {
         let session_id = self.get_next_session_id();
 
@@ -77,6 +78,7 @@ impl SessionsList {
             version,
             env_info,
             protocol_version,
+            is_node,
         ));
 
         let session = MyServiceBusSession {

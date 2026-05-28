@@ -1,0 +1,20 @@
+[package]
+name = "my-service-bus-node"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+my-service-bus = { tag = "1.1.5", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
+    "tcp_contracts",
+] }
+my-tcp-sockets = { tag = "0.1.12", git = "https://github.com/MyJetTools/my-tcp-sockets.git" }
+rust-extensions = { tag = "0.1.5", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
+    "with-tokio",
+] }
+my-logger = { tag = "1.2.1", git = "https://github.com/MyJetTools/my-logger.git" }
+
+tokio = { version = "*", features = ["full"] }
+async-trait = "*"
+serde = { version = "*", features = ["derive"] }
+serde_yaml = "*"
+ahash = "*"

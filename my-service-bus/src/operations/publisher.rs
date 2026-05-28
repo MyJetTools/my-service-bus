@@ -12,7 +12,7 @@ pub async fn publish(
     messages: Vec<MessageToPublish>,
     persist_immediately: bool,
     session_id: SessionId,
-) -> Result<(), OperationFailResult> {
+) -> Result<Option<(i64, i64)>, OperationFailResult> {
     if app.states.is_shutting_down() {
         return Err(OperationFailResult::ShuttingDown);
     }
@@ -41,7 +41,7 @@ pub async fn publish(
 
     let messages_count = messages.len();
 
-    topic_data.publish_messages(session_id, messages);
+    let assigned_range = topic_data.publish_messages(session_id, messages);
 
     topic_data.statistics.update_messages_count(messages_count);
 
@@ -61,5 +61,5 @@ pub async fn publish(
         &mut topic_data,
     );
 
-    Ok(())
+    Ok(assigned_range)
 }

@@ -5,7 +5,9 @@ use std::sync::Arc;
 
 use my_service_bus::{
     abstractions::queue_with_intervals::QueueWithIntervals,
-    tcp_contracts::{MySbSerializerState, MySbTcpConnection, MySbTcpContract, MySbTcpSerializer},
+    tcp_contracts::{
+        MySbSerializerState, MySbTcpConnection, MySbTcpContract, MySbTcpSerializer, NodeTopicAck,
+    },
 };
 
 use crate::{app::AppContext, operations};
@@ -62,6 +64,7 @@ impl TcpServerEvents {
                     version,
                     env_info,
                     protocol_version,
+                    /* is_node */ false,
                 );
 
                 Ok(())
@@ -249,6 +252,125 @@ impl TcpServerEvents {
             MySbTcpContract::NewMessages(_) => {
                 //this is Client Side Message
 
+                Ok(())
+            }
+            MySbTcpContract::NodeGreeting {
+                name,
+                protocol_version,
+            } => {
+                println!(
+                    "New tcp NODE connection [{}] with name: {} and protocol_version {}",
+                    connection.id, name, protocol_version
+                );
+                let mut connection_name = None;
+                let mut version = None;
+                let mut env_info = None;
+                let mut no = 0;
+                for itm in name.split(";") {
+                    match no {
+                        0 => connection_name = Some(itm.to_string()),
+                        1 => version = Some(itm.to_string()),
+                        2 => env_info = Some(itm.to_string()),
+                        _ => {}
+                    }
+                    no += 1;
+                }
+
+                self.app.sessions.add_tcp(
+                    connection.clone(),
+                    connection_name.unwrap(),
+                    version,
+                    env_info,
+                    protocol_version,
+                    /* is_node */ true,
+                );
+
+                Ok(())
+            }
+            MySbTcpContract::NodePublish {
+                sequence_number,
+                topics,
+            } => {
+                let session_id = match self
+                    .app
+                    .sessions
+                    .get_session_id_by_tcp_connection_id(connection.id)
+                {
+                    Some(id) => id,
+                    None => {
+                        connection.send(&MySbTcpContract::Reject {
+                            message: "NodePublish before NodeGreeting".to_string(),
+                        });
+                        return Ok(());
+                    }
+                };
+
+                let mut acks: Vec<NodeTopicAck> = Vec::with_capacity(topics.len());
+                for topic_block in topics {
+                    let topic_id = topic_block.topic_id.clone();
+                    let result = operations::publisher::publish(
+                        &self.app,
+                        topic_id.as_str(),
+                        topic_block.data_to_publish,
+                        topic_block.persist_immediately,
+                        session_id,
+                    )
+                    .await;
+
+                    match result {
+                        Ok(Some((first_message_id, last_message_id))) => {
+                            acks.push(NodeTopicAck {
+                                topic_id,
+                                first_message_id,
+                                last_message_id,
+                            });
+                        }
+                        Ok(None) => {
+                            // Empty topic block — surface zero-length range so
+                            // node can still ack the corresponding clients.
+                            acks.push(NodeTopicAck {
+                                topic_id,
+                                first_message_id: 0,
+                                last_message_id: -1,
+                            });
+                        }
+                        Err(err) => {
+                            connection.send(&MySbTcpContract::Reject {
+                                message: format!("{:?}", err),
+                            });
+                            return Ok(());
+                        }
+                    }
+                }
+
+                connection.send(&MySbTcpContract::NodePublishResponse {
+                    sequence_number,
+                    topics: acks,
+                });
+
+                Ok(())
+            }
+            MySbTcpContract::NodePublishResponse { .. }
+            | MySbTcpContract::NodeSubscribeResponse { .. }
+            | MySbTcpContract::NodeNewMessages { .. } => {
+                // These are sent BY master, never received from a peer.
+                Ok(())
+            }
+            MySbTcpContract::NodeSubscribe { .. }
+            | MySbTcpContract::NodeUnsubscribe { .. }
+            | MySbTcpContract::NodeNewMessagesConfirmation { .. }
+            | MySbTcpContract::NodeAllMessagesConfirmedAsFail { .. }
+            | MySbTcpContract::NodeConfirmSomeMessagesAsOk { .. }
+            | MySbTcpContract::NodeIntermediaryConfirm { .. } => {
+                // TODO(node-subscribe): wire virtual subscriber registration
+                // and confirmation proxying. For now we ack the packet receipt
+                // by ignoring; the node will see no NodeNewMessages because
+                // subscribe is not yet implemented.
+                my_logger::LOGGER.write_warning(
+                    "node_subscribe",
+                    "Received node subscribe-side packet, subscribe path not yet implemented",
+                    LogEventCtx::new().add("connection_id", connection.id.to_string()),
+                );
                 Ok(())
             }
         }
