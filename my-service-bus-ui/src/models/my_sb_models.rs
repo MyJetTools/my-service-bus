@@ -58,6 +58,8 @@ impl MySbHttpContract {
             persist_queue: 0,
             packets_per_sec: 0,
             total_pages_size: 0,
+            incoming_per_sec: 0,
+            outgoing_per_sec: 0,
         };
 
         for topic in &self.topics.items {
@@ -68,6 +70,11 @@ impl MySbHttpContract {
             for page in &topic.pages {
                 result.total_pages_size += page.size;
             }
+        }
+
+        for session in &self.sessions.items {
+            result.incoming_per_sec += session.read_per_sec;
+            result.outgoing_per_sec += session.written_per_sec;
         }
 
         result
@@ -239,4 +246,6 @@ pub struct StatusBarCalculatedValue {
     pub packets_per_sec: i64,
     pub persist_queue: i64,
     pub total_pages_size: i64,
+    pub incoming_per_sec: i64,
+    pub outgoing_per_sec: i64,
 }

@@ -19,6 +19,11 @@ pub fn format_mem(mem: i64) -> String {
     return format!("{:.3}GB", mem);
 }
 
+pub fn format_mb_per_sec(bytes_per_sec: i64) -> String {
+    let mb = bytes_per_sec as f64 / 1024.0 / 1024.0;
+    format!("{:.2}", mb)
+}
+
 pub fn format_unix_micros(unix_micros: i64) -> String {
     let ms = (unix_micros / 1000) as f64;
     let date = js_sys::Date::new(&ms.into());

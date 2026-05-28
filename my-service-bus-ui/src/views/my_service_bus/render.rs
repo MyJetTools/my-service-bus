@@ -10,7 +10,7 @@ use crate::components::ui::{
 };
 use crate::dialogs::{DialogState, RenderDialog};
 use crate::models::{MySbHttpContract, TopicHttpModel};
-use crate::utils::{format_mem, format_unix_micros};
+use crate::utils::{format_mb_per_sec, format_mem, format_unix_micros};
 
 use super::state::{MySbState, SidebarSection};
 
@@ -80,21 +80,9 @@ pub fn RenderMyServiceBus() -> Element {
 
 fn render_kpi_strip(data: &MySbHttpContract, cs_ra: &MySbState) -> Element {
     let bar = data.get_status_bar_calculated_values();
-    let mem_pct = if data.system.totalmem > 0 {
-        ((data.system.usedmem as f64 / data.system.totalmem as f64) * 100.0) as i32
-    } else {
-        0
-    };
     let persist_tone = if bar.persist_queue >= 5000 {
         KpiTone::Danger
     } else if bar.persist_queue >= 1000 {
-        KpiTone::Warning
-    } else {
-        KpiTone::Default
-    };
-    let mem_tone = if mem_pct >= 90 {
-        KpiTone::Danger
-    } else if mem_pct >= 75 {
         KpiTone::Warning
     } else {
         KpiTone::Default
@@ -117,19 +105,18 @@ fn render_kpi_strip(data: &MySbHttpContract, cs_ra: &MySbState) -> Element {
                 history: vec_from(&cs_ra.kpi_history.persist_queue),
             }
             KpiCard {
-                label: "Sessions",
-                value: format!("{}", data.sessions.items.len()),
+                label: "In (MBytes/sec)",
+                value: format_mb_per_sec(bar.incoming_per_sec),
                 tone: KpiTone::Default,
                 color: SparklineColor::Green,
-                history: vec_from(&cs_ra.kpi_history.sessions),
+                history: vec_from(&cs_ra.kpi_history.incoming_kb_per_sec),
             }
             KpiCard {
-                label: "Memory used",
-                value: format!("{}", mem_pct),
-                unit: "%".to_string(),
-                tone: mem_tone,
-                color: if mem_pct >= 90 { SparklineColor::Red } else { SparklineColor::Accent },
-                history: vec_from(&cs_ra.kpi_history.mem_used_pct),
+                label: "Out (MBytes/sec)",
+                value: format_mb_per_sec(bar.outgoing_per_sec),
+                tone: KpiTone::Default,
+                color: SparklineColor::Amber,
+                history: vec_from(&cs_ra.kpi_history.outgoing_kb_per_sec),
             }
         }
     }
