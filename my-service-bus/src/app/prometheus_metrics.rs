@@ -164,10 +164,6 @@ impl PrometheusMetrics {
             .set(threads_statistics.read_threads.get());
 
         self.tcp_connections
-            .with_label_values(&["write_threads"])
-            .set(threads_statistics.write_threads.get());
-
-        self.tcp_connections
             .with_label_values(&["connection_objects"])
             .set(threads_statistics.connections_objects.get());
     }
