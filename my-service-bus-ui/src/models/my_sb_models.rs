@@ -109,6 +109,9 @@ pub struct TopicHttpModel {
     pub subscribers: Vec<TopicSubscriber>,
 
     #[serde(default)]
+    pub persist: bool,
+
+    #[serde(default)]
     pub deleted: i64,
 }
 

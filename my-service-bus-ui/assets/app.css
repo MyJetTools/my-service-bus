@@ -1116,6 +1116,7 @@ svg {
 .msb-topic__stat-grid .value.is-active { color: var(--green); }
 .msb-topic__stat-grid .value.is-warning { color: var(--amber); }
 .msb-topic__stat-grid .value.is-danger { color: var(--red); }
+.msb-topic__stat-grid .value.is-muted { color: var(--fg-2); font-style: italic; }
 
 .msb-topic__pages {
     display: flex;

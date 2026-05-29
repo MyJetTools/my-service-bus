@@ -337,7 +337,11 @@ fn render_topic_row(
                     span { class: "label", "Req/s" }
                     span { class: "value", "{topic.packet_per_sec}" }
                     span { class: "label", "Persist q" }
-                    span { class: "{persist_value_class}", "{topic.persist_size}" }
+                    if topic.persist {
+                        span { class: "{persist_value_class}", "{topic.persist_size}" }
+                    } else {
+                        span { class: "value is-muted", "NotPersisted" }
+                    }
                 }
                 div { class: "msb-spark-card",
                     div { class: "msb-spark-row",
