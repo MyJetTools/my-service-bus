@@ -10,7 +10,7 @@ use crate::components::ui::{
 };
 use crate::dialogs::{DialogState, RenderDialog};
 use crate::models::{MySbHttpContract, TopicHttpModel};
-use crate::utils::{format_mb_per_sec, format_mem, format_unix_micros};
+use crate::utils::{format_bytes, format_bytes_per_sec, format_unix_micros};
 
 use super::state::{MySbState, SidebarSection};
 
@@ -105,15 +105,15 @@ fn render_kpi_strip(data: &MySbHttpContract, cs_ra: &MySbState) -> Element {
                 history: vec_from(&cs_ra.kpi_history.persist_queue),
             }
             KpiCard {
-                label: "In (MBytes/sec)",
-                value: format_mb_per_sec(bar.incoming_per_sec),
+                label: "In",
+                value: format_bytes_per_sec(bar.incoming_per_sec),
                 tone: KpiTone::Default,
                 color: SparklineColor::Green,
                 history: vec_from(&cs_ra.kpi_history.incoming_kb_per_sec),
             }
             KpiCard {
-                label: "Out (MBytes/sec)",
-                value: format_mb_per_sec(bar.outgoing_per_sec),
+                label: "Out",
+                value: format_bytes_per_sec(bar.outgoing_per_sec),
                 tone: KpiTone::Default,
                 color: SparklineColor::Amber,
                 history: vec_from(&cs_ra.kpi_history.outgoing_kb_per_sec),
@@ -129,8 +129,8 @@ fn render_status_bar(data: &MySbHttpContract, cs_ra: &MySbState, is_live: bool) 
     } else {
         StatusValueTone::Success
     };
-    let mem_used = format_mem(data.system.usedmem);
-    let mem_total = format_mem(data.system.totalmem);
+    let mem_used = format_bytes(data.system.usedmem);
+    let mem_total = format_bytes(data.system.totalmem);
     let mem_str = format!("{mem_used} / {mem_total}");
 
     let updated_str = if cs_ra.last_updated_ms > 0.0 {
@@ -146,7 +146,7 @@ fn render_status_bar(data: &MySbHttpContract, cs_ra: &MySbState, is_live: bool) 
             {status_item("Persist", &bar.persist_queue.to_string(), persist_tone)}
             {status_item("Msg/s", &bar.msg_per_sec.to_string(), StatusValueTone::Default)}
             {status_item("Req/s", &bar.packets_per_sec.to_string(), StatusValueTone::Default)}
-            {status_item("Pages", &format_mem(bar.total_pages_size), StatusValueTone::Default)}
+            {status_item("Pages", &format_bytes(bar.total_pages_size), StatusValueTone::Default)}
             {status_item("Mem", &mem_str, StatusValueTone::Default)}
             {status_item("sb", data.version.as_str(), StatusValueTone::Dim)}
             {status_item("persist", data.persistence_version.as_str(), StatusValueTone::Dim)}

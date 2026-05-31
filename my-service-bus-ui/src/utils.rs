@@ -1,27 +1,25 @@
-pub fn format_mem(mem: i64) -> String {
-    let mem = mem as f64;
-    if mem < 1024.0 {
-        return format!("{}B", mem);
+pub fn format_bytes(bytes: i64) -> String {
+    let v = bytes as f64;
+    if v < 1024.0 {
+        return format!("{} Bytes", bytes);
     }
 
-    let mem = mem / 1024.0;
-    if mem < 1024.0 {
-        return format!("{:.3}KB", mem);
-    }
-    let mem = mem / 1024.0;
-
-    if mem < 1024.0 {
-        return format!("{:.3}MB", mem);
+    let kb = v / 1024.0;
+    if kb < 1024.0 {
+        return format!("{:.2} KBytes", kb);
     }
 
-    let mem = mem / 1024.0;
+    let mb = kb / 1024.0;
+    if mb < 1024.0 {
+        return format!("{:.2} MBytes", mb);
+    }
 
-    return format!("{:.3}GB", mem);
+    let gb = mb / 1024.0;
+    format!("{:.2} GBytes", gb)
 }
 
-pub fn format_mb_per_sec(bytes_per_sec: i64) -> String {
-    let mb = bytes_per_sec as f64 / 1024.0 / 1024.0;
-    format!("{:.2}", mb)
+pub fn format_bytes_per_sec(bytes_per_sec: i64) -> String {
+    format!("{} per sec", format_bytes(bytes_per_sec))
 }
 
 pub fn format_unix_micros(unix_micros: i64) -> String {

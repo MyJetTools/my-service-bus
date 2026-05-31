@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use crate::components::ui::{Badge, StatusPill, Tone};
 use crate::models::*;
-use crate::utils::format_mem;
+use crate::utils::{format_bytes, format_bytes_per_sec};
 
 pub fn render_sessions(data: &MySbHttpContract, filter_string: &str) -> Element {
     if data.sessions.items.is_empty() {
@@ -38,10 +38,10 @@ fn render_one(data: &MySbHttpContract, session: &MySbSessionHttpModel, row_class
         SessionType::Http => rsx! { StatusPill { tone: Tone::Warning, dot: true, "HTTP" } },
     };
 
-    let r_size = format_mem(session.read_size);
-    let w_size = format_mem(session.written_size);
-    let r_p_s = format_mem(session.read_per_sec);
-    let w_p_s = format_mem(session.written_per_sec);
+    let r_size = format_bytes(session.read_size);
+    let w_size = format_bytes(session.written_size);
+    let r_p_s = format_bytes_per_sec(session.read_per_sec);
+    let w_p_s = format_bytes_per_sec(session.written_per_sec);
 
     let (publishers, subscribers) = data.get_publishers_and_subscribers(session.id);
 
@@ -88,9 +88,9 @@ fn render_one(data: &MySbHttpContract, session: &MySbSessionHttpModel, row_class
                     span { class: "value", "{w_size}" }
                 }
                 div { class: "row",
-                    span { class: "label", "R/sec" }
+                    span { class: "label", "R" }
                     span { class: "value", "{r_p_s}" }
-                    span { class: "label", "W/sec" }
+                    span { class: "label", "W" }
                     span { class: "value", "{w_p_s}" }
                 }
             }
