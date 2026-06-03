@@ -78,6 +78,23 @@ pub fn RenderMyServiceBus() -> Element {
     }
 }
 
+/// A queue is considered problematic once its backlog grows past this many messages.
+const PROBLEMATIC_QUEUE_SIZE: i64 = 10_000;
+
+fn topic_has_problematic_queue(data: &MySbHttpContract, topic: &TopicHttpModel) -> bool {
+    data.queues
+        .get(&topic.id)
+        .map(|qs| qs.queues.iter().any(|q| q.size > PROBLEMATIC_QUEUE_SIZE))
+        .unwrap_or(false)
+}
+
+fn count_problematic_queues(data: &MySbHttpContract) -> usize {
+    data.queues
+        .values()
+        .map(|qs| qs.queues.iter().filter(|q| q.size > PROBLEMATIC_QUEUE_SIZE).count())
+        .sum()
+}
+
 fn render_kpi_strip(data: &MySbHttpContract, cs_ra: &MySbState) -> Element {
     let bar = data.get_status_bar_calculated_values();
     let persist_tone = if bar.persist_queue >= 5000 {
@@ -88,7 +105,16 @@ fn render_kpi_strip(data: &MySbHttpContract, cs_ra: &MySbState) -> Element {
         KpiTone::Default
     };
 
+    let problematic_queues = count_problematic_queues(data);
+    let problematic_class = if problematic_queues > 1 { " is-alert" } else { "" };
+
     rsx! {
+        div { class: "msb-problematic-bar",
+            div { class: "msb-problematic{problematic_class}",
+                span { class: "msb-problematic__label", "Problematic queues" }
+                span { class: "msb-problematic__value", "{problematic_queues}" }
+            }
+        }
         div { class: "msb-kpi-strip",
             KpiCard {
                 label: "Msg / sec",
@@ -179,8 +205,10 @@ fn render_topics_section(
 
     let head = rsx! {
         div { class: "msb-col-head",
+            div { "Publishers" }
+            div {}
             div { "Topic" }
-            div { "Connections" }
+            div {}
             div { "Queues" }
         }
     };
@@ -247,6 +275,11 @@ fn render_topic_row(
     highlight: HighlightState,
 ) -> Element {
     let highlight_class = highlight.class_suffix();
+    let problematic_class = if topic_has_problematic_queue(data, topic) {
+        " is-problematic"
+    } else {
+        ""
+    };
     let topic_connections = super::components::render_topic_connections(data, topic);
     let render_queues = super::components::render_topic_queues(data, topic, cs);
     let publish_history = topic.publish_history.clone();
@@ -321,9 +354,13 @@ fn render_topic_row(
 
     let persist_value_class = if topic.persist_size > 0 { "value is-warning" } else { "value" };
     let msg_class = if topic.messages_per_src > 0 { "value is-active" } else { "value" };
+    let flow_in_class = if !topic.publishers.is_empty() { " is-active" } else { "" };
+    let flow_out_class = if has_queues { " is-active" } else { "" };
 
     rsx! {
-        div { class: "msb-topic{highlight_class}",
+        div { class: "msb-topic{highlight_class}{problematic_class}",
+            div { class: "msb-topic__publishers", {topic_connections} }
+            div { class: "msb-flow-arrow{flow_in_class}" }
             div { class: "msb-topic__head",
                 div { class: "msb-topic__title",
                     span { class: "{dot_class}" }
@@ -359,8 +396,8 @@ fn render_topic_row(
                 div { class: "msb-topic__pages", {pages} }
                 {row_actions}
             }
-            div { {topic_connections} }
-            div { {render_queues} }
+            div { class: "msb-flow-arrow{flow_out_class}" }
+            div { class: "msb-topic__queues", {render_queues} }
         }
     }
 }

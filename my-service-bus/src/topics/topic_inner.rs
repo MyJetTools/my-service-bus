@@ -147,8 +147,28 @@ impl TopicInner {
     }
 
     pub fn gc(&mut self) {
+        let current_sub_page: SubPageId = self.message_id.into();
+
+        // Not-persisted topics: messages cannot be reloaded from disk, so keep every
+        // page from the oldest message id any queue still references (its next/min
+        // unread id, including in-flight deliveries) up to the current write page, and
+        // drop everything older. With no queues this min is the current write page, so
+        // only the current page survives.
+        if !self.persist {
+            let min_message_id = self.get_min_message_id().unwrap_or(self.message_id);
+            let keep_from: SubPageId = min_message_id.into();
+
+            self.pages.force_gc_pages_before(keep_from);
+
+            let mut active_sub_pages = ActiveSubPages::new();
+            active_sub_pages.add_if_not_exists(current_sub_page);
+            self.pages.gc_messages(min_message_id, &active_sub_pages);
+            return;
+        }
+
+        // Persisted, queue-less topic: a past page may still hold un-persisted
+        // messages, so honor the per-page persist guard.
         if self.queues.get_all().next().is_none() {
-            let current_sub_page: SubPageId = self.message_id.into();
             self.pages.gc_all_except(current_sub_page);
 
             let mut active_sub_pages = ActiveSubPages::new();
@@ -367,5 +387,99 @@ mod tests {
         topic_inner.gc();
 
         assert!(topic_inner.pages.get(old_sub_page_id).is_none());
+    }
+
+    #[test]
+    fn no_queues_not_persisted_force_drops_past_page_even_with_pending_persist() {
+        use crate::messages_page::MySbMessageContent;
+        use my_service_bus::shared::sub_page::SubPageId;
+        use rust_extensions::date_time::DateTimeAsMicroseconds;
+
+        // Not-persisted, queue-less topic with the write head far ahead.
+        let mut topic_inner = super::TopicInner::new("test".into(), 5_000_000, false, 0);
+
+        // Defensively give an old page a pending-persist entry (sub_page 1 owns ids 1000..1999).
+        let old_id = SubPageId::new(1);
+        topic_inner.pages.get_or_create_mut(old_id).add_message(
+            MySbMessageContent::new(
+                1_000.into(),
+                vec![1, 2, 3],
+                SbMessageHeaders::new(),
+                DateTimeAsMicroseconds::now(),
+            ),
+            true,
+        );
+        assert!(topic_inner.pages.get(old_id).is_some());
+
+        topic_inner.gc();
+
+        // For a not-persisted, queue-less topic every past page is force-dropped,
+        // regardless of the per-page persist guard.
+        assert!(topic_inner.pages.get(old_id).is_none());
+    }
+
+    #[test]
+    fn no_queues_persisted_keeps_past_page_with_pending_persist() {
+        use crate::messages_page::MySbMessageContent;
+        use my_service_bus::shared::sub_page::SubPageId;
+        use rust_extensions::date_time::DateTimeAsMicroseconds;
+
+        // Persisted, queue-less topic with the write head far ahead.
+        let mut topic_inner = super::TopicInner::new("test".into(), 5_000_000, true, 0);
+
+        let old_id = SubPageId::new(1);
+        topic_inner.pages.get_or_create_mut(old_id).add_message(
+            MySbMessageContent::new(
+                1_000.into(),
+                vec![1, 2, 3],
+                SbMessageHeaders::new(),
+                DateTimeAsMicroseconds::now(),
+            ),
+            true,
+        );
+
+        topic_inner.gc();
+
+        // Persisted topic: a page with un-persisted messages must survive (data safety).
+        assert!(topic_inner.pages.get(old_id).is_some());
+    }
+
+    #[test]
+    fn not_persisted_drops_pages_before_queue_front_keeps_the_rest() {
+        use crate::messages_page::MySbMessageContent;
+        use my_service_bus::shared::sub_page::SubPageId;
+        use rust_extensions::date_time::DateTimeAsMicroseconds;
+
+        // Not-persisted topic, write head at id 2500 (current page = 2).
+        let mut topic_inner = super::TopicInner::new("test".into(), 2_500, false, 0);
+
+        // One queue whose oldest unread id is 1500 (lives in page 1).
+        topic_inner.queues.restore(
+            topic_inner.topic_id.clone(),
+            "q".to_string().into(),
+            TopicQueueType::Permanent,
+            QueueWithIntervals::from_single_interval(1_500, 2_499),
+        );
+
+        // Materialize pages 0, 1, 2, each holding its representative message.
+        for (page, id) in [(0i64, 500i64), (1, 1_500), (2, 2_000)] {
+            topic_inner.pages.get_or_create_mut(SubPageId::new(page)).add_message(
+                MySbMessageContent::new(
+                    id.into(),
+                    vec![1],
+                    SbMessageHeaders::new(),
+                    DateTimeAsMicroseconds::now(),
+                ),
+                false,
+            );
+        }
+
+        topic_inner.gc();
+
+        // Page 0 is entirely behind every queue's front -> dropped.
+        assert!(topic_inner.pages.get(SubPageId::new(0)).is_none());
+        // The queue's front page and everything newer are retained.
+        assert!(topic_inner.pages.get(SubPageId::new(1)).is_some());
+        assert!(topic_inner.pages.get(SubPageId::new(2)).is_some());
     }
 }

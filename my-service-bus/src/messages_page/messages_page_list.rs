@@ -91,6 +91,25 @@ impl MessagesPageList {
         }
     }
 
+    /// Removes every sub_page strictly older than `keep_from`, ignoring the per-page
+    /// persist guard. Intended for non-persisted topics: messages cannot be reloaded,
+    /// so a page is kept only while some queue still needs it (its id >= keep_from,
+    /// where keep_from is the oldest message id any queue still references). With no
+    /// queues keep_from is the current write page, so only it survives.
+    pub fn force_gc_pages_before(&mut self, keep_from: SubPageId) {
+        let mut to_remove = Vec::new();
+
+        for sub_page in self.sub_pages.iter() {
+            if sub_page.get_id().get_value() < keep_from.get_value() {
+                to_remove.push(sub_page.get_id());
+            }
+        }
+
+        for page_id in to_remove {
+            self.sub_pages.remove(page_id.as_ref());
+        }
+    }
+
     pub fn gc_messages(
         &mut self,
         min_message_id: my_service_bus::abstractions::MessageId,
