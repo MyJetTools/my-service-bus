@@ -105,16 +105,7 @@ fn render_kpi_strip(data: &MySbHttpContract, cs_ra: &MySbState) -> Element {
         KpiTone::Default
     };
 
-    let problematic_queues = count_problematic_queues(data);
-    let problematic_class = if problematic_queues > 1 { " is-alert" } else { "" };
-
     rsx! {
-        div { class: "msb-problematic-bar",
-            div { class: "msb-problematic{problematic_class}",
-                span { class: "msb-problematic__label", "Problematic queues" }
-                span { class: "msb-problematic__value", "{problematic_queues}" }
-            }
-        }
         div { class: "msb-kpi-strip",
             KpiCard {
                 label: "Msg / sec",
@@ -168,6 +159,7 @@ fn render_status_bar(data: &MySbHttpContract, cs_ra: &MySbState, is_live: bool) 
     rsx! {
         div { class: "msb-statusbar",
             {status_live(is_live)}
+            {render_problematic_status(count_problematic_queues(data))}
             {status_item("Sessions", &data.sessions.items.len().to_string(), StatusValueTone::Default)}
             {status_item("Persist", &bar.persist_queue.to_string(), persist_tone)}
             {status_item("Msg/s", &bar.msg_per_sec.to_string(), StatusValueTone::Default)}
@@ -177,6 +169,21 @@ fn render_status_bar(data: &MySbHttpContract, cs_ra: &MySbState, is_live: bool) 
             {status_item("sb", data.version.as_str(), StatusValueTone::Dim)}
             {status_item("persist", data.persistence_version.as_str(), StatusValueTone::Dim)}
             {status_item_end("Updated", &updated_str, StatusValueTone::Default)}
+        }
+    }
+}
+
+fn render_problematic_status(count: usize) -> Element {
+    // The whole cell turns red once more than one queue is problematic.
+    let item_class = if count > 1 {
+        "msb-statusbar__item is-alert"
+    } else {
+        "msb-statusbar__item"
+    };
+    rsx! {
+        div { class: "{item_class}",
+            span { class: "msb-statusbar__label", "Problematic" }
+            span { class: "msb-statusbar__value", "{count}" }
         }
     }
 }

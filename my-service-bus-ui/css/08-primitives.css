@@ -266,6 +266,14 @@
     border-left: 1px solid var(--border);
     padding-right: 18px;
 }
+.msb-statusbar__item.is-alert {
+    background: rgba(248, 113, 113, 0.20);
+    border-right-color: rgba(248, 113, 113, 0.45);
+}
+.msb-statusbar__item.is-alert .msb-statusbar__label,
+.msb-statusbar__item.is-alert .msb-statusbar__value {
+    color: var(--red);
+}
 .msb-statusbar__label {
     color: var(--fg-2);
     text-transform: uppercase;

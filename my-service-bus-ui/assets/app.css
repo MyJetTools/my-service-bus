@@ -575,49 +575,6 @@ svg {
     padding: 16px 22px 12px;
 }
 
-.msb-problematic-bar {
-    padding: 14px 22px 0;
-}
-
-.msb-problematic {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 7px 14px;
-    background: var(--bg-1);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    transition:
-        border-color var(--dur-fast) var(--ease-out),
-        box-shadow var(--dur-base) var(--ease-out);
-}
-
-.msb-problematic__label {
-    color: var(--fg-2);
-    font-size: var(--fs-sm);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    font-weight: 500;
-}
-
-.msb-problematic__value {
-    font-family: var(--font-mono);
-    font-size: var(--fs-lg);
-    color: var(--fg-0);
-    line-height: 1;
-}
-
-.msb-problematic.is-alert {
-    border-color: var(--red);
-    box-shadow:
-        0 0 0 1px rgba(248, 113, 113, 0.55),
-        0 0 16px rgba(248, 113, 113, 0.3);
-}
-.msb-problematic.is-alert .msb-problematic__label,
-.msb-problematic.is-alert .msb-problematic__value {
-    color: var(--red);
-}
-
 .msb-kpi {
     background: var(--bg-1);
     border: 1px solid var(--border);
@@ -946,6 +903,14 @@ svg {
     border-right: 0;
     border-left: 1px solid var(--border);
     padding-right: 18px;
+}
+.msb-statusbar__item.is-alert {
+    background: rgba(248, 113, 113, 0.20);
+    border-right-color: rgba(248, 113, 113, 0.45);
+}
+.msb-statusbar__item.is-alert .msb-statusbar__label,
+.msb-statusbar__item.is-alert .msb-statusbar__value {
+    color: var(--red);
 }
 .msb-statusbar__label {
     color: var(--fg-2);
