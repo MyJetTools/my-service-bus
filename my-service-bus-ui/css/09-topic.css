@@ -182,7 +182,10 @@
     align-items: center;
 }
 .msb-conn.is-live {
-    border-color: rgba(74, 222, 128, 0.25);
+    border-color: rgba(74, 222, 128, 0.75);
+    box-shadow:
+        0 0 0 1px rgba(74, 222, 128, 0.35),
+        0 0 12px rgba(74, 222, 128, 0.18);
 }
 
 .msb-conn__pill {

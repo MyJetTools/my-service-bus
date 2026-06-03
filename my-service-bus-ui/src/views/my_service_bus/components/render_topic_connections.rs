@@ -57,14 +57,6 @@ pub fn render_topic_connections<'a>(
                         if let Some(env) = env_info.as_ref() {
                             Badge { tone: Tone::Accent, "{env}" }
                         }
-                        if is_live {
-                            Badge { tone: Tone::Success,
-                                span { class: "msb-pill__dot",
-                                    style: "width:5px;height:5px;background:currentColor;border-radius:50%;display:inline-block;margin-right:2px;"
-                                }
-                                "publishing"
-                            }
-                        }
                     }
                 }
                 div { class: "msb-conn__right",
