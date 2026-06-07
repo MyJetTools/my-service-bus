@@ -66,7 +66,7 @@ The data hierarchy:
 
 - **TCP** (`src/tcp/`) — `TcpServerEvents` (`socket_events.rs`) handles the binary MySB protocol via `my-tcp-sockets` + `MySbSerializerFactory` from the `my-service-bus` SDK. Same handler is reused for the Unix socket server.
 - **HTTP** (`src/http/`) — `start_up::setup_server` wires up middlewares in order: Swagger, `AuthMiddleware` (`src/http/auth/`), MCP middleware, the controllers, then static files (SPA). REST controllers live under `src/http/controllers/` (publisher, subscribers, topics, queues, sessions, status, prometheus, logs, debug, greeting).
-- **MCP** (`src/mcp/`) — read-only MCP server mounted at `/mcp` (built in `mcp::build_middleware`). Tools: overview, list topics, get topic, list sessions, get message. Register new tools in `src/mcp/mod.rs`.
+- **MCP** (`src/mcp/`) — read-only MCP server mounted at `/mcp` (built in `mcp::build_middleware`). Tools: overview, list topics, get topic, get topic pages (in-memory sub-pages), get page messages (message metadata in a sub-page, from memory), list sessions, get message (from persistence), get message from memory (in-memory page cache). Register new tools in `src/mcp/mod.rs`. In-memory reads go through `Topic::get_topic_info(|inner| ...)` over `inner.pages` (`MessagesPageList`).
 
 ### Persistence client
 

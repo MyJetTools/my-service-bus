@@ -83,6 +83,18 @@ impl SubPage {
         self.inner.get_size_metrics()
     }
 
+    pub fn get_loaded_and_missing(&self) -> (usize, usize) {
+        self.inner.get_loaded_and_missing()
+    }
+
+    pub fn get_messages_meta(&self) -> Vec<super::CachedMessageMeta> {
+        self.inner.get_messages_meta()
+    }
+
+    pub fn is_pending_persist(&self, message_id: MessageId) -> bool {
+        self.inner.is_pending_persist(message_id)
+    }
+
     pub fn is_ready_to_gc(&self, active_pages: &[SubPageId]) -> bool {
         if self.inner.has_messages_to_persist() {
             return false;

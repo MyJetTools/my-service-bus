@@ -33,6 +33,10 @@ impl MessagesPageList {
         self.sub_pages.get(sub_page_id.as_ref())
     }
 
+    pub fn get_sub_page(&self, sub_page_id: SubPageId) -> Option<&SubPage> {
+        self.sub_pages.get(sub_page_id.as_ref())
+    }
+
     pub fn get_mut(&mut self, sub_page_id: SubPageId) -> Option<&mut SubPage> {
         self.sub_pages.get_mut(sub_page_id.as_ref())
     }

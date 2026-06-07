@@ -187,4 +187,52 @@ impl SubPageInner {
 
         msg_id.get_value() < min_message_id.get_value()
     }
+
+    pub fn get_loaded_and_missing(&self) -> (usize, usize) {
+        let mut loaded = 0;
+        let mut missing = 0;
+        for msg in self.messages.iter() {
+            if msg.is_missing() {
+                missing += 1;
+            } else {
+                loaded += 1;
+            }
+        }
+        (loaded, missing)
+    }
+
+    pub fn is_pending_persist(&self, message_id: MessageId) -> bool {
+        self.to_persist.has_message(message_id.get_value())
+    }
+
+    pub fn get_messages_meta(&self) -> Vec<CachedMessageMeta> {
+        let mut result = Vec::with_capacity(self.messages.len());
+        for msg in self.messages.iter() {
+            let message_id = msg.get_message_id().get_value();
+            let pending_persist = self.to_persist.has_message(message_id);
+            let (loaded, size, created_unix_microseconds) = match msg {
+                MySbCachedMessage::Loaded(content) => {
+                    (true, content.content.len(), content.time.unix_microseconds)
+                }
+                MySbCachedMessage::Missing(_) => (false, 0, 0),
+            };
+            result.push(CachedMessageMeta {
+                message_id,
+                loaded,
+                size,
+                created_unix_microseconds,
+                pending_persist,
+            });
+        }
+        result
+    }
+}
+
+/// Lightweight, owned view of a cached message used by read-only surfaces (MCP/HTTP).
+pub struct CachedMessageMeta {
+    pub message_id: i64,
+    pub loaded: bool,
+    pub size: usize,
+    pub created_unix_microseconds: i64,
+    pub pending_persist: bool,
 }
