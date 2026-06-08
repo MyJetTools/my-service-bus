@@ -22,3 +22,8 @@ ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.3" }
 [profile.wasm-dev]
 inherits = "dev"
 opt-level = 1
+
+# Release web builds must not carry DWARF debuginfo: binaryen's wasm-opt aborts on it
+# ("unsupported version of DWARF"), which would leave an unoptimized wasm bundle.
+[profile.release]
+strip = true

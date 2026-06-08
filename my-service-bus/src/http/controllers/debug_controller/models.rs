@@ -55,3 +55,40 @@ pub struct QueueSubscriberDebugModel {
     pub last_delivered_amount: usize,
     pub delivery_compilation: String,
 }
+
+#[derive(Debug, MyHttpInput)]
+pub struct SetDebugConsoleTargetInputModel {
+    #[http_query(
+        name = "topicId";
+        description = "Topic to trace. Leave empty to turn the debug console OFF"
+    )]
+    pub topic_id: Option<String>,
+    #[http_query(
+        name = "queueId";
+        description = "Queue to trace. Leave empty to trace every queue of the topic"
+    )]
+    pub queue_id: Option<String>,
+}
+
+#[derive(Debug, MyHttpInput)]
+pub struct GetDebugConsoleInputModel {
+    #[http_query(name = "tail"; description = "Return only the last N records")]
+    pub tail: Option<i64>,
+    #[http_query(name = "clear"; description = "Clear the buffer after reading")]
+    pub clear: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
+pub struct DebugConsoleRecordHttpModel {
+    pub date: String,
+    pub data: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
+pub struct DebugConsoleHttpModel {
+    pub enabled: bool,
+    pub topic_id: Option<String>,
+    pub queue_id: Option<String>,
+    pub records_count: usize,
+    pub records: Vec<DebugConsoleRecordHttpModel>,
+}

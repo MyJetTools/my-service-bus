@@ -159,6 +159,7 @@ fn render_status_bar(data: &MySbHttpContract, cs_ra: &MySbState, is_live: bool) 
     rsx! {
         div { class: "msb-statusbar",
             {status_live(is_live)}
+            {render_debug_status(data.debug.as_deref())}
             {render_problematic_status(count_problematic_queues(data))}
             {status_item("Sessions", &data.sessions.items.len().to_string(), StatusValueTone::Default)}
             {status_item("Persist", &bar.persist_queue.to_string(), persist_tone)}
@@ -170,6 +171,20 @@ fn render_status_bar(data: &MySbHttpContract, cs_ra: &MySbState, is_live: bool) 
             {status_item("persist", data.persistence_version.as_str(), StatusValueTone::Dim)}
             {status_item_end("Updated", &updated_str, StatusValueTone::Default)}
         }
+    }
+}
+
+fn render_debug_status(debug: Option<&str>) -> Element {
+    // Shows a red DEBUG badge while the broker's debug console is tracing a target,
+    // so it is obvious the node is in debug mode.
+    match debug {
+        Some(target) => rsx! {
+            div { class: "msb-statusbar__item is-alert",
+                span { class: "msb-statusbar__label", "DEBUG" }
+                span { class: "msb-statusbar__value", "{target}" }
+            }
+        },
+        None => rsx! {},
     }
 }
 

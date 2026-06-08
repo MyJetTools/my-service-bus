@@ -5,3 +5,7 @@ mod get_queues_action;
 pub use get_queues_action::*;
 mod get_min_message_id_action;
 pub use get_min_message_id_action::*;
+mod set_debug_console_action;
+pub use set_debug_console_action::*;
+mod get_debug_console_action;
+pub use get_debug_console_action::*;

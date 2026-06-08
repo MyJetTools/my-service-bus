@@ -4,6 +4,7 @@ use mcp_server_middleware::McpMiddleware;
 
 use crate::app::{AppContext, APP_VERSION};
 
+mod get_debug_console_tool_call;
 mod get_message_from_memory_tool_call;
 mod get_message_tool_call;
 mod get_overview_tool_call;
@@ -15,6 +16,7 @@ mod list_topics_tool_call;
 mod persistence_get_message_tool_call;
 mod persistence_load_page_tool_call;
 
+pub use get_debug_console_tool_call::*;
 pub use get_message_from_memory_tool_call::*;
 pub use get_message_tool_call::*;
 pub use get_overview_tool_call::*;
@@ -44,6 +46,7 @@ pub fn build_middleware(app: Arc<AppContext>) -> McpMiddleware {
     mcp.register_tool_call(Arc::new(GetMessageFromMemoryHandler::new(app.clone())));
     mcp.register_tool_call(Arc::new(PersistenceLoadPageHandler::new(app.clone())));
     mcp.register_tool_call(Arc::new(PersistenceGetMessageHandler::new(app.clone())));
+    mcp.register_tool_call(Arc::new(GetDebugConsoleHandler::new(app.clone())));
 
     mcp
 }

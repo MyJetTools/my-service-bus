@@ -25,6 +25,9 @@ pub struct StatusJsonResult {
     #[serde(rename = "persistenceVersion")]
     pub persistence_version: String,
     pub version: String,
+    /// Set when the debug console is actively tracing a target ("topic / queue").
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub debug: Option<String>,
 }
 
 impl StatusJsonResult {
@@ -64,6 +67,10 @@ impl StatusJsonResult {
             },
             persistence_version: app.persistence_version.get(),
             version: crate::app::APP_VERSION.to_string(),
+            debug: app.debug_console.get_target().map(|t| match &t.queue_id {
+                Some(queue_id) => format!("{} / {}", t.topic_id, queue_id),
+                None => format!("{} / *", t.topic_id),
+            }),
         }
     }
 }

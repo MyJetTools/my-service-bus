@@ -33,6 +33,8 @@ pub struct AppContext {
     #[cfg(test)]
     pub restore_page_scheduler: crate::test_tools::SubPageLoaderSchedulerMock,
 
+    pub debug_console: super::DebugConsole,
+
     pub settings: Arc<SettingsModel>,
 }
 
@@ -59,6 +61,7 @@ impl AppContext {
             persistence_version: MultiThreadedShortString::new(),
 
             restore_page_scheduler: Default::default(),
+            debug_console: super::DebugConsole::new(),
             settings,
         }
     }

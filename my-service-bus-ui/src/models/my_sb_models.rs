@@ -12,6 +12,10 @@ pub struct MySbHttpContract {
     pub queues: HashMap<String, TopicQueuesModel>,
     pub sessions: MySbSessionsHttpModel,
     pub system: SbSystemModel,
+
+    /// Present when the broker's debug console is actively tracing a target ("topic / queue").
+    #[serde(default)]
+    pub debug: Option<String>,
 }
 
 impl MySbHttpContract {

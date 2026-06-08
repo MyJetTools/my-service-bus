@@ -37,8 +37,13 @@ cp -R "$DX_OUT"/. "$WWWROOT/"
 # into index.html. dx hashes assets referenced via `asset!()` but does not
 # emit raw copies. Mirror them ourselves so both the static `<link>` and the
 # hashed runtime asset references resolve.
-cp "$SCRIPT_DIR/assets/styled.css" "$WWWROOT/assets/styled.css"
-cp "$SCRIPT_DIR/assets/app.css" "$WWWROOT/assets/app.css"
+# Copy whichever of these exist (styled.css is optional / may not be present).
+if [ -f "$SCRIPT_DIR/assets/styled.css" ]; then
+    cp "$SCRIPT_DIR/assets/styled.css" "$WWWROOT/assets/styled.css"
+fi
+if [ -f "$SCRIPT_DIR/assets/app.css" ]; then
+    cp "$SCRIPT_DIR/assets/app.css" "$WWWROOT/assets/app.css"
+fi
 
 echo
 echo "UI built  → $DX_OUT"

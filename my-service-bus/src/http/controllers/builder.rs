@@ -71,6 +71,14 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         Arc::new(super::debug_controller::OnDeliveryAction::new(app.clone()));
     controllers.register_get_action(on_delivery_controller);
 
+    controllers.register_post_action(Arc::new(
+        super::debug_controller::SetDebugConsoleTargetAction::new(app.clone()),
+    ));
+
+    controllers.register_get_action(Arc::new(
+        super::debug_controller::GetDebugConsoleAction::new(app.clone()),
+    ));
+
     /*
        let logs_controller = Arc::new(super::logs::LogsAction::new(app.clone()));
        controllers.register_get_action(logs_controller);
