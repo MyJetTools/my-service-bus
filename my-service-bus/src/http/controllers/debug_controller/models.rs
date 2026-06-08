@@ -58,11 +58,8 @@ pub struct QueueSubscriberDebugModel {
 
 #[derive(Debug, MyHttpInput)]
 pub struct SetDebugConsoleTargetInputModel {
-    #[http_query(
-        name = "topicId";
-        description = "Topic to trace. Leave empty to turn the debug console OFF"
-    )]
-    pub topic_id: Option<String>,
+    #[http_query(name = "topicId"; description = "Topic to trace")]
+    pub topic_id: String,
     #[http_query(
         name = "queueId";
         description = "Queue to trace. Leave empty to trace every queue of the topic"

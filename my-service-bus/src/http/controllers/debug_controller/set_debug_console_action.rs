@@ -8,7 +8,7 @@ use std::sync::Arc;
     method: "POST",
     route: "/api/Debug/Console/Target",
     input_data: SetDebugConsoleTargetInputModel,
-    description: "Selects which topic/queue the debug console records. Empty topicId turns it off.",
+    description: "Sets (or switches) which topic/queue the debug console records. To turn it off use DELETE /api/Debug/Console.",
     summary: "Set debug console target",
     controller: "Debug",
     result:[
@@ -30,38 +30,30 @@ async fn handle_request(
     input_data: SetDebugConsoleTargetInputModel,
     _ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let topic_id = input_data
-        .topic_id
+    let topic_id = input_data.topic_id.trim().to_string();
+    if topic_id.is_empty() {
+        return Err(HttpFailResult::as_validation_error("topicId is required"));
+    }
+
+    let queue_id = input_data
+        .queue_id
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
-    let response = match topic_id {
-        Some(topic_id) => {
-            let queue_id = input_data
-                .queue_id
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty());
+    action
+        .app
+        .debug_console
+        .set_target(topic_id.clone(), queue_id.clone());
 
-            action
-                .app
-                .debug_console
-                .set_target(topic_id.clone(), queue_id.clone());
-
-            match queue_id {
-                Some(queue_id) => format!(
-                    "Debug console ON. Tracing topic '{}', queue '{}'. Buffer cleared.",
-                    topic_id, queue_id
-                ),
-                None => format!(
-                    "Debug console ON. Tracing topic '{}', all queues. Buffer cleared.",
-                    topic_id
-                ),
-            }
-        }
-        None => {
-            action.app.debug_console.disable();
-            "Debug console OFF.".to_string()
-        }
+    let response = match queue_id {
+        Some(queue_id) => format!(
+            "Debug console ON. Tracing topic '{}', queue '{}'. Buffer cleared.",
+            topic_id, queue_id
+        ),
+        None => format!(
+            "Debug console ON. Tracing topic '{}', all queues. Buffer cleared.",
+            topic_id
+        ),
     };
 
     HttpOutput::as_text(response).into_ok_result(true).into()

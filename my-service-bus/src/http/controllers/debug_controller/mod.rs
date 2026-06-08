@@ -9,3 +9,5 @@ mod set_debug_console_action;
 pub use set_debug_console_action::*;
 mod get_debug_console_action;
 pub use get_debug_console_action::*;
+mod reset_debug_console_action;
+pub use reset_debug_console_action::*;
