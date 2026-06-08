@@ -26,6 +26,12 @@ pub fn try_to_deliver_to_subscribers(
 
     let topic_persist = topic_data.persist;
 
+    // TEMP DEBUG: trace delivery for the stuck topic only
+    let dbg_topic = topic.topic_id.as_str() == "trade";
+    if dbg_topic {
+        println!(">>> [DLV trade] try_to_deliver_to_subscribers called (topic_persist={topic_persist})");
+    }
+
     for topic_queue in topic_data.queues.get_all_mut() {
         compile_packages(
             app,
@@ -58,14 +64,36 @@ fn compile_packages(
 ) {
     let mut not_engaged_topics = Vec::new();
 
+    // TEMP DEBUG: trace delivery only for the stuck topic+queue
+    let dbg = topic.topic_id.as_str() == "trade"
+        && topic_queue.queue_id.as_str() == "scalper-orderbook-aggregator";
+    if dbg {
+        println!(
+            ">>> [DLV trade/scalper] compile_packages: queue_size={}",
+            topic_queue.queue.queue_size()
+        );
+    }
+
     while topic_queue.queue.queue_size() > 0 {
         let subscriber = topic_queue
             .subscribers
             .get_and_rent_next_subscriber_ready_to_deliver();
 
         let Some((subscriber_id, session)) = subscriber else {
+            if dbg {
+                println!(
+                    ">>> [DLV trade/scalper] NO subscriber ready_to_deliver (all not Idle) -> break"
+                );
+            }
             break;
         };
+
+        if dbg {
+            println!(
+                ">>> [DLV trade/scalper] rented subscriber_id={}",
+                subscriber_id.get_value()
+            );
+        }
 
         let package_builder = compile_package(
             app,
@@ -78,8 +106,20 @@ fn compile_packages(
         );
 
         if let Some(package_builder) = package_builder {
+            if dbg {
+                println!(
+                    ">>> [DLV trade/scalper] package COMPILED data_size={} -> to_send",
+                    package_builder.get_data_size()
+                );
+            }
             to_send.push(package_builder);
         } else {
+            if dbg {
+                println!(
+                    ">>> [DLV trade/scalper] package EMPTY -> not_engaged (cancel_rent) subscriber_id={}",
+                    subscriber_id.get_value()
+                );
+            }
             not_engaged_topics.push(subscriber_id);
         }
     }
@@ -103,6 +143,10 @@ fn compile_package(
     #[cfg(test)]
     println!("compile_and_deliver");
 
+    // TEMP DEBUG: trace delivery only for the stuck topic+queue
+    let dbg = topic.topic_id.as_str() == "trade"
+        && topic_queue.queue_id.as_str() == "scalper-orderbook-aggregator";
+
     let mut payload_size = 0;
 
     let last_access = DateTimeAsMicroseconds::now();
@@ -117,6 +161,9 @@ fn compile_package(
         }
 
         let Some(message_id) = topic_queue.queue.peek() else {
+            if dbg {
+                println!(">>> [DLV trade/scalper] compile_package: peek=None -> break");
+            }
             break;
         };
 
@@ -124,10 +171,32 @@ fn compile_package(
 
         let sub_page_id: SubPageId = message_id.into();
 
+        if dbg {
+            println!(
+                ">>> [DLV trade/scalper] compile_package: peek msg_id={} sub_page_id={}",
+                message_id.get_value(),
+                sub_page_id.get_value()
+            );
+        }
+
         let sub_page = match pages.get_mut(sub_page_id) {
-            Some(sub_page) => sub_page,
+            Some(sub_page) => {
+                if dbg {
+                    println!(
+                        ">>> [DLV trade/scalper] compile_package: sub_page {} IN CACHE",
+                        sub_page_id.get_value()
+                    );
+                }
+                sub_page
+            }
             None => {
                 if topic_persist {
+                    if dbg {
+                        println!(
+                            ">>> [DLV trade/scalper] compile_package: sub_page {} NOT in cache (persist) -> schedule restore + RETURN",
+                            sub_page_id.get_value()
+                        );
+                    }
                     app.restore_page_scheduler
                         .schedule_load_sub_page(topic.clone(), sub_page_id);
                     return package_builder;
@@ -153,6 +222,12 @@ fn compile_package(
 
         match sub_page.get_message(message_id.as_message_id()) {
             GetMessageResult::Message(message_content) => {
+                if dbg {
+                    println!(
+                        ">>> [DLV trade/scalper] compile_package: msg {} LOADED -> add to package",
+                        message_id.get_value()
+                    );
+                }
                 let attempt_no = topic_queue.delivery_attempts.get(message_content.id);
 
                 if package_builder.is_none() {
@@ -169,8 +244,21 @@ fn compile_package(
                     .unwrap()
                     .add_message(message_content, attempt_no);
             }
-            GetMessageResult::Missing => {}
+            GetMessageResult::Missing => {
+                if dbg {
+                    println!(
+                        ">>> [DLV trade/scalper] compile_package: msg {} MISSING -> skip (dequeued)",
+                        message_id.get_value()
+                    );
+                }
+            }
             GetMessageResult::NotLoaded => {
+                if dbg {
+                    println!(
+                        ">>> [DLV trade/scalper] compile_package: msg {} NOT_LOADED -> schedule restore + RETURN",
+                        message_id.get_value()
+                    );
+                }
                 if topic_persist {
                     app.restore_page_scheduler
                         .schedule_load_sub_page(topic.clone(), sub_page_id);
