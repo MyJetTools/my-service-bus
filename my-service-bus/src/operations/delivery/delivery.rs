@@ -289,12 +289,10 @@ fn drain_queue_below(
     queue: &mut my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals,
     target_msg_id: i64,
 ) {
-    while let Some(peek) = queue.peek() {
-        if peek >= target_msg_id {
-            break;
-        }
-        queue.dequeue();
-    }
+    // Drop everything below target_msg_id in one shot (keeps target and above). O(intervals),
+    // not O(gap): dequeuing id-by-id would burn CPU under the topic mutex when fast-forwarding
+    // a far-behind non-persisted queue on a high-speed bus.
+    queue.remove_before(target_msg_id);
 }
 
 #[cfg(test)]
