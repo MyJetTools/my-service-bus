@@ -8,15 +8,21 @@ edition = "2021"
 
 [dependencies]
 
-my-service-bus = { tag = "1.1.5", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
+my-service-bus = { tag = "1.1.6", git = "https://github.com/MyJetTools/my-service-bus-sdk.git", features = [
     "tcp_contracts",
     "shared",
 
 ] }
-my-http-server = { tag = "0.8.3", git = "https://github.com/MyJetTools/my-http-server.git", features = [
+my-http-server = { tag = "0.9.0", git = "https://github.com/MyJetTools/my-http-server.git", features = [
     "macros",
     "controllers",
     "static-files",
+] }
+# my-http-server 0.9.0 moved the HTTP-model derive macros into my-http-utils; the
+# code they generate references the `my_http_utils` crate directly, so it must be a
+# direct dependency. Pinned to the same tag my-http-server 0.9.0 uses to avoid a duplicate.
+my-http-utils = { tag = "0.1.0", git = "https://github.com/MyJetTools/my-http-utils.git", features = [
+    "server",
 ] }
 
 
@@ -28,15 +34,15 @@ rust-extensions = { tag = "0.1.5", git = "https://github.com/MyJetTools/rust-ext
     "vec-maybe-stack",
 ] }
 
-my-logger = { tag = "1.2.1", git = "https://github.com/MyJetTools/my-logger.git" }
+my-logger = { tag = "1.3.0", git = "https://github.com/MyJetTools/my-logger.git" }
 
 
-my-grpc-extensions = { tag = "0.6.6", git = "https://github.com/MyJetTools/my-grpc-extensions.git", features = [
+my-grpc-extensions = { tag = "0.7.0", git = "https://github.com/MyJetTools/my-grpc-extensions.git", features = [
     "grpc-client",
 ] }
 
 
-mcp-server-middleware = { tag = "0.8.3", git = "https://github.com/my-ai-utils/mcp-server-middleware.git" }
+mcp-server-middleware = { tag = "0.9.0", git = "https://github.com/my-ai-utils/mcp-server-middleware.git" }
 my-ai-agent = { tag = "0.1.0", git = "https://github.com/my-ai-utils/my-ai-agent.git", features = [
     "agent",
 ] }

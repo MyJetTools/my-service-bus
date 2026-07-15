@@ -15,6 +15,7 @@ mod list_sessions_tool_call;
 mod list_topics_tool_call;
 mod persistence_get_message_tool_call;
 mod persistence_load_page_tool_call;
+mod set_topic_persist_tool_call;
 
 pub use get_debug_console_tool_call::*;
 pub use get_message_from_memory_tool_call::*;
@@ -27,6 +28,7 @@ pub use list_sessions_tool_call::*;
 pub use list_topics_tool_call::*;
 pub use persistence_get_message_tool_call::*;
 pub use persistence_load_page_tool_call::*;
+pub use set_topic_persist_tool_call::*;
 
 pub fn build_middleware(app: Arc<AppContext>) -> McpMiddleware {
     let mut mcp = McpMiddleware::new(
@@ -47,6 +49,7 @@ pub fn build_middleware(app: Arc<AppContext>) -> McpMiddleware {
     mcp.register_tool_call(Arc::new(PersistenceLoadPageHandler::new(app.clone())));
     mcp.register_tool_call(Arc::new(PersistenceGetMessageHandler::new(app.clone())));
     mcp.register_tool_call(Arc::new(GetDebugConsoleHandler::new(app.clone())));
+    mcp.register_tool_call(Arc::new(SetTopicPersistHandler::new(app.clone())));
 
     mcp
 }
