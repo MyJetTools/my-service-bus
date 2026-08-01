@@ -26,12 +26,10 @@ jobs:
 
       - name: Updating version
         run: |
-          cd my-service-bus
           sed -i -e 's/^version = .*/version = "${{ steps.get_version.outputs.VERSION }}"/' Cargo.toml
 
       - name: Build server (release)
         run: |
-          cd my-service-bus
           cargo build --release
 
       - name: Docker login
@@ -40,6 +38,5 @@ jobs:
 
       - name: Docker Build and Publish
         run: |
-          cd my-service-bus
           docker build -t ${IMAGE_NAME}:${{ steps.get_version.outputs.VERSION }} .
           docker push ${IMAGE_NAME}:${{ steps.get_version.outputs.VERSION }}

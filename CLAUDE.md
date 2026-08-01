@@ -4,29 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Layout
 
-This repo root contains two separate Rust crates (it is **not** a single Cargo workspace):
+The main broker node (`my-service-bus-main-node`, the binary) lives **at the repo root** — `Cargo.toml`, `src/`, `proto/`, `build.rs`, `Dockerfile`. All backend work happens there. The UI is a second, separate crate (it is **not** a single Cargo workspace):
 
-- `my-service-bus/` — the main broker node (`my-service-bus-main-node`, the binary). All backend work happens here.
-- `my-service-bus-ui/` — a Dioxus 0.7 WASM SPA that is the web dashboard. It is built separately and its output is copied into `my-service-bus/wwwroot/`, which the node serves via `StaticFilesMiddleware`.
+- `ui/` — a Dioxus 0.7 WASM SPA that is the web dashboard. It is built separately and its output is copied into the root `wwwroot/`, which the node serves via `StaticFilesMiddleware`.
+- `wwwroot/` — the built UI bundle. Committed, and baked into the docker image by the `Dockerfile`.
 - `docs/` — design notes; see `docs/HOW_IT_WORKS.md` (GC layers) and `docs/gc-recovery.md`.
 
 ## Build / Run / Test
 
-All `cargo` commands for the broker must run from inside `my-service-bus/`:
+`cargo` commands for the broker run from the repo root:
 
 ```bash
-cd my-service-bus
 cargo build --release          # build the node
 cargo run --release            # run the node (needs persistence service + settings, see below)
 cargo test                     # run all tests
 cargo test <name>              # run a single test by substring match
 ```
 
-The UI is built from `my-service-bus-ui/` with the Dioxus CLI. Use the provided script — it builds the SPA and copies the bundle (including raw `app.css`/`styled.css`) into the node's `wwwroot/`, which is the only step needed to publish a UI change:
+The UI is built with the Dioxus CLI. Use `build-ui.sh` from the root — it builds the SPA and copies the bundle (including raw `app.css`/`styled.css`) into `wwwroot/`, which is the only step needed to publish a UI change:
 
 ```bash
-cd my-service-bus-ui
-./build.sh                     # dx build --release --platform web, then copy to ../my-service-bus/wwwroot
+./build-ui.sh                  # dx build --release --platform web, then copy to ./wwwroot
 ```
 
 ### Runtime prerequisites
@@ -89,5 +87,5 @@ Shutdown is cooperative: `app.states.wait_until_shutdown()` then `app::shutdown:
 - **Locking**: topic state lives behind a single `Mutex<TopicInner>`; go through `Topic`'s accessor methods. `arc-swap` and `parking_lot` are used for low-contention shared state. Never `.await` while holding a sync mutex.
 - **Dependencies**: most MyJetTools crates are pinned to git tags in `Cargo.toml` (e.g. `my-service-bus` SDK, `my-http-server`, `my-tcp-sockets`, `rust-extensions`, `my-grpc-extensions`). Consult the development-best-practices MCP docs before using these APIs — they evolve and signatures change between tags.
 - **Allocator**: `mimalloc` is the global allocator (set in `main.rs`).
-- **Versioning**: `APP_VERSION` comes from `CARGO_PKG_VERSION` (the crate version in `my-service-bus/Cargo.toml`); bump the changelog in `README.md`.
+- **Versioning**: `APP_VERSION` comes from `CARGO_PKG_VERSION` (the crate version in the root `Cargo.toml`); bump the changelog in `README.md`.
 - Tests use `#[cfg(test)]` mocks (`src/test_tools.rs`, `SubPageLoaderSchedulerMock`, the grpc mock repo) so the node can run without the persistence service.

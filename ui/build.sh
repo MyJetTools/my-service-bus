@@ -11,7 +11,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WWWROOT="${WWWROOT:-$SCRIPT_DIR/../my-service-bus/wwwroot}"
+WWWROOT="${WWWROOT:-$SCRIPT_DIR/../wwwroot}"
 DX_OUT="$SCRIPT_DIR/target/dx/my-service-bus-ui/release/web/public"
 
 cd "$SCRIPT_DIR"

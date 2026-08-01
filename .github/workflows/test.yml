@@ -18,5 +18,4 @@ jobs:
         uses: arduino/setup-protoc@v3
       - name: Test build
         run: |
-          cd my-service-bus
           cargo test
