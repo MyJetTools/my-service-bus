@@ -168,6 +168,7 @@ fn render_status_bar(data: &MySbHttpContract, cs_ra: &MySbState, is_live: bool) 
         div { class: "msb-statusbar",
             {status_live(is_live)}
             {render_debug_status(data.debug.as_deref())}
+            {render_mcp_writes_status(data.mcp_writes_remaining_secs)}
             {render_problematic_status(count_problematic_queues(data))}
             {status_item("Sessions", &data.sessions.items.len().to_string(), StatusValueTone::Default)}
             {status_item("Persist", &bar.persist_queue.to_string(), persist_tone)}
@@ -179,6 +180,52 @@ fn render_status_bar(data: &MySbHttpContract, cs_ra: &MySbState, is_live: bool) 
             {status_item("persist", data.persistence_version.as_str(), StatusValueTone::Dim)}
             {status_item_end("Updated", &updated_str, StatusValueTone::Default)}
         }
+    }
+}
+
+/// The MCP write tools are refused unless a human opens this window, so the
+/// switch that opens it lives here, next to the DEBUG badge — both say "this node
+/// is temporarily in a more dangerous mode than usual".
+fn render_mcp_writes_status(remaining_secs: Option<u64>) -> Element {
+    match remaining_secs {
+        Some(left) => {
+            let mins = left / 60;
+            let secs = left % 60;
+            rsx! {
+                div { class: "msb-statusbar__item is-alert",
+                    span { class: "msb-statusbar__label", "MCP W" }
+                    span { class: "msb-statusbar__value", "{mins}:{secs:02}" }
+                    button {
+                        class: "msb-statusbar__btn",
+                        onclick: move |_| {
+                            spawn(async move {
+                                if let Err(err) = crate::api::my_sb::set_mcp_writes(false).await {
+                                    dioxus_logger::tracing::error!("set_mcp_writes failed: {err}");
+                                }
+                            });
+                        },
+                        "Disable"
+                    }
+                }
+            }
+        }
+        None => rsx! {
+            div { class: "msb-statusbar__item",
+                span { class: "msb-statusbar__label", "MCP W" }
+                span { class: "msb-statusbar__value is-dim", "off" }
+                button {
+                    class: "msb-statusbar__btn",
+                    onclick: move |_| {
+                        spawn(async move {
+                            if let Err(err) = crate::api::my_sb::set_mcp_writes(true).await {
+                                dioxus_logger::tracing::error!("set_mcp_writes failed: {err}");
+                            }
+                        });
+                    },
+                    "Enable"
+                }
+            }
+        },
     }
 }
 

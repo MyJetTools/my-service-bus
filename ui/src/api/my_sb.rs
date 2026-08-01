@@ -5,6 +5,7 @@ const QUEUES_PATH: &str = "/api/Queues";
 const DELETE_TOPIC_PATH: &str = "/api/Topics/Delete";
 const RESTORE_TOPIC_PATH: &str = "/api/Topics/Restore";
 const NAMESPACES_PATH: &str = "/api/Namespaces/List";
+const MCP_WRITES_PATH: &str = "/api/Mcp/Writes";
 
 /// Header naming the namespace a request works in. No header means the default
 /// namespace — which is exactly what the UI sends when nothing is selected, so
@@ -125,6 +126,25 @@ pub async fn restore_topic(topic_id: &str) -> Result<(), String> {
 
     if !resp.status().is_success() {
         return Err(format!("PUT {url} returned {}", resp.status()));
+    }
+
+    Ok(())
+}
+
+/// Opens the MCP-writes window for another 10 minutes, or closes it at once.
+/// Namespace-less on purpose: the window is a node-wide switch, not per-namespace.
+pub async fn set_mcp_writes(enabled: bool) -> Result<(), String> {
+    let origin = get_origin()?;
+    let url = format!("{origin}{MCP_WRITES_PATH}?enabled={enabled}");
+
+    let resp = reqwest::Client::new()
+        .post(&url)
+        .send()
+        .await
+        .map_err(|e| format!("POST {url} failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("POST {url} returned {}", resp.status()));
     }
 
     Ok(())

@@ -35,6 +35,13 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         super::namespaces_controller::GetNamespacesListAction::new(app.clone()),
     ));
 
+    controllers.register_get_action(Arc::new(super::mcp_controller::GetMcpWritesAction::new(
+        app.clone(),
+    )));
+    controllers.register_post_action(Arc::new(super::mcp_controller::SetMcpWritesAction::new(
+        app.clone(),
+    )));
+
     controllers.register_post_action(Arc::new(super::greeting::GreetingAction::new(app.clone())));
 
     //controllers.register_http_objects(greeting_controller);

@@ -28,6 +28,11 @@ pub struct StatusJsonResult {
     /// Set when the debug console is actively tracing a target ("topic / queue").
     #[serde(skip_serializing_if = "Option::is_none")]
     pub debug: Option<String>,
+    /// Seconds left of the MCP-writes window. Absent while the write tools are
+    /// disabled, which is what a freshly started node always reports.
+    #[serde(rename = "mcpWritesRemainingSecs")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mcp_writes_remaining_secs: Option<u64>,
 }
 
 impl StatusJsonResult {
@@ -67,6 +72,7 @@ impl StatusJsonResult {
             },
             persistence_version: app.persistence_version.get(),
             version: crate::app::APP_VERSION.to_string(),
+            mcp_writes_remaining_secs: app.mcp_writes_remaining_secs(),
             debug: app.debug_console.get_target().map(|t| match &t.queue_id {
                 Some(queue_id) => format!("{} / {}", t.topic_id, queue_id),
                 None => format!("{} / *", t.topic_id),

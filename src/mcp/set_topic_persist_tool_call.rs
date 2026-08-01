@@ -51,6 +51,8 @@ impl McpToolCall<SetTopicPersistInput, SetTopicPersistResponse> for SetTopicPers
         &self,
         model: SetTopicPersistInput,
     ) -> Result<SetTopicPersistResponse, String> {
+        super::write_gate::ensure_mcp_writes_enabled(self.app.as_ref())?;
+
         let persist = model.persist.unwrap_or(true);
 
         let namespace = self

@@ -16,6 +16,12 @@ pub struct MySbHttpContract {
     /// Present when the broker's debug console is actively tracing a target ("topic / queue").
     #[serde(default)]
     pub debug: Option<String>,
+
+    /// Seconds left of the MCP-writes window. Absent while the write tools are
+    /// disabled — which is also what an older node, that knows nothing about the
+    /// window, reports.
+    #[serde(rename = "mcpWritesRemainingSecs", default)]
+    pub mcp_writes_remaining_secs: Option<u64>,
 }
 
 impl MySbHttpContract {

@@ -1502,6 +1502,28 @@ svg {
     gap: 4px;
 }
 
+/* Inline switch inside a status-bar cell (MCP writes enable/disable). */
+.msb-statusbar__btn {
+    margin-left: 6px;
+    padding: 1px 7px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--fg-2);
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease-out),
+        color var(--dur-fast) var(--ease-out),
+        background var(--dur-fast) var(--ease-out);
+}
+
+.msb-statusbar__btn:hover {
+    background: var(--bg-3);
+    border-color: var(--accent);
+    color: var(--fg-0);
+}
+
 .msb-dialog__backdrop {
     position: fixed;
     inset: 0;

@@ -4,6 +4,8 @@ use mcp_server_middleware::McpMiddleware;
 
 use crate::app::{AppContext, APP_VERSION};
 
+mod delete_queue_tool_call;
+mod delete_topic_tool_call;
 mod get_debug_console_tool_call;
 mod get_message_from_memory_tool_call;
 mod get_message_tool_call;
@@ -17,6 +19,10 @@ mod persistence_get_message_tool_call;
 mod persistence_load_page_tool_call;
 mod set_topic_persist_tool_call;
 
+mod write_gate;
+
+pub use delete_queue_tool_call::*;
+pub use delete_topic_tool_call::*;
 pub use get_debug_console_tool_call::*;
 pub use get_message_from_memory_tool_call::*;
 pub use get_message_tool_call::*;
@@ -35,7 +41,7 @@ pub fn build_middleware(app: Arc<AppContext>) -> McpMiddleware {
         "/mcp",
         "my-service-bus",
         APP_VERSION,
-        "MyServiceBus read-only stats: topics, queues, subscribers, sessions, in-memory pages and messages",
+        "MyServiceBus stats: topics, queues, subscribers, sessions, in-memory pages and messages. Write tools (set topic persist, delete queue, delete topic) are refused unless a human has enabled MCP writes in the UI.",
     );
 
     mcp.register_tool_call(Arc::new(GetOverviewHandler::new(app.clone())));
@@ -50,6 +56,8 @@ pub fn build_middleware(app: Arc<AppContext>) -> McpMiddleware {
     mcp.register_tool_call(Arc::new(PersistenceGetMessageHandler::new(app.clone())));
     mcp.register_tool_call(Arc::new(GetDebugConsoleHandler::new(app.clone())));
     mcp.register_tool_call(Arc::new(SetTopicPersistHandler::new(app.clone())));
+    mcp.register_tool_call(Arc::new(DeleteQueueHandler::new(app.clone())));
+    mcp.register_tool_call(Arc::new(DeleteTopicHandler::new(app.clone())));
 
     mcp
 }

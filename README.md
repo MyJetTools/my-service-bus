@@ -95,3 +95,6 @@ execute: **cargo run --release**
 * Persistence: `Namespace` is sent in every gRPC request and in each topics-snapshot record. The default namespace is sent as an absent field, so an un-upgraded persistence keeps working.
 * Prometheus topic metrics gained a `namespace` label; MCP tools gained an optional `namespace` argument; the sessions list reports the namespace of each connection.
 * UI: namespace selector in the topbar (shown once more than one namespace exists), remembered in localStorage.
+* MCP write tools are gated behind an enable window. `mysb_set_topic_persist`, `mysb_delete_queue` and `mysb_delete_topic` are refused unless a human opens it; the window lasts 10 minutes, pressing Enable again while it is open adds another 10, and a node restart always leaves it closed.
+* New MCP tools: `mysb_delete_queue` (irreversible) and `mysb_delete_topic` (soft delete, `hard_delete_after_seconds` defaults to 24h, restorable until then). Both report what the queue/topic still held at the moment of deletion.
+* New endpoints `GET`/`POST /api/Mcp/Writes`; `/api/Status` carries `mcpWritesRemainingSecs`, and the UI status bar gained an `MCP W` switch next to the DEBUG badge.

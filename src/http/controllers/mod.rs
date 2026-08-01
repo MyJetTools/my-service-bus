@@ -4,6 +4,7 @@ pub mod debug_controller;
 pub mod greeting;
 //pub mod logs;
 mod message_shared_contracts;
+pub mod mcp_controller;
 pub mod namespaces_controller;
 pub mod prometheus_controller;
 pub mod publisher;
