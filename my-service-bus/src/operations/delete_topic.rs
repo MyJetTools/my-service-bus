@@ -2,16 +2,17 @@ use std::sync::Arc;
 
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
-use crate::app::AppContext;
+use crate::{app::AppContext, namespaces::Namespace};
 
 use super::OperationFailResult;
 
 pub async fn delete_topic(
     app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     hard_delete_moment: DateTimeAsMicroseconds,
 ) -> Result<(), OperationFailResult> {
-    let topic = app
+    let topic = namespace
         .topic_list
         .get(topic_id)
         .ok_or_else(|| OperationFailResult::TopicNotFound {

@@ -5,6 +5,7 @@ use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::{
     app::AppContext,
+    namespaces::Namespace,
     queue_subscribers::SubscriberId,
     queues::{DeliveryBucket, TopicQueue},
 };
@@ -13,16 +14,18 @@ use super::OperationFailResult;
 
 pub async fn all_confirmed(
     app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     queue_id: &str,
     subscriber_id: SubscriberId,
 ) -> Result<(), OperationFailResult> {
-    let topic = app
-        .topic_list
-        .get(topic_id)
-        .ok_or(OperationFailResult::TopicNotFound {
-            topic_id: topic_id.to_string(),
-        })?;
+    let topic =
+        namespace
+            .topic_list
+            .get(topic_id)
+            .ok_or(OperationFailResult::TopicNotFound {
+                topic_id: topic_id.to_string(),
+            })?;
 
     let mut topic_access = topic.get_access();
 
@@ -57,16 +60,18 @@ pub async fn all_confirmed(
 
 pub async fn all_fail(
     app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     queue_id: &str,
     subscriber_id: SubscriberId,
 ) -> Result<(), OperationFailResult> {
-    let topic = app
-        .topic_list
-        .get(topic_id)
-        .ok_or(OperationFailResult::TopicNotFound {
-            topic_id: topic_id.to_string(),
-        })?;
+    let topic =
+        namespace
+            .topic_list
+            .get(topic_id)
+            .ok_or(OperationFailResult::TopicNotFound {
+                topic_id: topic_id.to_string(),
+            })?;
 
     let mut topic_data = topic.get_access();
 
@@ -97,17 +102,19 @@ pub async fn all_fail(
 
 pub async fn intermediary_confirm(
     app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     queue_id: &str,
     subscriber_id: SubscriberId,
     confirmed_ids: QueueWithIntervals,
 ) -> Result<(), OperationFailResult> {
-    let topic = app
-        .topic_list
-        .get(topic_id)
-        .ok_or(OperationFailResult::TopicNotFound {
-            topic_id: topic_id.to_string(),
-        })?;
+    let topic =
+        namespace
+            .topic_list
+            .get(topic_id)
+            .ok_or(OperationFailResult::TopicNotFound {
+                topic_id: topic_id.to_string(),
+            })?;
 
     let mut topic_data = topic.get_access();
 
@@ -151,17 +158,19 @@ pub async fn intermediary_confirm(
 
 pub async fn some_messages_are_confirmed(
     app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     queue_id: &str,
     subscriber_id: SubscriberId,
     confirmed_messages: QueueWithIntervals,
 ) -> Result<(), OperationFailResult> {
-    let topic = app
-        .topic_list
-        .get(topic_id)
-        .ok_or(OperationFailResult::TopicNotFound {
-            topic_id: topic_id.to_string(),
-        })?;
+    let topic =
+        namespace
+            .topic_list
+            .get(topic_id)
+            .ok_or(OperationFailResult::TopicNotFound {
+                topic_id: topic_id.to_string(),
+            })?;
 
     let mut topic_data = topic.get_access();
     {

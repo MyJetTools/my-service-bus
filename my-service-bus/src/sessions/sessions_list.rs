@@ -67,7 +67,8 @@ impl SessionsList {
         version: Option<String>,
         env_info: Option<String>,
         protocol_version: i32,
-    ) {
+        namespace: Arc<crate::namespaces::Namespace>,
+    ) -> Arc<MyServiceBusTcpSession> {
         let session_id = self.get_next_session_id();
 
         let tcp_session = Arc::new(MyServiceBusTcpSession::new(
@@ -77,6 +78,7 @@ impl SessionsList {
             version,
             env_info,
             protocol_version,
+            namespace,
         ));
 
         let session = MyServiceBusSession {
@@ -90,17 +92,25 @@ impl SessionsList {
 
         let connection_id = tcp_session.connection.id;
         match find_tcp(&new_inner.tcp, connection_id) {
-            Ok(idx) => new_inner.tcp[idx] = tcp_session,
-            Err(idx) => new_inner.tcp.insert(idx, tcp_session),
+            Ok(idx) => new_inner.tcp[idx] = tcp_session.clone(),
+            Err(idx) => new_inner.tcp.insert(idx, tcp_session.clone()),
         }
 
         new_inner.by_session_id.insert_or_replace(session);
         new_inner.snapshot_id += 1;
 
         self.inner.store(Arc::new(new_inner));
+
+        tcp_session
     }
 
-    pub fn add_http(&self, name: String, version: String, ip: String) -> HttpSessionKey {
+    pub fn add_http(
+        &self,
+        name: String,
+        version: String,
+        ip: String,
+        namespace: Arc<crate::namespaces::Namespace>,
+    ) -> HttpSessionKey {
         let session_key = HttpSessionKey::new();
         let session_id = self.get_next_session_id();
         let http_session = Arc::new(MyServiceBusHttpSession::new(
@@ -109,6 +119,7 @@ impl SessionsList {
             name,
             version,
             ip,
+            namespace,
         ));
         let session = MyServiceBusSession {
             session_id,
@@ -129,9 +140,12 @@ impl SessionsList {
     }
 
     #[cfg(test)]
-    pub fn add_test(&self) -> Arc<MyServiceBusTestSession> {
+    pub fn add_test(
+        &self,
+        namespace: Arc<crate::namespaces::Namespace>,
+    ) -> Arc<MyServiceBusTestSession> {
         let session_id = self.get_next_session_id();
-        let test_session = Arc::new(MyServiceBusTestSession::new(session_id));
+        let test_session = Arc::new(MyServiceBusTestSession::new(session_id, namespace));
         let session = MyServiceBusSession {
             session_id,
             inner: MyServiceBusSessionInner::Test(test_session.clone()),
@@ -160,17 +174,6 @@ impl SessionsList {
         let inner = self.inner.load();
         match find_tcp(&inner.tcp, connection_id) {
             Ok(idx) => Some(inner.tcp[idx].clone()),
-            Err(_) => None,
-        }
-    }
-
-    pub fn get_session_id_by_tcp_connection_id(
-        &self,
-        connection_id: ConnectionId,
-    ) -> Option<SessionId> {
-        let inner = self.inner.load();
-        match find_tcp(&inner.tcp, connection_id) {
-            Ok(idx) => Some(inner.tcp[idx].session_id),
             Err(_) => None,
         }
     }

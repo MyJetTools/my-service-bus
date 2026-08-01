@@ -1,9 +1,13 @@
 use std::sync::Arc;
 
-use crate::app::AppContext;
+use crate::{app::AppContext, namespaces::Namespace};
 
-pub async fn restore_topic(app: &Arc<AppContext>, topic_id: &str) -> bool {
-    let Some(topic) = app.topic_list.get(topic_id) else {
+pub async fn restore_topic(
+    app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
+    topic_id: &str,
+) -> bool {
+    let Some(topic) = namespace.topic_list.get(topic_id) else {
         return false;
     };
 

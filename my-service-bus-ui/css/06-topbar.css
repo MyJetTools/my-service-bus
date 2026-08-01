@@ -97,3 +97,39 @@
     color: var(--fg-0);
     border-color: var(--border-strong);
 }
+
+/* Namespace selector — only rendered when the node holds more than one namespace. */
+.msb-ns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.msb-ns__label {
+    font-size: var(--fs-sm);
+    color: var(--fg-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.msb-ns__select {
+    height: 34px;
+    padding: 0 10px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--fg-0);
+    font-size: var(--fs-base);
+    transition: border-color var(--dur-fast) var(--ease-out),
+        background var(--dur-fast) var(--ease-out);
+}
+
+.msb-ns__select:hover {
+    background: var(--bg-3);
+}
+
+.msb-ns__select:focus {
+    border-color: var(--accent);
+    background: var(--bg-3);
+    outline: none;
+}

@@ -67,7 +67,9 @@ struct NoOpBackgroundJob;
 
 #[async_trait::async_trait]
 impl rust_extensions::background_executor::BackgroundJob for NoOpBackgroundJob {
-    async fn execute(&self) {}
+    async fn execute(&self) -> rust_extensions::background_executor::RepeatIteration {
+        rust_extensions::background_executor::RepeatIteration::No
+    }
 }
 
 pub async fn create_app_context() -> Arc<AppContext> {

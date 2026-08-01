@@ -2,12 +2,13 @@ use std::sync::Arc;
 
 use my_service_bus::abstractions::publisher::MessageToPublish;
 
-use crate::{app::AppContext, sessions::SessionId};
+use crate::{app::AppContext, namespaces::Namespace, sessions::SessionId};
 
 use super::OperationFailResult;
 
 pub async fn publish(
     app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     messages: Vec<MessageToPublish>,
     _persist_immediately: bool,
@@ -17,11 +18,11 @@ pub async fn publish(
         return Err(OperationFailResult::ShuttingDown);
     }
 
-    let mut topic = app.topic_list.get(topic_id);
+    let mut topic = namespace.topic_list.get(topic_id);
 
     if topic.is_none() {
         if app.settings.auto_create_topic_on_publish {
-            topic = Some(app.topic_list.add_if_not_exists(topic_id)?);
+            topic = Some(namespace.topic_list.add_if_not_exists(topic_id)?);
         } else {
             return Err(OperationFailResult::TopicNotFound {
                 topic_id: topic_id.to_string(),

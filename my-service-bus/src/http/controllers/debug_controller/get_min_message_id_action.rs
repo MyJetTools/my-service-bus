@@ -28,10 +28,12 @@ impl GetMinMessageIdAction {
 async fn handle_request(
     action: &GetMinMessageIdAction,
     input_data: GetMinMessageIdInputModel,
-    _ctx: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
     let min_message_id = {
-        let topic = action.app.topic_list.get(&input_data.topic_id);
+        let topic = namespace.topic_list.get(&input_data.topic_id);
 
         if topic.is_none() {
             return Err(HttpFailResult::as_not_found(

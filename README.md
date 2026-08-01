@@ -86,3 +86,12 @@ execute: **cargo run --release**
 ### 2.2.8
 * GRPC Optimization
 * Libraries Updates
+
+### 2.4.0
+* Namespaces. Every topic now lives inside a namespace; a topic name is unique only within one, and namespaces share nothing.
+* A client which names no namespace works in `default` — the pre-namespace behaviour, byte for byte on the wire.
+* TCP: new `SetNamespace` packet (id 16). It is sent only when the namespace is not `default`, and is refused once the connection has published or subscribed.
+* HTTP: publishers and subscribers take the namespace from the session fixed at `/Greeting`; the admin/read surface takes it from the `ns` header (with a `?ns=` fallback). New `GET /api/Namespaces/List`.
+* Persistence: `Namespace` is sent in every gRPC request and in each topics-snapshot record. The default namespace is sent as an absent field, so an un-upgraded persistence keeps working.
+* Prometheus topic metrics gained a `namespace` label; MCP tools gained an optional `namespace` argument; the sessions list reports the namespace of each connection.
+* UI: namespace selector in the topbar (shown once more than one namespace exists), remembered in localStorage.

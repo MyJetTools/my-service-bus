@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rust_extensions::{date_time::DateTimeAsMicroseconds, MyTimerTick};
+use rust_extensions::{date_time::DateTimeAsMicroseconds, MyTimerTick, RepeatTimerIteration};
 
 use crate::app::AppContext;
 
@@ -18,31 +18,35 @@ impl GcTimer {
 
 #[async_trait::async_trait]
 impl MyTimerTick for GcTimer {
-    async fn tick(&self) {
-        let topic_list = self.app.topic_list.get_all();
+    async fn tick(&self) -> RepeatTimerIteration {
+        for namespace in self.app.namespaces.get_all().iter() {
+            for topic in namespace.topic_list.get_all().iter() {
+                let now = DateTimeAsMicroseconds::now();
 
-        for topic in topic_list.iter() {
-            let now = DateTimeAsMicroseconds::now();
+                let removed_queues = {
+                    let mut topic_data = topic.get_access();
+                    topic_data.gc();
 
-            let removed_queues = {
-                let mut topic_data = topic.get_access();
-                topic_data.gc();
+                    let removed_queues = topic_data
+                        .gc_queues_with_no_subscribers(self.app.settings.queue_gc_timeout, now);
 
-                let removed_queues = topic_data
-                    .gc_queues_with_no_subscribers(self.app.settings.queue_gc_timeout, now);
+                    removed_queues
+                };
 
-                removed_queues
-            };
-
-            if let Some(removed_queues) = &removed_queues {
-                for queue_id in removed_queues {
-                    self.app
-                        .prometheus
-                        .queue_is_deleted(topic.topic_id.as_str(), queue_id);
+                if let Some(removed_queues) = &removed_queues {
+                    for queue_id in removed_queues {
+                        self.app.prometheus.queue_is_deleted(
+                            namespace.name.as_str(),
+                            topic.topic_id.as_str(),
+                            queue_id,
+                        );
+                    }
                 }
             }
         }
 
         crate::operations::gc_http_connections(self.app.as_ref()).await;
+
+        RepeatTimerIteration::WithInterval
     }
 }

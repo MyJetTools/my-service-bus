@@ -30,10 +30,13 @@ impl DeleteTopicAction {
 async fn handle_request(
     action: &DeleteTopicAction,
     input_data: DeleteTopicRequestContract,
-    _: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
     crate::operations::delete_topic(
         &action.app,
+        &namespace,
         &input_data.topic_id,
         input_data.hard_delete_moment,
     )

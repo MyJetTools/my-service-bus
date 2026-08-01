@@ -1,13 +1,16 @@
+use std::sync::Arc;
+
 use super::super::OperationFailResult;
 
-use crate::app::AppContext;
+use crate::namespaces::Namespace;
+
 pub async fn set_max_messages_per_payload(
-    app: &AppContext,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     queue_id: &str,
     max_amount: Option<usize>,
 ) -> Result<(), OperationFailResult> {
-    let topic = app
+    let topic = namespace
         .topic_list
         .get(topic_id)
         .ok_or(OperationFailResult::TopicNotFound {

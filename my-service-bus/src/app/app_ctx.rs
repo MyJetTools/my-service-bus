@@ -3,8 +3,8 @@ use std::{sync::Arc, time::Duration};
 use rust_extensions::{AppStates, ApplicationStates};
 
 use crate::{
-    grpc_client::PersistenceGrpcService, queue_subscribers::SubscriberIdGenerator,
-    sessions::SessionsList, settings::SettingsModel, topics::TopicsList,
+    grpc_client::PersistenceGrpcService, namespaces::NamespacesList,
+    queue_subscribers::SubscriberIdGenerator, sessions::SessionsList, settings::SettingsModel,
     utils::MultiThreadedShortString,
 };
 
@@ -14,7 +14,9 @@ pub const APP_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 pub struct AppContext {
     pub states: Arc<AppStates>,
-    pub topic_list: TopicsList,
+    /// Every topic lives inside a namespace. A client which names none works in the
+    /// default one, which is what everybody did before namespaces existed.
+    pub namespaces: NamespacesList,
     pub persistence_client: Arc<PersistenceGrpcService>,
     pub sessions: SessionsList,
     pub subscriber_id_generator: SubscriberIdGenerator,
@@ -42,7 +44,7 @@ impl AppContext {
     pub async fn new(messages_repo: PersistenceGrpcService, settings: Arc<SettingsModel>) -> Self {
         Self {
             states: Arc::new(AppStates::create_un_initialized()),
-            topic_list: TopicsList::new(),
+            namespaces: NamespacesList::new(),
 
             persistence_client: Arc::new(messages_repo),
             sessions: SessionsList::new(),
@@ -68,6 +70,10 @@ impl AppContext {
 
     pub fn get_max_delivery_size(&self) -> usize {
         self.settings.max_delivery_size
+    }
+
+    pub fn get_default_namespace(&self) -> Arc<crate::namespaces::Namespace> {
+        self.namespaces.get_default()
     }
 }
 

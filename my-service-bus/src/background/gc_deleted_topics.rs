@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use my_logger::LogEventCtx;
-use rust_extensions::{date_time::DateTimeAsMicroseconds, MyTimerTick};
+use rust_extensions::{date_time::DateTimeAsMicroseconds, MyTimerTick, RepeatTimerIteration};
 
 use crate::app::AppContext;
 
@@ -17,40 +17,51 @@ impl GcDeletedTopicsTimer {
 
 #[async_trait::async_trait]
 impl MyTimerTick for GcDeletedTopicsTimer {
-    async fn tick(&self) {
+    async fn tick(&self) -> RepeatTimerIteration {
         let now = DateTimeAsMicroseconds::now().unix_microseconds;
 
-        let topics = self.app.topic_list.get_all();
-
-        for topic in topics.iter() {
-            let deleted = topic.get_deleted();
-            if deleted == 0 || deleted > now {
-                continue;
-            }
-
-            let topic_id = topic.topic_id.as_str();
-
-            match self.app.persistence_client.hard_delete_topic(topic_id).await {
-                Ok(()) => {
-                    self.app.topic_list.delete_topic(topic_id);
-
-                    my_logger::LOGGER.write_info(
-                        "GcDeletedTopics",
-                        format!("Topic {} hard-deleted", topic_id),
-                        LogEventCtx::new().add("topicId", topic_id),
-                    );
+        for namespace in self.app.namespaces.get_all().iter() {
+            for topic in namespace.topic_list.get_all().iter() {
+                let deleted = topic.get_deleted();
+                if deleted == 0 || deleted > now {
+                    continue;
                 }
-                Err(err) => {
-                    my_logger::LOGGER.write_error(
-                        "GcDeletedTopics",
-                        format!(
-                            "Failed to hard-delete topic {}. Will retry next tick. Err: {:?}",
-                            topic_id, err
-                        ),
-                        LogEventCtx::new().add("topicId", topic_id),
-                    );
+
+                let topic_id = topic.topic_id.as_str();
+
+                match self
+                    .app
+                    .persistence_client
+                    .hard_delete_topic(namespace.as_grpc_namespace(), topic_id)
+                    .await
+                {
+                    Ok(()) => {
+                        namespace.topic_list.delete_topic(topic_id);
+
+                        my_logger::LOGGER.write_info(
+                            "GcDeletedTopics",
+                            format!("Topic {}/{} hard-deleted", namespace.name, topic_id),
+                            LogEventCtx::new()
+                                .add("namespace", namespace.name.as_str())
+                                .add("topicId", topic_id),
+                        );
+                    }
+                    Err(err) => {
+                        my_logger::LOGGER.write_error(
+                            "GcDeletedTopics",
+                            format!(
+                                "Failed to hard-delete topic {}/{}. Will retry next tick. Err: {:?}",
+                                namespace.name, topic_id, err
+                            ),
+                            LogEventCtx::new()
+                                .add("namespace", namespace.name.as_str())
+                                .add("topicId", topic_id),
+                        );
+                    }
                 }
             }
         }
+
+        RepeatTimerIteration::WithInterval
     }
 }

@@ -13,18 +13,39 @@ use super::topic_data_access::TopicDataAccess;
 use super::{TopicId, TopicInner};
 
 pub struct Topic {
+    /// Namespace this topic belongs to. Kept on the topic itself so that
+    /// everything downstream — metrics, logs, persistence snapshots — can name the
+    /// topic unambiguously: `topic_id` alone is unique only inside one namespace.
+    pub namespace: String,
     pub topic_id: TopicId,
     inner: Mutex<TopicInner>,
 }
 
 impl Topic {
-    pub fn new(topic_id: String, message_id: i64, persist: bool, deleted: i64) -> Self {
+    pub fn new(
+        namespace: String,
+        topic_id: String,
+        message_id: i64,
+        persist: bool,
+        deleted: i64,
+    ) -> Self {
         let topic_id = TopicId::new(topic_id);
         Self {
+            namespace,
             topic_id: topic_id.clone(),
             inner: Mutex::new(TopicInner::new(
                 topic_id, message_id, persist, deleted,
             )),
+        }
+    }
+
+    /// Namespace as the persistence contract wants it: `None` for the default one,
+    /// which is what a node knowing nothing about namespaces sends.
+    pub fn as_grpc_namespace(&self) -> Option<String> {
+        if self.namespace == my_service_bus::shared::validators::DEFAULT_NAMESPACE {
+            None
+        } else {
+            Some(self.namespace.clone())
         }
     }
 

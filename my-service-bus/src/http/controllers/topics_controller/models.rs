@@ -5,12 +5,6 @@ use rust_extensions::date_time::DateTimeAsMicroseconds;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
-#[serde(transparent)]
-pub struct JsonTopicsResult {
-    pub items: Vec<JsonTopicResult>,
-}
-
-#[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
 pub struct JsonTopicResult {
     pub id: String,
     #[serde(rename = "messageId")]

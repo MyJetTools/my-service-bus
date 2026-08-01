@@ -1,16 +1,18 @@
+use std::sync::Arc;
+
 use my_service_bus::abstractions::MessageId;
 
-use crate::app::AppContext;
+use crate::{app::AppContext, namespaces::Namespace};
 
 use super::super::OperationFailResult;
 
 pub async fn set_message_id(
-    app: &AppContext,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     queue_id: &str,
     message_id: MessageId,
 ) -> Result<(), OperationFailResult> {
-    let topic = app
+    let topic = namespace
         .topic_list
         .get(topic_id)
         .ok_or(OperationFailResult::TopicNotFound {
@@ -36,10 +38,11 @@ pub async fn set_message_id(
 
 pub async fn delete_queue(
     app: &AppContext,
+    namespace: &Arc<Namespace>,
     topic_id: &str,
     queue_id: &str,
 ) -> Result<(), OperationFailResult> {
-    let topic = app
+    let topic = namespace
         .topic_list
         .get(topic_id)
         .ok_or(OperationFailResult::TopicNotFound {
@@ -50,7 +53,8 @@ pub async fn delete_queue(
 
     topic_data.queues.remove(queue_id);
 
-    app.prometheus.queue_is_deleted(topic_id, queue_id);
+    app.prometheus
+        .queue_is_deleted(namespace.name.as_str(), topic_id, queue_id);
 
     Ok(())
 }

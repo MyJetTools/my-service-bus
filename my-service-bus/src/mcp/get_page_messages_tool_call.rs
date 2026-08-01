@@ -14,6 +14,8 @@ pub struct GetPageMessagesInput {
         description = "Sub-page id to inspect (as reported by mysb_get_topic_pages). Holds up to 1000 message ids"
     )]
     pub sub_page_id: i64,
+    #[property(description = "Namespace to work in. Optional, absent means the default namespace")]
+    pub namespace: Option<String>,
 }
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
@@ -70,8 +72,13 @@ impl McpToolCall<GetPageMessagesInput, GetPageMessagesResponse> for GetPageMessa
         &self,
         model: GetPageMessagesInput,
     ) -> Result<GetPageMessagesResponse, String> {
-        let topic = self
+        let namespace = self
             .app
+            .namespaces
+            .get_or_create_optional(model.namespace.as_deref())
+            .map_err(|err| format!("Invalid namespace. {}", err))?;
+
+        let topic = namespace
             .topic_list
             .get(&model.topic_id)
             .ok_or_else(|| format!("Topic '{}' not found", model.topic_id))?;

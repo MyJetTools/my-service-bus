@@ -8,7 +8,7 @@ use my_service_bus::{
     tcp_contracts::{MySbSerializerState, MySbTcpConnection, MySbTcpContract, MySbTcpSerializer},
 };
 
-use crate::{app::AppContext, operations};
+use crate::{app::AppContext, namespaces::Namespace, operations};
 
 use super::error::MySbSocketError;
 
@@ -20,6 +20,18 @@ pub struct TcpServerEvents {
 impl TcpServerEvents {
     pub fn new(app: Arc<AppContext>) -> Self {
         Self { app }
+    }
+
+    /// Namespace the connection works in. A connection with no session yet — a
+    /// packet arriving before `Greeting` — has none, and the packet is dropped
+    /// rather than served in the default namespace.
+    fn get_namespace(&self, connection: &Arc<MySbTcpConnection>) -> Option<Arc<Namespace>> {
+        let session = self
+            .app
+            .sessions
+            .get_tcp_session_by_connection_id(connection.id)?;
+
+        Some(session.get_namespace())
     }
 
     pub async fn handle_incoming_packet(
@@ -56,13 +68,45 @@ impl TcpServerEvents {
                     no += 1;
                 }
 
+                // The session starts in the default namespace: a client which
+                // knows nothing about namespaces never sends `SetNamespace`, and
+                // one that does sends it right after this packet.
                 self.app.sessions.add_tcp(
                     connection.clone(),
                     connection_name.unwrap(),
                     version,
                     env_info,
                     protocol_version,
+                    self.app.get_default_namespace(),
                 );
+
+                Ok(())
+            }
+            MySbTcpContract::SetNamespace { namespace } => {
+                let Some(session) = self
+                    .app
+                    .sessions
+                    .get_tcp_session_by_connection_id(connection.id)
+                else {
+                    connection.send(&MySbTcpContract::Reject {
+                        message: "Namespace can not be set before the Greeting packet".to_string(),
+                    });
+                    return Ok(());
+                };
+
+                let resolved = match self.app.namespaces.get_or_create(namespace.as_str()) {
+                    Ok(resolved) => resolved,
+                    Err(err) => {
+                        connection.send(&MySbTcpContract::Reject {
+                            message: format!("Namespace '{}' is invalid. {}", namespace, err),
+                        });
+                        return Ok(());
+                    }
+                };
+
+                if let Err(message) = session.set_namespace(resolved) {
+                    connection.send(&MySbTcpContract::Reject { message });
+                }
 
                 Ok(())
             }
@@ -72,17 +116,20 @@ impl TcpServerEvents {
                 persist_immediately,
                 data_to_publish,
             } => {
-                if let Some(session_id) = self
+                if let Some(session) = self
                     .app
                     .sessions
-                    .get_session_id_by_tcp_connection_id(connection.id)
+                    .get_tcp_session_by_connection_id(connection.id)
                 {
+                    session.lock_namespace();
+
                     let result = operations::publisher::publish(
                         &self.app,
+                        &session.get_namespace(),
                         topic_id.as_str(),
                         data_to_publish,
                         persist_immediately,
-                        session_id,
+                        session.session_id,
                     ).await;
 
                     if let Err(err) = result {
@@ -117,8 +164,13 @@ impl TcpServerEvents {
                     .sessions
                     .get_tcp_session_by_connection_id(connection.id)
                 {
+                    session.lock_namespace();
+
+                    let namespace = session.get_namespace();
+
                     operations::subscriber::subscribe_to_queue(
                         &self.app,
+                        &namespace,
                         topic_id,
                         queue_id,
                         queue_type,
@@ -150,13 +202,16 @@ impl TcpServerEvents {
                 queue_id,
                 confirmation_id,
             } => {
-                operations::delivery_confirmation::all_confirmed(
-                    &self.app,
-                    topic_id.as_str(),
-                    queue_id.as_str(),
-                    confirmation_id.into(),
-                )
-                .await?;
+                if let Some(namespace) = self.get_namespace(connection) {
+                    operations::delivery_confirmation::all_confirmed(
+                        &self.app,
+                        &namespace,
+                        topic_id.as_str(),
+                        queue_id.as_str(),
+                        confirmation_id.into(),
+                    )
+                    .await?;
+                }
 
                 Ok(())
             }
@@ -164,11 +219,11 @@ impl TcpServerEvents {
                 if let Some(session) = self
                     .app
                     .sessions
-                    .get_session_id_by_tcp_connection_id(connection.id)
+                    .get_tcp_session_by_connection_id(connection.id)
                 {
                     operations::create_topic_if_not_exists(
-                        &self.app,
-                        Some(session),
+                        &session.get_namespace(),
+                        Some(session.session_id),
                         topic_id.as_str(),
                     )
                     .await?;
@@ -183,14 +238,17 @@ impl TcpServerEvents {
                 confirmation_id,
                 delivered,
             } => {
-                operations::delivery_confirmation::intermediary_confirm(
-                    &self.app,
-                    topic_id.as_str(),
-                    queue_id.as_str(),
-                    confirmation_id.into(),
-                    QueueWithIntervals::restore(delivered),
-                )
-                .await?;
+                if let Some(namespace) = self.get_namespace(connection) {
+                    operations::delivery_confirmation::intermediary_confirm(
+                        &self.app,
+                        &namespace,
+                        topic_id.as_str(),
+                        queue_id.as_str(),
+                        confirmation_id.into(),
+                        QueueWithIntervals::restore(delivered),
+                    )
+                    .await?;
+                }
 
                 Ok(())
             }
@@ -218,13 +276,17 @@ impl TcpServerEvents {
                 queue_id,
                 confirmation_id,
             } => {
-                operations::delivery_confirmation::all_fail(
-                    &self.app,
-                    topic_id.as_str(),
-                    queue_id.as_str(),
-                    confirmation_id.into(),
-                )
-                .await?;
+                if let Some(namespace) = self.get_namespace(connection) {
+                    operations::delivery_confirmation::all_fail(
+                        &self.app,
+                        &namespace,
+                        topic_id.as_str(),
+                        queue_id.as_str(),
+                        confirmation_id.into(),
+                    )
+                    .await?;
+                }
+
                 Ok(())
             }
 
@@ -235,14 +297,17 @@ impl TcpServerEvents {
                 confirmation_id,
                 delivered,
             } => {
-                operations::delivery_confirmation::some_messages_are_confirmed(
-                    &self.app,
-                    topic_id.as_str(),
-                    queue_id.as_str(),
-                    confirmation_id.into(),
-                    QueueWithIntervals::restore(delivered),
-                )
-                .await?;
+                if let Some(namespace) = self.get_namespace(connection) {
+                    operations::delivery_confirmation::some_messages_are_confirmed(
+                        &self.app,
+                        &namespace,
+                        topic_id.as_str(),
+                        queue_id.as_str(),
+                        confirmation_id.into(),
+                        QueueWithIntervals::restore(delivered),
+                    )
+                    .await?;
+                }
 
                 Ok(())
             }

@@ -23,6 +23,7 @@ pub async fn load_page(
     loop {
         let result = messages_pages_repo
             .load_page(
+                topic.as_grpc_namespace(),
                 topic.topic_id.as_str(),
                 sub_page_id.into(),
                 sub_page_id.get_first_message_id(),
@@ -60,6 +61,7 @@ pub async fn load_page(
                         zip_error
                     ),
                     LogEventCtx::new()
+                        .add("namespace", topic.namespace.as_str())
                         .add("topicId", topic.topic_id.as_str())
                         .add("subPageId", sub_page_id.get_value().to_string())
                         .add("attemptNo", attempt_no.to_string()),
@@ -79,6 +81,7 @@ pub async fn load_page(
                         sub_page_id.get_value(),
                     ),
                     LogEventCtx::new()
+                        .add("namespace", topic.namespace.as_str())
                         .add("topicId", topic.topic_id.as_str())
                         .add("subPageId", sub_page_id.get_value().to_string())
                         .add("attemptNo", attempt_no.to_string()),

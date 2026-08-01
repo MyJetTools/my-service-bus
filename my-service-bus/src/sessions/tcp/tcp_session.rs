@@ -1,12 +1,14 @@
 use std::sync::{
-    atomic::{AtomicU8, Ordering},
+    atomic::{AtomicBool, AtomicU8, Ordering},
     Arc,
 };
 
+use arc_swap::ArcSwap;
 use my_service_bus::tcp_contracts::{MySbTcpConnection, PacketProtVer};
 use rust_extensions::sorted_vec::EntityWithKey;
 
 use crate::{
+    namespaces::Namespace,
     operations::delivery::SubscriberPackageBuilder,
     sessions::{my_sb_session::*, ConnectionMetricsSnapshot, SessionId},
 };
@@ -19,6 +21,15 @@ pub struct MyServiceBusTcpSession {
     pub name: String,
     pub version: Option<String>,
     pub env_info: Option<String>,
+    /// Namespace this connection works in. A connection starts in the default one
+    /// — which is where every pre-namespace client stays — and the `SetNamespace`
+    /// packet moves it before the first publish or subscribe.
+    namespace: ArcSwap<Namespace>,
+    /// Raised by the first publish or subscribe. From that moment the namespace
+    /// can no longer change: the connection already holds subscriptions and
+    /// delivery cursors of the namespace it is in, and confirmations name only a
+    /// topic and a queue, so swapping it underneath would misroute them.
+    namespace_locked: AtomicBool,
 }
 
 impl MyServiceBusTcpSession {
@@ -29,6 +40,7 @@ impl MyServiceBusTcpSession {
         version: Option<String>,
         env_info: Option<String>,
         protocol_version: i32,
+        namespace: Arc<Namespace>,
     ) -> Self {
         Self {
             session_id,
@@ -38,7 +50,38 @@ impl MyServiceBusTcpSession {
             name,
             version,
             env_info,
+            namespace: ArcSwap::new(namespace),
+            namespace_locked: AtomicBool::new(false),
         }
+    }
+
+    pub fn get_namespace(&self) -> Arc<Namespace> {
+        self.namespace.load_full()
+    }
+
+    /// Called by the operations that make the namespace observable — publish and
+    /// subscribe. After this the connection is pinned to its namespace.
+    pub fn lock_namespace(&self) {
+        self.namespace_locked.store(true, Ordering::SeqCst);
+    }
+
+    pub fn set_namespace(&self, namespace: Arc<Namespace>) -> Result<(), String> {
+        // Re-stating the namespace it already has is not a change, so it stays
+        // allowed even after the connection started working.
+        if self.get_namespace().name == namespace.name {
+            return Ok(());
+        }
+
+        if self.namespace_locked.load(Ordering::SeqCst) {
+            return Err(format!(
+                "Namespace can not be changed to '{}' after the connection has published or subscribed",
+                namespace.name
+            ));
+        }
+
+        self.namespace.store(namespace);
+
+        Ok(())
     }
 
     pub fn update_deliver_message_packet_version(&self, value: u8) {

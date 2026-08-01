@@ -33,8 +33,9 @@ impl SetMaxMessagePerPayloadAction {
 async fn handle_request(
     action: &SetMaxMessagePerPayloadAction,
     input_data: SetMaxMessagesPerPayloadInputModel,
-    _ctx: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
 
     let max_messages = match input_data.max_messages{
         Some(messages) => {
@@ -49,7 +50,7 @@ async fn handle_request(
 
 
     crate::operations::queues::set_max_messages_per_payload(
-        action.app.as_ref(),
+        &namespace,
         input_data.topic_id.as_str(),
         input_data.queue_id.as_str(),
         max_messages,

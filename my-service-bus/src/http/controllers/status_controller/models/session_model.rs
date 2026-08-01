@@ -7,6 +7,9 @@ use serde::{Deserialize, Serialize};
 pub struct SessionJsonResult {
     pub id: i64,
     pub name: String,
+    /// Namespace the connection works in. A connection which never named one is
+    /// reported as `default`.
+    pub namespace: String,
     #[serde(rename = "type")]
     pub session_type: String,
     pub ip: String,
@@ -44,6 +47,7 @@ impl SessionJsonResult {
 
         Self {
             id: session.session_id.get_value(),
+            namespace: session.get_namespace().name.to_string(),
             ip: session_metrics.ip,
             session_type,
             name: name_and_version.name,

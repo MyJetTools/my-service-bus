@@ -30,9 +30,11 @@ impl CreateTopicAction {
 async fn handle_request(
     action: &CreateTopicAction,
     input_data: CreateTopicRequestContract,
-    _ctx: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    crate::operations::create_topic_if_not_exists(&action.app, None, input_data.topic_id.as_ref())
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
+    crate::operations::create_topic_if_not_exists(&namespace, None, input_data.topic_id.as_ref())
         .await?;
 
     HttpOutput::as_text("Topic is created".to_string())

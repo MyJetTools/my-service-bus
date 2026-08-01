@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use dioxus_utils::DataState;
 
-use crate::models::MySbHttpContract;
+use crate::models::{MySbHttpContract, NamespaceApiModel};
 
 const KPI_HISTORY_CAP: usize = 60;
 
@@ -15,9 +15,25 @@ pub struct MySbState {
     pub kpi_history: KpiHistory,
     pub last_updated_ms: f64,
     pub poll_failures: u32,
+    /// Every namespace the node holds, refreshed by the polling loop.
+    pub namespaces: Vec<NamespaceApiModel>,
+    /// Namespace the UI is pointed at. Empty means the default one — see
+    /// `crate::storage`.
+    pub selected_namespace: String,
 }
 
 impl MySbState {
+    /// Switching namespace throws away everything on screen: the topics, queues
+    /// and KPI history all belong to the namespace we are leaving, and showing
+    /// them next to the new namespace's name would be a lie until the next poll.
+    pub fn switch_namespace(&mut self, namespace: String) {
+        crate::storage::save_namespace(namespace.as_str());
+        self.selected_namespace = namespace;
+        self.data.reset();
+        self.kpi_history.clear();
+        self.last_updated_ms = 0.0;
+    }
+
     pub fn push_kpi_sample(&mut self, data: &MySbHttpContract) {
         let bar = data.get_status_bar_calculated_values();
         self.kpi_history.push(KpiSample {

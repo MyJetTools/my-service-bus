@@ -27,6 +27,8 @@ pub fn RenderMyServiceBus() -> Element {
     };
 
     let filter = cs_ra.filter_string.clone();
+    let namespaces = cs_ra.namespaces.clone();
+    let selected_namespace = cs_ra.selected_namespace.clone();
     let active_section = cs_ra.active_section;
     let topics_len = data.topics.items.len();
     let sessions_len = data.sessions.items.len();
@@ -67,7 +69,10 @@ pub fn RenderMyServiceBus() -> Element {
                     Topbar {
                         section: active_section,
                         filter,
+                        namespaces,
+                        selected_namespace,
                         on_filter_change: move |s: String| cs.write().filter_string = s,
+                        on_namespace_change: move |s: String| cs.write().switch_namespace(s),
                     }
                 }
                 div { class: "app-shell__kpi", {kpi_strip} }
@@ -77,6 +82,9 @@ pub fn RenderMyServiceBus() -> Element {
         }
     }
 }
+
+/// How many status polls happen between two refreshes of the namespace list.
+const NAMESPACES_RELOAD_EVERY: u32 = 10;
 
 /// A queue is considered problematic once its backlog grows past this many messages.
 const PROBLEMATIC_QUEUE_SIZE: i64 = 10_000;
@@ -468,9 +476,27 @@ fn start_background(mut cs: Signal<MySbState>, cs_ra: &MySbState) {
         return;
     }
     spawn(async move {
-        cs.write().started = true;
+        // The selected namespace survives a page reload, so it is restored from
+        // localStorage before the first request goes out.
+        {
+            let mut w = cs.write();
+            w.started = true;
+            w.selected_namespace = crate::storage::load_namespace().unwrap_or_default();
+        }
+
+        // The namespace list changes far more rarely than the status snapshot, so
+        // it is refreshed once every NAMESPACES_RELOAD_EVERY polls instead of on
+        // every one.
+        let mut tick: u32 = 0;
 
         loop {
+            if tick % NAMESPACES_RELOAD_EVERY == 0 {
+                if let Ok(namespaces) = crate::api::my_sb::get_namespaces_list().await {
+                    cs.write().namespaces = namespaces;
+                }
+            }
+            tick = tick.wrapping_add(1);
+
             match crate::api::my_sb::get_data().await {
                 Ok(data) => {
                     let mut w = cs.write();

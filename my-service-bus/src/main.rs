@@ -31,6 +31,7 @@ mod test_tools;
 mod utils;
 
 mod background;
+mod namespaces;
 mod topics;
 pub mod persistence_grpc {
     tonic::include_proto!("persistence");

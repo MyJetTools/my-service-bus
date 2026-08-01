@@ -17,6 +17,8 @@ pub struct GetMessageFromMemoryInput {
     pub topic_id: String,
     #[property(description = "Message id to fetch from the in-memory page cache")]
     pub message_id: i64,
+    #[property(description = "Namespace to work in. Optional, absent means the default namespace")]
+    pub namespace: Option<String>,
 }
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
@@ -71,8 +73,13 @@ impl McpToolCall<GetMessageFromMemoryInput, GetMessageFromMemoryResponse> for Ge
         &self,
         model: GetMessageFromMemoryInput,
     ) -> Result<GetMessageFromMemoryResponse, String> {
-        let topic = self
+        let namespace = self
             .app
+            .namespaces
+            .get_or_create_optional(model.namespace.as_deref())
+            .map_err(|err| format!("Invalid namespace. {}", err))?;
+
+        let topic = namespace
             .topic_list
             .get(&model.topic_id)
             .ok_or_else(|| format!("Topic '{}' not found", model.topic_id))?;

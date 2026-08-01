@@ -33,11 +33,12 @@ impl SetMessageIdAction {
 async fn handle_request(
     action: &SetMessageIdAction,
     input_data: SetQueueMessageIdInputContract,
-    _ctx: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
 
     crate::operations::queues::set_message_id(
-        action.app.as_ref(),
+        &namespace,
         input_data.topic_id.as_str(),
         input_data.queue_id.as_str(),
         input_data.message_id.into(),

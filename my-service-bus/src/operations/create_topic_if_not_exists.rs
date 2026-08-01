@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use crate::{app::AppContext, sessions::SessionId, topics::Topic};
+use crate::{namespaces::Namespace, sessions::SessionId, topics::Topic};
 
 use super::OperationFailResult;
 
 pub async fn create_topic_if_not_exists(
-    app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
     session_id: Option<SessionId>,
     topic_id: &str,
 ) -> Result<Arc<Topic>, OperationFailResult> {
-    let topic = app.topic_list.add_if_not_exists(topic_id)?;
+    let topic = namespace.topic_list.add_if_not_exists(topic_id)?;
 
     if topic.get_deleted() != 0 {
         return Err(OperationFailResult::TopicIsDeleted {

@@ -312,11 +312,12 @@ mod tests {
         const QUEUE_NAME: &str = "test-queue";
 
         let app = crate::test_tools::create_app_context().await;
+        let namespace = app.get_default_namespace();
 
-        let test_session = app.sessions.add_test();
+        let test_session = app.sessions.add_test(namespace.clone());
 
         crate::operations::create_topic_if_not_exists(
-            &app,
+            &namespace,
             Some(test_session.session_id),
             TOPIC_NAME,
         )
@@ -325,6 +326,7 @@ mod tests {
 
         crate::operations::subscriber::subscribe_to_queue(
             &app,
+            &namespace,
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::Permanent,
@@ -347,6 +349,7 @@ mod tests {
 
         crate::operations::publisher::publish(
             &app,
+            &namespace,
             TOPIC_NAME,
             messages,
             false,
@@ -367,9 +370,10 @@ mod tests {
         const QUEUE_NAME: &str = "test-queue";
 
         let app = crate::test_tools::create_app_context().await;
-        let test_session = app.sessions.add_test();
+        let namespace = app.get_default_namespace();
+        let test_session = app.sessions.add_test(namespace.clone());
 
-        app.topic_list.add(TOPIC_NAME, 3.into(), true, 0);
+        namespace.topic_list.add(TOPIC_NAME, 3.into(), true, 0);
 
         //Simulate that we have persisted messages
         let msg1 = MessageProtobufModel::new(
@@ -389,12 +393,12 @@ mod tests {
         let messages_to_persist = vec![msg1, msg2];
 
         app.persistence_client
-            .save_messages(TOPIC_NAME, messages_to_persist)
+            .save_messages(None, TOPIC_NAME, messages_to_persist)
             .await
             .unwrap();
 
         {
-            let topic = app.topic_list.get(TOPIC_NAME).unwrap();
+            let topic = namespace.topic_list.get(TOPIC_NAME).unwrap();
             let mut topic_data = topic.get_access();
 
             let mut queue_with_intervals = QueueWithIntervals::new();
@@ -412,6 +416,7 @@ mod tests {
 
         crate::operations::subscriber::subscribe_to_queue(
             &app,
+            &namespace,
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::Permanent,

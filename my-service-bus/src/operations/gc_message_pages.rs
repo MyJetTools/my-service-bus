@@ -10,11 +10,12 @@ mod tests {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
         let app = crate::test_tools::create_app_context().await;
+        let namespace = app.get_default_namespace();
 
-        let session = app.sessions.add_test();
+        let session = app.sessions.add_test(namespace.clone());
 
         let topic = crate::operations::create_topic_if_not_exists(
-            &app,
+            &namespace,
             Some(session.session_id),
             TOPIC_NAME,
         )
@@ -23,6 +24,7 @@ mod tests {
 
         let subscriber_id = crate::operations::subscriber::subscribe_to_queue(
             &app,
+            &namespace,
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,
@@ -43,6 +45,7 @@ mod tests {
 
         crate::operations::publisher::publish(
             &app,
+            &namespace,
             TOPIC_NAME,
             vec![msg1, msg2],
             false,

@@ -63,6 +63,15 @@ impl MyServiceBusSession {
         }
     }
 
+    pub fn get_namespace(&self) -> Arc<crate::namespaces::Namespace> {
+        match &self.inner {
+            MyServiceBusSessionInner::Tcp(session) => session.get_namespace(),
+            MyServiceBusSessionInner::Http(session) => session.get_namespace(),
+            #[cfg(test)]
+            MyServiceBusSessionInner::Test(session) => session.get_namespace(),
+        }
+    }
+
     pub async fn disconnect(&self) -> bool {
         match &self.inner {
             MyServiceBusSessionInner::Tcp(session) => session.disconnect().await,

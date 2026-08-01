@@ -8,24 +8,29 @@ pub async fn execute(app: Arc<AppContext>) {
 }
 
 async fn empty_persistence_queues(app: Arc<AppContext>) {
-    let topics = app.topic_list.get_all();
-    for topic in topics.iter() {
-        let metrics = topic.get_topic_size_metrics();
+    for namespace in app.namespaces.get_all().iter() {
+        let topics = namespace.topic_list.get_all();
 
-        while metrics.persist_size > 0 {
+        for topic in topics.iter() {
+            let metrics = topic.get_topic_size_metrics();
+
+            while metrics.persist_size > 0 {
+                println!(
+                    "Topic {}/{} has {} messages to persist. Doing Force Persist",
+                    namespace.name.as_str(),
+                    topic.topic_id.as_str(),
+                    metrics.persist_size
+                );
+
+                crate::operations::persist_topic_messages(&app, &topic).await;
+            }
+
             println!(
-                "Topic {} has {} messages to persist. Doing Force Persist",
-                topic.topic_id.as_str(),
-                metrics.persist_size
+                "Topic {}/{} has no messages to persist.",
+                namespace.name.as_str(),
+                topic.topic_id.as_str()
             );
-
-            crate::operations::persist_topic_messages(&app, &topic).await;
         }
-
-        println!(
-            "Topic {} has no messages to persist.",
-            topic.topic_id.as_str()
-        );
     }
 }
 

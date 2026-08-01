@@ -15,6 +15,8 @@ pub struct PersistenceLoadPageInput {
         description = "Sub-page id to request (as reported by mysb_get_topic_pages). Holds up to 1000 consecutive message ids"
     )]
     pub sub_page_id: i64,
+    #[property(description = "Namespace to work in. Optional, absent means the default namespace")]
+    pub namespace: Option<String>,
 }
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
@@ -71,6 +73,12 @@ impl McpToolCall<PersistenceLoadPageInput, PersistenceLoadPageResponse> for Pers
         &self,
         model: PersistenceLoadPageInput,
     ) -> Result<PersistenceLoadPageResponse, String> {
+        let namespace = self
+            .app
+            .namespaces
+            .get_or_create_optional(model.namespace.as_deref())
+            .map_err(|err| format!("Invalid namespace. {}", err))?;
+
         let sub_page_id = SubPageId::new(model.sub_page_id);
         let page_id: PageId = sub_page_id.into();
         let from_message_id = sub_page_id.get_first_message_id();
@@ -84,7 +92,13 @@ impl McpToolCall<PersistenceLoadPageInput, PersistenceLoadPageResponse> for Pers
         let result = self
             .app
             .persistence_client
-            .load_page(&model.topic_id, page_id, from_message_id, to_message_id)
+            .load_page(
+                namespace.as_grpc_namespace(),
+                &model.topic_id,
+                page_id,
+                from_message_id,
+                to_message_id,
+            )
             .await
             .map_err(|err| {
                 format!(

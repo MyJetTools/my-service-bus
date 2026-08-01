@@ -4,7 +4,7 @@ use my_http_server::{HttpContext, HttpFailResult, HttpOkResult, HttpOutput};
 
 use crate::app::AppContext;
 
-use super::models::{JsonTopicResult, JsonTopicsResult};
+use super::models::JsonTopicResult;
 
 #[my_http_server::macros::http_route(
     method: "GET",
@@ -13,7 +13,7 @@ use super::models::{JsonTopicResult, JsonTopicsResult};
     summary: "Get list of topics",
     controller: "Topics",
     result:[
-        {status_code: 200, description: "List of topics", model:"JsonTopicsResult"},
+        {status_code: 200, description: "List of topics", model:"Vec<JsonTopicResult>"},
     ]
 )]
 pub struct GetTopicsAction {
@@ -28,9 +28,11 @@ impl GetTopicsAction {
 
 async fn handle_request(
     action: &GetTopicsAction,
-    _: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let topics = action.app.topic_list.get_all();
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
+    let topics = namespace.topic_list.get_all();
 
     let mut items: Vec<JsonTopicResult> = Vec::new();
 
@@ -40,7 +42,5 @@ async fn handle_request(
         items.push(item);
     }
 
-    let contract = JsonTopicsResult { items };
-
-    HttpOutput::as_json(contract).into_ok_result(true).into()
+    HttpOutput::as_json(items).into_ok_result(true).into()
 }

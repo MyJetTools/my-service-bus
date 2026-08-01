@@ -36,11 +36,14 @@ async fn handle_request(
 
     http_session.ping();
 
+    let namespace = http_session.get_namespace();
+
     if let Some(confirmations) = input_data.confirmation {
         for confirmation in confirmations {
             if confirmation.all_confirmed_ok() {
                 crate::operations::delivery_confirmation::all_confirmed(
                     &action.app,
+                    &namespace,
                     &confirmation.topic_id,
                     &confirmation.queue_id,
                     confirmation.subscriber_id.into(),

@@ -30,9 +30,12 @@ impl RestoreTopicAction {
 async fn handle_request(
     action: &RestoreTopicAction,
     input_data: RestoreTopicRequestContract,
-    _: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let restored = crate::operations::restore_topic(&action.app, &input_data.topic_id).await;
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
+    let restored =
+        crate::operations::restore_topic(&action.app, &namespace, &input_data.topic_id).await;
     let response = RestoreTopicResponseContract { restored };
     HttpOutput::as_json(response).into_ok_result(true).into()
 }

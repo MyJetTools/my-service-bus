@@ -39,13 +39,16 @@ impl TopicsInner {
 }
 
 pub struct TopicsList {
+    /// Namespace these topics belong to — stamped onto every topic created here.
+    namespace: String,
     inner: ArcSwap<TopicsInner>,
     write_lock: Mutex<()>,
 }
 
 impl TopicsList {
-    pub fn new() -> Self {
+    pub fn new(namespace: String) -> Self {
         Self {
+            namespace,
             inner: ArcSwap::from_pointee(TopicsInner::empty()),
             write_lock: Mutex::new(()),
         }
@@ -77,7 +80,13 @@ impl TopicsList {
             return Ok(existing.clone());
         }
 
-        let topic = Arc::new(Topic::new(topic_id.to_string(), 0, true, 0));
+        let topic = Arc::new(Topic::new(
+            self.namespace.clone(),
+            topic_id.to_string(),
+            0,
+            true,
+            0,
+        ));
         let mut new_sorted = current.sorted.clone();
         new_sorted.insert_or_replace(topic.clone());
 
@@ -100,6 +109,7 @@ impl TopicsList {
         let current = self.inner.load_full();
 
         let topic = Arc::new(Topic::new(
+            self.namespace.clone(),
             topic_id.to_string(),
             message_id.get_value(),
             persist,

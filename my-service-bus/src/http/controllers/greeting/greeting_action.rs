@@ -38,10 +38,16 @@ async fn handle_request(
 ) -> Result<HttpOkResult, HttpFailResult> {
     let ip = ctx.request.get_ip().get_real_ip().to_string();
 
-    let session_key = action
-        .app
-        .sessions
-        .add_http(input_data.name, input_data.version, ip);
+    // The namespace of an HTTP client is fixed here and read from the session on
+    // every later publish/subscribe, so a request that forgets the header can not
+    // silently land in the default namespace.
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
+    let session_key =
+        action
+            .app
+            .sessions
+            .add_http(input_data.name, input_data.version, ip, namespace);
 
     let result = GreetingJsonResult {
         session: session_key.into_string(),

@@ -10,34 +10,42 @@ use crate::{
 };
 
 pub async fn persist_all(app: &Arc<AppContext>) {
-    let topic_list = app.topic_list.get_all();
+    let namespaces = app.namespaces.get_all();
 
-    let mut topics_snapshots = Vec::with_capacity(topic_list.len());
+    // Every namespace goes into one stream: persistence keeps a single snapshot
+    // where each record names its namespace, and that is also how the node learns
+    // which namespaces exist when it restores.
+    let mut topics_snapshots = Vec::new();
 
-    for topic in topic_list.iter() {
-        topics_snapshots.push(topic.get_topic_info(|topic_data| {
-            TopicAndQueuesSnapshotGrpcModel {
-                topic_id: topic_data.topic_id.to_string(),
-                message_id: topic_data.message_id.get_value(),
-                queue_snapshots: topic_data
-                    .queues
-                    .get_snapshot(|itm| QueueSnapshotGrpcModel {
-                        queue_id: itm.queue_id.to_string(),
-                        ranges: itm
-                            .queue
-                            .get_intervals()
-                            .iter()
-                            .map(|itm| QueueIndexRangeGrpcModel {
-                                from_id: itm.from_id,
-                                to_id: itm.to_id,
-                            })
-                            .collect(),
-                        queue_type: itm.queue_type.into_u8() as i32,
-                    }),
-                persist: Some(topic_data.persist),
-                deleted: topic_data.deleted,
-            }
-        }));
+    for namespace in namespaces.iter() {
+        let grpc_namespace = namespace.as_grpc_namespace();
+
+        for topic in namespace.topic_list.get_all().iter() {
+            topics_snapshots.push(topic.get_topic_info(|topic_data| {
+                TopicAndQueuesSnapshotGrpcModel {
+                    topic_id: topic_data.topic_id.to_string(),
+                    message_id: topic_data.message_id.get_value(),
+                    queue_snapshots: topic_data
+                        .queues
+                        .get_snapshot(|itm| QueueSnapshotGrpcModel {
+                            queue_id: itm.queue_id.to_string(),
+                            ranges: itm
+                                .queue
+                                .get_intervals()
+                                .iter()
+                                .map(|itm| QueueIndexRangeGrpcModel {
+                                    from_id: itm.from_id,
+                                    to_id: itm.to_id,
+                                })
+                                .collect(),
+                            queue_type: itm.queue_type.into_u8() as i32,
+                        }),
+                    persist: Some(topic_data.persist),
+                    deleted: topic_data.deleted,
+                    namespace: grpc_namespace.clone(),
+                }
+            }));
+        }
     }
 
     let result = app
@@ -53,7 +61,9 @@ pub async fn persist_all(app: &Arc<AppContext>) {
         );
     }
 
-    for topic in topic_list.iter() {
-        crate::operations::persist_topic_messages(app, topic).await;
+    for namespace in namespaces.iter() {
+        for topic in namespace.topic_list.get_all().iter() {
+            crate::operations::persist_topic_messages(app, topic).await;
+        }
     }
 }

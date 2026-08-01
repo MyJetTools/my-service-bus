@@ -30,9 +30,11 @@ impl UpdatePersistAction {
 async fn handle_request(
     action: &UpdatePersistAction,
     input_data: UpdatePersistRequestContract,
-    _ctx: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    crate::operations::update_topic_persist(&action.app, input_data.topic_id, input_data.persist)
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
+    crate::operations::update_topic_persist(&namespace, input_data.topic_id, input_data.persist)
         .await?;
 
     HttpOutput::as_text("Topic is created".to_string())

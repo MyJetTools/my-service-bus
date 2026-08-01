@@ -32,6 +32,7 @@ impl PersistenceGrpcService {
 
     pub async fn load_page(
         &self,
+        namespace: Option<String>,
         topic_id: &str,
         page_id: PageId,
         from_message_id: MessageId,
@@ -46,6 +47,7 @@ impl PersistenceGrpcService {
                         from_message_id: from_message_id.get_value(),
                         to_message_id: to_message_id.get_value(),
                         version: 1,
+                        namespace,
                     })
                     .await
                     .unwrap();
@@ -68,6 +70,7 @@ impl PersistenceGrpcService {
 
     pub async fn get_message(
         &self,
+        namespace: Option<String>,
         topic_id: &str,
         message_id: MessageId,
     ) -> Result<Option<MessageContentGrpcModel>, PersistenceError> {
@@ -77,6 +80,7 @@ impl PersistenceGrpcService {
                     .get_message(GetMessageGrpcRequest {
                         topic_id: topic_id.to_string(),
                         message_id: message_id.get_value(),
+                        namespace,
                     })
                     .await?;
 
@@ -93,6 +97,7 @@ impl PersistenceGrpcService {
 
     pub async fn save_messages(
         &self,
+        namespace: Option<String>,
         topic_id: &str,
         messages: Vec<MessageProtobufModel>,
     ) -> Result<(), PersistenceError> {
@@ -101,6 +106,7 @@ impl PersistenceGrpcService {
                 let input_data = vec![SaveMessagesGrpcRequest {
                     topic_id: topic_id.to_string(),
                     messages: messages.into_iter().map(|itm| itm.into()).collect(),
+                    namespace,
                 }];
                 repo.save_messages(input_data).await?;
 
@@ -122,11 +128,16 @@ impl PersistenceGrpcService {
         }
     }
 
-    pub async fn hard_delete_topic(&self, topic_id: &str) -> Result<(), GrpcReadError> {
+    pub async fn hard_delete_topic(
+        &self,
+        namespace: Option<String>,
+        topic_id: &str,
+    ) -> Result<(), GrpcReadError> {
         match self {
             PersistenceGrpcService::Grpc(repo) => {
                 repo.hard_delete_topic(HardDeleteTopicGrpcRequest {
                     topic_id: topic_id.to_string(),
+                    namespace,
                 })
                 .await?;
                 Ok(())

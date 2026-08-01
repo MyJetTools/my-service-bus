@@ -17,6 +17,8 @@ pub struct PersistenceGetMessageInput {
     pub topic_id: String,
     #[property(description = "Message id to fetch from the persistence service")]
     pub message_id: i64,
+    #[property(description = "Namespace to work in. Optional, absent means the default namespace")]
+    pub namespace: Option<String>,
 }
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
@@ -73,6 +75,12 @@ impl McpToolCall<PersistenceGetMessageInput, PersistenceGetMessageResponse> for 
         &self,
         model: PersistenceGetMessageInput,
     ) -> Result<PersistenceGetMessageResponse, String> {
+        let namespace = self
+            .app
+            .namespaces
+            .get_or_create_optional(model.namespace.as_deref())
+            .map_err(|err| format!("Invalid namespace. {}", err))?;
+
         let message_id: MessageId = model.message_id.into();
         let sub_page_id: SubPageId = message_id.into();
         let page_id: PageId = sub_page_id.into();
@@ -84,6 +92,7 @@ impl McpToolCall<PersistenceGetMessageInput, PersistenceGetMessageResponse> for 
             .app
             .persistence_client
             .load_page(
+                namespace.as_grpc_namespace(),
                 &model.topic_id,
                 page_id,
                 sub_page_id.get_first_message_id(),

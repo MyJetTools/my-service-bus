@@ -31,6 +31,10 @@ pub fn build(app: &Arc<AppContext>) -> ControllersMiddleware {
         super::sessions_controller::DeleteSessionAction::new(app.clone()),
     ));
 
+    controllers.register_get_action(Arc::new(
+        super::namespaces_controller::GetNamespacesListAction::new(app.clone()),
+    ));
+
     controllers.register_post_action(Arc::new(super::greeting::GreetingAction::new(app.clone())));
 
     //controllers.register_http_objects(greeting_controller);

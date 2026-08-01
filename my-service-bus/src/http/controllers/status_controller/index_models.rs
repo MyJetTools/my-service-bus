@@ -31,12 +31,12 @@ pub struct StatusJsonResult {
 }
 
 impl StatusJsonResult {
-    pub async fn new(app: &AppContext) -> Self {
+    pub async fn new(app: &AppContext, namespace: &crate::namespaces::Namespace) -> Self {
         let mut sys_info = sysinfo::System::new_all();
 
         sys_info.refresh_all();
 
-        let snapshot = app.topic_list.get_all_with_snapshot_id();
+        let snapshot = namespace.topic_list.get_all_with_snapshot_id();
 
         let mut queues = BTreeMap::new();
 

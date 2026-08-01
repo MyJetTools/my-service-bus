@@ -18,7 +18,11 @@ pub async fn persist_topic_messages(app: &Arc<AppContext>, topic: &Arc<Topic>) {
         }
 
         app.persistence_client
-            .save_messages(topic.topic_id.as_str(), bucket.get())
+            .save_messages(
+                topic.as_grpc_namespace(),
+                topic.topic_id.as_str(),
+                bucket.get(),
+            )
             .await
             .unwrap();
 

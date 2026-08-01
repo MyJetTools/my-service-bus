@@ -15,10 +15,14 @@ pub struct MyServiceBusTestSession {
     pub name: String,
     pub _version: Option<String>,
     pub connected_moment: DateTimeAsMicroseconds,
+    namespace: std::sync::Arc<crate::namespaces::Namespace>,
 }
 
 impl MyServiceBusTestSession {
-    pub fn new(session_id: SessionId) -> Self {
+    pub fn new(
+        session_id: SessionId,
+        namespace: std::sync::Arc<crate::namespaces::Namespace>,
+    ) -> Self {
         Self {
             session_id,
             connected: std::sync::atomic::AtomicBool::new(true),
@@ -26,7 +30,12 @@ impl MyServiceBusTestSession {
             name: "Test".to_string(),
             _version: None,
             connected_moment: DateTimeAsMicroseconds::now(),
+            namespace,
         }
+    }
+
+    pub fn get_namespace(&self) -> std::sync::Arc<crate::namespaces::Namespace> {
+        self.namespace.clone()
     }
 
     pub fn get_list_of_packets_and_clear_them(&self) -> Vec<HttpDeliveryPackage> {

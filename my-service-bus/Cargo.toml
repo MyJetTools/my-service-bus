@@ -1,6 +1,6 @@
 [package]
 name = "my-service-bus-main-node"
-version = "2.3.0"
+version = "2.4.0"
 authors = ["amigin <amigin@gmail.com>"]
 edition = "2021"
 

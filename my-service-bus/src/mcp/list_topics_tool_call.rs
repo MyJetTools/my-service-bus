@@ -6,11 +6,18 @@ use serde::{Deserialize, Serialize};
 use crate::app::AppContext;
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
-pub struct ListTopicsInput {}
+pub struct ListTopicsInput {
+    #[property(
+        description = "Namespace to list topics of. Optional, absent means every namespace of this node"
+    )]
+    pub namespace: Option<String>,
+}
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
 pub struct TopicSummary {
-    #[property(description = "Topic id")]
+    #[property(description = "Namespace the topic belongs to")]
+    pub namespace: String,
+    #[property(description = "Topic id. Unique only inside its namespace")]
     pub id: String,
     #[property(description = "Next message id to be assigned on publish")]
     pub message_id: i64,
@@ -62,36 +69,54 @@ impl ToolDefinition for ListTopicsHandler {
 impl McpToolCall<ListTopicsInput, ListTopicsResponse> for ListTopicsHandler {
     async fn execute_tool_call(
         &self,
-        _model: ListTopicsInput,
+        model: ListTopicsInput,
     ) -> Result<ListTopicsResponse, String> {
-        let topics = self.app.topic_list.get_all();
-        let mut result = Vec::with_capacity(topics.len());
+        // No namespace named means every namespace: a diagnostic listing that
+        // quietly showed one namespace out of three would read as the whole node.
+        let namespaces = match model.namespace.as_deref().filter(|itm| !itm.is_empty()) {
+            Some(name) => {
+                let namespace = self
+                    .app
+                    .namespaces
+                    .get(name)
+                    .ok_or_else(|| format!("Namespace '{}' not found", name))?;
+                vec![namespace]
+            }
+            None => self.app.namespaces.get_all().as_ref().clone(),
+        };
 
-        for topic in topics.iter() {
-            let summary = topic.get_topic_info(|inner| {
-                let mut subscribers_count = 0usize;
-                let mut queues_count = 0usize;
-                for queue in inner.queues.get_all() {
-                    queues_count += 1;
-                    subscribers_count += queue.subscribers.get_amount();
-                }
+        let mut result = Vec::new();
 
-                TopicSummary {
-                    id: inner.topic_id.to_string(),
-                    message_id: inner.message_id.into(),
-                    messages_per_second: inner.statistics.messages_per_second,
-                    packets_per_second: inner.statistics.packets_per_second,
-                    avg_message_size: inner.statistics.size_metrics.avg_message_size,
-                    persist_size: inner.statistics.size_metrics.persist_size,
-                    queues_count,
-                    subscribers_count,
-                    publishers_count: inner.publishers.len(),
-                    persist: inner.persist,
-                    deleted: inner.deleted,
-                }
-            });
+        for namespace in namespaces.iter() {
+            let namespace_name = namespace.name.to_string();
 
-            result.push(summary);
+            for topic in namespace.topic_list.get_all().iter() {
+                let summary = topic.get_topic_info(|inner| {
+                    let mut subscribers_count = 0usize;
+                    let mut queues_count = 0usize;
+                    for queue in inner.queues.get_all() {
+                        queues_count += 1;
+                        subscribers_count += queue.subscribers.get_amount();
+                    }
+
+                    TopicSummary {
+                        namespace: namespace_name.clone(),
+                        id: inner.topic_id.to_string(),
+                        message_id: inner.message_id.into(),
+                        messages_per_second: inner.statistics.messages_per_second,
+                        packets_per_second: inner.statistics.packets_per_second,
+                        avg_message_size: inner.statistics.size_metrics.avg_message_size,
+                        persist_size: inner.statistics.size_metrics.persist_size,
+                        queues_count,
+                        subscribers_count,
+                        publishers_count: inner.publishers.len(),
+                        persist: inner.persist,
+                        deleted: inner.deleted,
+                    }
+                });
+
+                result.push(summary);
+            }
         }
 
         Ok(ListTopicsResponse { topics: result })

@@ -1,13 +1,15 @@
-use crate::app::AppContext;
+use std::sync::Arc;
+
+use crate::namespaces::Namespace;
 
 use super::OperationFailResult;
 
 pub async fn update_topic_persist(
-    app: &AppContext,
+    namespace: &Arc<Namespace>,
     topic_id: String,
     persist: bool,
 ) -> Result<(), OperationFailResult> {
-    let topic = app.topic_list.get(topic_id.as_str());
+    let topic = namespace.topic_list.get(topic_id.as_str());
 
     if topic.is_none() {
         return Err(OperationFailResult::TopicNotFound { topic_id });

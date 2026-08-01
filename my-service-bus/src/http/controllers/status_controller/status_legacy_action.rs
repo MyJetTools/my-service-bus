@@ -20,8 +20,11 @@ impl GetStatusLegacyAction {
 
 async fn handle_request(
     action: &GetStatusLegacyAction,
-    _ctx: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
-    let result = super::index_models::StatusJsonResult::new(action.app.as_ref()).await;
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
+    let result =
+        super::index_models::StatusJsonResult::new(action.app.as_ref(), namespace.as_ref()).await;
     return HttpOutput::as_json(result).into_ok_result(true).into();
 }

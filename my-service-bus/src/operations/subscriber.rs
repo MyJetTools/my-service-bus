@@ -5,6 +5,7 @@ use my_service_bus::abstractions::subscriber::TopicQueueType;
 
 use crate::{
     app::AppContext,
+    namespaces::Namespace,
     queue_subscribers::{QueueSubscriber, SubscriberId},
     queues::TopicQueue,
     sessions::MyServiceBusSession,
@@ -14,19 +15,20 @@ use super::OperationFailResult;
 
 pub async fn subscribe_to_queue(
     app: &Arc<AppContext>,
+    namespace: &Arc<Namespace>,
     topic_id: String,
     queue_id: String,
     queue_type: TopicQueueType,
     session: MyServiceBusSession,
 ) -> Result<SubscriberId, OperationFailResult> {
     let topic = {
-        let topic = app.topic_list.get(topic_id.as_str());
+        let topic = namespace.topic_list.get(topic_id.as_str());
 
         match topic {
             Some(result) => result,
             None => {
                 if app.settings.auto_create_topic_on_subscribe {
-                    app.topic_list.add_if_not_exists(topic_id.as_str())?
+                    namespace.topic_list.add_if_not_exists(topic_id.as_str())?
                 } else {
                     return Err(OperationFailResult::TopicNotFound { topic_id });
                 }
@@ -65,6 +67,7 @@ pub async fn subscribe_to_queue(
             "subscribe_to_queue",
             "Subscribed.",
             LogEventCtx::new()
+                .add("namespace", namespace.name.as_str())
                 .add("topicId", topic_queue.queue_id.as_str())
                 .add("queueId", topic_queue.queue_id.as_str())
                 .add("subscriberId", subscriber_id.get_value().to_string())
@@ -76,6 +79,7 @@ pub async fn subscribe_to_queue(
                 "subscribe_to_queue",
                 "Subscribed. Subscriber is kicked",
                 LogEventCtx::new()
+                    .add("namespace", namespace.name.as_str())
                     .add("topicId", topic_queue.queue_id.as_str())
                     .add("queueId", topic_queue.queue_id.as_str())
                     .add("subscriberId", subscriber_id.get_value().to_string())
@@ -124,11 +128,12 @@ mod tests {
         const TOPIC_NAME: &str = "test-topic";
         const QUEUE_NAME: &str = "test-queue";
         let app = crate::test_tools::create_app_context().await;
+        let namespace = app.get_default_namespace();
 
-        let session = app.sessions.add_test();
+        let session = app.sessions.add_test(namespace.clone());
 
         let topic = crate::operations::create_topic_if_not_exists(
-            &app,
+            &namespace,
             Some(session.session_id),
             TOPIC_NAME,
         )
@@ -137,6 +142,7 @@ mod tests {
 
         crate::operations::subscriber::subscribe_to_queue(
             &app,
+            &namespace,
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,
@@ -157,6 +163,7 @@ mod tests {
 
         crate::operations::publisher::publish(
             &app,
+            &namespace,
             TOPIC_NAME,
             vec![msg1, msg2],
             false,
@@ -165,10 +172,11 @@ mod tests {
         .await
         .unwrap();
 
-        let session2 = app.sessions.add_test();
+        let session2 = app.sessions.add_test(namespace.clone());
 
         let subscriber_id_2 = crate::operations::subscriber::subscribe_to_queue(
             &app,
+            &namespace,
             TOPIC_NAME.to_string(),
             QUEUE_NAME.to_string(),
             TopicQueueType::PermanentWithSingleConnection,

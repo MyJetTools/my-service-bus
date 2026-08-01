@@ -78,6 +78,10 @@ fn render_one(data: &MySbHttpContract, session: &MySbSessionHttpModel, row_class
                     }
                 }
                 div { class: "row",
+                    span { class: "label", "NS" }
+                    span { class: "value", "{session.namespace}" }
+                }
+                div { class: "row",
                     span { class: "label", "Connected" }
                     span { class: "value", "{session.connected}" }
                 }

@@ -30,6 +30,10 @@ pub struct MyServiceBusHttpSession {
     connection_metrics: ConnectionMetrics,
     connected: AtomicBool,
     send_queue: Arc<Mutex<SendQueueInner>>,
+    /// Namespace this session works in. Fixed at `/Greeting` and never changes —
+    /// there is no packet to move an HTTP session the way `SetNamespace` moves a
+    /// TCP connection, so publish and subscribe read it straight from here.
+    namespace: Arc<crate::namespaces::Namespace>,
 }
 
 impl MyServiceBusHttpSession {
@@ -39,6 +43,7 @@ impl MyServiceBusHttpSession {
         name: String,
         version: String,
         ip: String,
+        namespace: Arc<crate::namespaces::Namespace>,
     ) -> Self {
         Self {
             session_id,
@@ -50,7 +55,12 @@ impl MyServiceBusHttpSession {
             connection_metrics: ConnectionMetrics::new(),
             connected_moment: DateTimeAsMicroseconds::now(),
             send_queue: Arc::new(Mutex::new(SendQueueInner::new())),
+            namespace,
         }
+    }
+
+    pub fn get_namespace(&self) -> Arc<crate::namespaces::Namespace> {
+        self.namespace.clone()
     }
 
     pub fn ping(&self) {

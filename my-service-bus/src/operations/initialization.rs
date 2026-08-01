@@ -16,7 +16,31 @@ pub async fn init(app: Arc<AppContext>) {
     println!("Loaded topics {}", topics_and_queues.len());
 
     for topic_and_queues in topics_and_queues {
-        let topic = app.topic_list.add(
+        // The snapshot is also where the list of namespaces comes from: a
+        // namespace materializes the moment one of its topics is restored.
+        let namespace = match app
+            .namespaces
+            .get_or_create(topic_and_queues.namespace.as_str())
+        {
+            Ok(namespace) => namespace,
+            Err(err) => {
+                my_logger::LOGGER.write_error(
+                    "Initialization",
+                    format!(
+                        "Topic '{}' is skipped: its namespace '{}' is not a valid name. Err: {:?}",
+                        topic_and_queues.topic_id.as_str(),
+                        topic_and_queues.namespace.as_str(),
+                        err
+                    ),
+                    LogEventCtx::new()
+                        .add("topicId", topic_and_queues.topic_id.as_str())
+                        .add("namespace", topic_and_queues.namespace.as_str()),
+                );
+                continue;
+            }
+        };
+
+        let topic = namespace.topic_list.add(
             topic_and_queues.topic_id.as_str(),
             topic_and_queues.message_id.into(),
             topic_and_queues.persist,
@@ -36,12 +60,6 @@ pub async fn init(app: Arc<AppContext>) {
         }
     }
 
-    /*
-       for topic in app.topic_list.get_all().await {
-           restore_topic_pages(app.clone(), topic.clone()).await;
-       }
-    */
-
     if let Some(persistence_version) = app.persistence_client.get_persistence_version().await {
         app.persistence_version.update(persistence_version.as_str());
     }
@@ -57,23 +75,6 @@ pub async fn init(app: Arc<AppContext>) {
     println!("Application is initialized in {:?}", sw.duration());
 }
 
-/*
-async fn restore_topic_pages(app: Arc<AppContext>, topic: Arc<Topic>) {
-    let sub_page_id = topic.get_current_sub_page().await;
-
-    let sub_page = crate::operations::page_loader::load_page_to_cache(
-        &topic,
-        app.messages_pages_repo.clone(),
-        sub_page_id,
-    )
-    .await;
-
-    if let Some(sub_page) = sub_page {
-        let mut topic_data = topic.get_access().await;
-        topic_data.pages.restore_sub_page(sub_page);
-    }
-}
- */
 async fn restore_topics_and_queues(app: &AppContext) -> Vec<TopicSnapshot> {
     let mut attempt = 0;
     loop {

@@ -11,6 +11,9 @@ pub struct TopicQueueSnapshot {
 }
 #[derive(Clone)]
 pub struct TopicSnapshot {
+    /// Namespace the topic belongs to. A snapshot written before namespaces
+    /// existed carries none, and reads back as the default one.
+    pub namespace: String,
     pub topic_id: ShortString,
     pub message_id: i64,
     pub queues: Vec<TopicQueueSnapshot>,

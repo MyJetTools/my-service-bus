@@ -10,6 +10,8 @@ use crate::app::AppContext;
 pub struct GetTopicPagesInput {
     #[property(description = "Topic id to list in-memory message pages for")]
     pub topic_id: String,
+    #[property(description = "Namespace to work in. Optional, absent means the default namespace")]
+    pub namespace: Option<String>,
 }
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
@@ -72,8 +74,13 @@ impl McpToolCall<GetTopicPagesInput, GetTopicPagesResponse> for GetTopicPagesHan
         &self,
         model: GetTopicPagesInput,
     ) -> Result<GetTopicPagesResponse, String> {
-        let topic = self
+        let namespace = self
             .app
+            .namespaces
+            .get_or_create_optional(model.namespace.as_deref())
+            .map_err(|err| format!("Invalid namespace. {}", err))?;
+
+        let topic = namespace
             .topic_list
             .get(&model.topic_id)
             .ok_or_else(|| format!("Topic '{}' not found", model.topic_id))?;

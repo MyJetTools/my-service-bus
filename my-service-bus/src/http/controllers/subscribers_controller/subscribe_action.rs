@@ -37,8 +37,11 @@ async fn handle_request(
     http_session.ping();
 
     let queue_type = input_data.get_queue_type();
+    let namespace = http_session.get_namespace();
+
     crate::operations::subscriber::subscribe_to_queue(
         &action.app,
+        &namespace,
         input_data.topic_id,
         input_data.queue_id,
         queue_type,

@@ -10,7 +10,9 @@ pub struct GetOverviewInput {}
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
 pub struct GetOverviewResponse {
-    #[property(description = "Number of topics registered in the broker")]
+    #[property(description = "Number of namespaces this node holds")]
+    pub namespaces_count: usize,
+    #[property(description = "Number of topics registered in the broker, across every namespace")]
     pub topics_count: usize,
     #[property(description = "Total number of queues across all topics")]
     pub queues_count: usize,
@@ -50,23 +52,29 @@ impl McpToolCall<GetOverviewInput, GetOverviewResponse> for GetOverviewHandler {
         &self,
         _model: GetOverviewInput,
     ) -> Result<GetOverviewResponse, String> {
-        let topics = self.app.topic_list.get_all();
+        let namespaces = self.app.namespaces.get_all();
 
+        let mut topics_count = 0usize;
         let mut queues_count = 0usize;
         let mut subscribers_count = 0usize;
 
-        for topic in topics.iter() {
-            let (q, s) = topic.get_topic_info(|inner| {
-                let mut q = 0usize;
-                let mut s = 0usize;
-                for queue in inner.queues.get_all() {
-                    q += 1;
-                    s += queue.subscribers.get_amount();
-                }
-                (q, s)
-            });
-            queues_count += q;
-            subscribers_count += s;
+        for namespace in namespaces.iter() {
+            let topics = namespace.topic_list.get_all();
+            topics_count += topics.len();
+
+            for topic in topics.iter() {
+                let (q, s) = topic.get_topic_info(|inner| {
+                    let mut q = 0usize;
+                    let mut s = 0usize;
+                    for queue in inner.queues.get_all() {
+                        q += 1;
+                        s += queue.subscribers.get_amount();
+                    }
+                    (q, s)
+                });
+                queues_count += q;
+                subscribers_count += s;
+            }
         }
 
         let (_, sessions) = self.app.sessions.get_snapshot();
@@ -75,7 +83,8 @@ impl McpToolCall<GetOverviewInput, GetOverviewResponse> for GetOverviewHandler {
         sys_info.refresh_all();
 
         Ok(GetOverviewResponse {
-            topics_count: topics.len(),
+            namespaces_count: namespaces.len(),
+            topics_count,
             queues_count,
             subscribers_count,
             sessions_count: sessions.len(),

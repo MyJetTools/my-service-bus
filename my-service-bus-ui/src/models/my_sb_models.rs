@@ -190,6 +190,8 @@ pub struct MySbSessionsHttpModel {
 pub struct MySbSessionHttpModel {
     pub id: i64,
     pub name: String,
+    #[serde(default = "crate::models::default_namespace")]
+    pub namespace: String,
     #[serde(rename = "type")]
     pub tp: Option<String>,
     pub ip: String,

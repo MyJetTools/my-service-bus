@@ -33,10 +33,13 @@ impl DeleteQueueAction {
 async fn handle_request(
     action: &DeleteQueueAction,
     http_input: DeleteQueueInputContract,
-    _ctx: &mut HttpContext,
+    ctx: &mut HttpContext,
 ) -> Result<HttpOkResult, HttpFailResult> {
+    let namespace = crate::http::get_request_namespace(&action.app, ctx)?;
+
     crate::operations::queues::delete_queue(
         action.app.as_ref(),
+        &namespace,
         http_input.topic_id.as_str(),
         http_input.queue_id.as_str(),
     )

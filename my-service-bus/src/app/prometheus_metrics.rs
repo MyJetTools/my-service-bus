@@ -90,9 +90,15 @@ impl PrometheusMetrics {
         };
     }
 
-    pub fn update_topic_queue_size(&self, topic_id: &str, queue_id: &str, value: usize) {
+    pub fn update_topic_queue_size(
+        &self,
+        namespace: &str,
+        topic_id: &str,
+        queue_id: &str,
+        value: usize,
+    ) {
         self.topic_queue_size
-            .with_label_values(&[topic_id, queue_id])
+            .with_label_values(&[namespace, topic_id, queue_id])
             .set(value as i64);
     }
 
@@ -104,21 +110,26 @@ impl PrometheusMetrics {
         self.topics_without_queues.set(value);
     }
 
-    pub fn update_topic_size_metrics(&self, topic_id: &str, metrics: &SizeMetrics) {
+    pub fn update_topic_size_metrics(
+        &self,
+        namespace: &str,
+        topic_id: &str,
+        metrics: &SizeMetrics,
+    ) {
         self.topic_data_size
-            .with_label_values(&[topic_id])
+            .with_label_values(&[namespace, topic_id])
             .set(metrics.data_size as i64);
 
         self.persist_queue_size
-            .with_label_values(&[topic_id])
+            .with_label_values(&[namespace, topic_id])
             .set(metrics.persist_size as i64);
 
         self.topic_messages_amount
-            .with_label_values(&[topic_id])
+            .with_label_values(&[namespace, topic_id])
             .set(metrics.messages_amount as i64);
 
         self.topic_mean_message_size
-            .with_label_values(&[topic_id])
+            .with_label_values(&[namespace, topic_id])
             .set(metrics.avg_message_size as i64);
     }
 
@@ -131,14 +142,14 @@ impl PrometheusMetrics {
         buffer
     }
 
-    pub fn queue_is_deleted(&self, topic_id: &str, queue_id: &str) {
+    pub fn queue_is_deleted(&self, namespace: &str, topic_id: &str, queue_id: &str) {
         let result = self
             .topic_queue_size
-            .remove_label_values(&[topic_id, queue_id]);
+            .remove_label_values(&[namespace, topic_id, queue_id]);
 
         println!(
-            "Error during removing topic_queue_size from metrics for Topic:{}, Queue:{}: {:?}",
-            topic_id, queue_id, result
+            "Error during removing topic_queue_size from metrics for Namespace:{}, Topic:{}, Queue:{}: {:?}",
+            namespace, topic_id, queue_id, result
         );
     }
 
@@ -172,7 +183,7 @@ impl PrometheusMetrics {
 fn create_topic_persist_queue_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_persist_queue_size", "Topic queue to persist size");
 
-    let labels = &["topic"];
+    let labels = &["namespace", "topic"];
 
     IntGaugeVec::new(gauge_opts, labels).unwrap()
 }
@@ -180,7 +191,7 @@ fn create_topic_persist_queue_size() -> IntGaugeVec {
 fn create_topic_queue_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_queue_size", "Topic queue size");
 
-    let labels = &["topic", "queue"];
+    let labels = &["namespace", "topic", "queue"];
 
     // This unwraps runs on application start. If it fails - applications is not started
     IntGaugeVec::new(gauge_opts, labels).unwrap()
@@ -197,7 +208,7 @@ fn create_permanent_queues_without_subscribers() -> IntGauge {
 fn create_topic_data_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_data_size", "Topic data size");
 
-    let labels = &["topic"];
+    let labels = &["namespace", "topic"];
 
     IntGaugeVec::new(gauge_opts, labels).unwrap()
 }
@@ -205,7 +216,7 @@ fn create_topic_data_size() -> IntGaugeVec {
 fn create_topic_mean_message_size() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_mean_message_size", "Topic mean message size");
 
-    let labels = &["topic"];
+    let labels = &["namespace", "topic"];
 
     IntGaugeVec::new(gauge_opts, labels).unwrap()
 }
@@ -213,7 +224,7 @@ fn create_topic_mean_message_size() -> IntGaugeVec {
 fn create_topic_messages_amount() -> IntGaugeVec {
     let gauge_opts = Opts::new("topic_messages_amount", "Messages amount in cache");
 
-    let labels = &["topic"];
+    let labels = &["namespace", "topic"];
 
     IntGaugeVec::new(gauge_opts, labels).unwrap()
 }

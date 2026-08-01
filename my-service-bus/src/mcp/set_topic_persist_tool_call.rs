@@ -13,6 +13,8 @@ pub struct SetTopicPersistInput {
         description = "Whether the topic should persist messages to disk. Optional, defaults to true (enable persistence)"
     )]
     pub persist: Option<bool>,
+    #[property(description = "Namespace to work in. Optional, absent means the default namespace")]
+    pub namespace: Option<String>,
 }
 
 #[derive(ApplyJsonSchema, Debug, Serialize, Deserialize)]
@@ -51,19 +53,20 @@ impl McpToolCall<SetTopicPersistInput, SetTopicPersistResponse> for SetTopicPers
     ) -> Result<SetTopicPersistResponse, String> {
         let persist = model.persist.unwrap_or(true);
 
-        let topic = self
+        let namespace = self
             .app
+            .namespaces
+            .get_or_create_optional(model.namespace.as_deref())
+            .map_err(|err| format!("Invalid namespace. {}", err))?;
+
+        let topic = namespace
             .topic_list
             .get(&model.topic_id)
             .ok_or_else(|| format!("Topic '{}' not found", model.topic_id))?;
 
         let previous_persist = topic.get_topic_info(|inner| inner.persist);
 
-        crate::operations::update_topic_persist(
-            self.app.as_ref(),
-            model.topic_id.clone(),
-            persist,
-        )
+        crate::operations::update_topic_persist(&namespace, model.topic_id.clone(), persist)
         .await
         .map_err(|err| {
             format!(

@@ -2,6 +2,7 @@ use my_service_bus::abstractions::queue_with_intervals::QueueIndexRange;
 use my_service_bus::abstractions::subscriber::TopicQueueType;
 use my_service_bus::abstractions::SbMessageHeaders;
 use my_service_bus::shared::protobuf_models::MessageProtobufModel;
+use my_service_bus::shared::validators::DEFAULT_NAMESPACE;
 use rust_extensions::date_time::DateTimeAsMicroseconds;
 
 use crate::messages_page::MySbMessageContent;
@@ -38,6 +39,11 @@ impl From<&TopicSnapshot> for TopicAndQueuesSnapshotGrpcModel {
             queue_snapshots: src.queues.iter().map(|itm| itm.into()).collect(),
             persist: Some(src.persist),
             deleted: src.deleted,
+            namespace: if src.namespace == DEFAULT_NAMESPACE {
+                None
+            } else {
+                Some(src.namespace.clone())
+            },
         }
     }
 }
@@ -45,6 +51,12 @@ impl From<&TopicSnapshot> for TopicAndQueuesSnapshotGrpcModel {
 impl From<TopicAndQueuesSnapshotGrpcModel> for TopicSnapshot {
     fn from(src: TopicAndQueuesSnapshotGrpcModel) -> Self {
         Self {
+            // A snapshot written before namespaces existed carries no namespace at
+            // all, and an empty one means the same thing: the default namespace.
+            namespace: match src.namespace {
+                Some(namespace) if !namespace.is_empty() => namespace,
+                _ => DEFAULT_NAMESPACE.to_string(),
+            },
             topic_id: src.topic_id.as_str().into(),
             message_id: src.message_id,
             persist: if let Some(persist) = src.persist {
