@@ -176,6 +176,14 @@ impl QueueSubscriber {
         );
     }
 
+    pub fn get_delivery_bucket(&self) -> Option<&DeliveryBucket> {
+        match &self.delivery_state {
+            QueueSubscriberDeliveryState::Idle => None,
+            QueueSubscriberDeliveryState::Rented => None,
+            QueueSubscriberDeliveryState::OnDelivery(state) => Some(&state.bucket),
+        }
+    }
+
     pub fn get_messages_on_delivery(&self) -> Option<QueueWithIntervals> {
         match &self.delivery_state {
             QueueSubscriberDeliveryState::Idle => None,

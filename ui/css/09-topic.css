@@ -342,6 +342,30 @@
     color: var(--fg-2);
     font-size: var(--fs-sm);
 }
+.msb-sub__delivery {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+    margin-top: 4px;
+}
+.msb-sub__delivery-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+.msb-sub__delivery-label {
+    color: var(--fg-2);
+    font-size: var(--fs-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.msb-sub__delivery-more {
+    font-family: var(--font-mono);
+    font-size: var(--fs-sm);
+    color: var(--fg-2);
+}
 .msb-sub__right {
     display: flex;
     flex-direction: column;

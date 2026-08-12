@@ -1,6 +1,7 @@
 use crate::{queues::TopicQueue, topics::TopicInner};
 
 use my_http_server::macros::MyHttpObjectStructure;
+use my_service_bus::abstractions::queue_with_intervals::QueueWithIntervals;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, MyHttpObjectStructure)]
@@ -60,9 +61,20 @@ pub struct QueueIndex {
 
 impl QueueIndex {
     pub fn get_queue_snapshot(topic_queue: &TopicQueue) -> Vec<Self> {
+        Self::from_queue_with_intervals(&topic_queue.queue)
+    }
+
+    /// Empty intervals are skipped: an empty `QueueWithIntervals` still keeps a
+    /// placeholder range (from_id > to_id) which would be rendered as a bogus
+    /// "0 – -1" range by the UI.
+    pub fn from_queue_with_intervals(queue: &QueueWithIntervals) -> Vec<Self> {
         let mut result = Vec::new();
 
-        for queue_index in topic_queue.queue.get_intervals() {
+        for queue_index in queue.get_intervals() {
+            if queue_index.is_empty() {
+                continue;
+            }
+
             result.push(Self {
                 from_id: queue_index.from_id,
                 to_id: queue_index.to_id,

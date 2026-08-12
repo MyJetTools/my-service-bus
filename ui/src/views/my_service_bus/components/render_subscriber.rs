@@ -1,9 +1,13 @@
 use dioxus::prelude::*;
 
 use crate::components::ui::{
-    format_micros, Badge, Led, LedColor, Sparkline, SparklineColor, SparklineKind, Tone,
+    format_micros, Badge, Led, LedColor, RangeBadge, Sparkline, SparklineColor, SparklineKind, Tone,
 };
 use crate::models::*;
+
+/// A subscriber can hold thousands of ids on delivery; only the first ranges are
+/// worth a badge, the rest is collapsed into a "+N" counter.
+const MAX_RANGES_TO_RENDER: usize = 8;
 
 pub fn render_subscriber(data: &MySbHttpContract, subscriber: &TopicSubscriber) -> Element {
     let is_active = subscriber.active != 0;
@@ -51,13 +55,15 @@ pub fn render_subscriber(data: &MySbHttpContract, subscriber: &TopicSubscriber) 
         },
     };
 
+    let delivery_view = render_delivery(subscriber);
+
     rsx! {
         div { class: "{row_class}",
             div { class: "msb-sub__pill",
                 span { "{session_id_short}" }
                 Led { color: led_color, label: led_label.to_string() }
             }
-            div { class: "msb-sub__body", {session_view} }
+            div { class: "msb-sub__body", {session_view} {delivery_view} }
             div { class: "msb-sub__right",
                 Sparkline {
                     kind: SparklineKind::Line,
@@ -68,6 +74,54 @@ pub fn render_subscriber(data: &MySbHttpContract, subscriber: &TopicSubscriber) 
                 }
                 span { class: "msb-sub__latency", "{latency_text}" }
             }
+        }
+    }
+}
+
+/// Message ids the subscriber currently holds. `on delivery` shrinks and
+/// `confirmed` grows as intermediary confirmations arrive, so the two together
+/// show the delivery being worked through.
+fn render_delivery(subscriber: &TopicSubscriber) -> Element {
+    if subscriber.on_delivery_amount == 0 && subscriber.confirmed_amount == 0 {
+        return rsx! {};
+    }
+
+    let on_delivery_ranges = render_ranges(&subscriber.on_delivery);
+    let confirmed_ranges = render_ranges(&subscriber.confirmed);
+
+    rsx! {
+        div { class: "msb-sub__delivery",
+            if subscriber.on_delivery_amount > 0 {
+                span { class: "msb-sub__delivery-group",
+                    span { class: "msb-sub__delivery-label", "on delivery" }
+                    Badge { tone: Tone::Warning, mono: true, "{subscriber.on_delivery_amount}" }
+                    {on_delivery_ranges}
+                }
+            }
+            if subscriber.confirmed_amount > 0 {
+                span { class: "msb-sub__delivery-group",
+                    span { class: "msb-sub__delivery-label", "confirmed" }
+                    Badge { tone: Tone::Success, mono: true, "{subscriber.confirmed_amount}" }
+                    {confirmed_ranges}
+                }
+            }
+        }
+    }
+}
+
+fn render_ranges(intervals: &[QueueIntervalModel]) -> Element {
+    let items = intervals.iter().take(MAX_RANGES_TO_RENDER).map(|itm| {
+        rsx! {
+            RangeBadge { from: itm.from_id, to: itm.to_id }
+        }
+    });
+
+    let rest = intervals.len().saturating_sub(MAX_RANGES_TO_RENDER);
+
+    rsx! {
+        {items}
+        if rest > 0 {
+            span { class: "msb-sub__delivery-more", "+{rest}" }
         }
     }
 }

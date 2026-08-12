@@ -155,6 +155,18 @@ pub struct TopicSubscriber {
     #[serde(rename = "deliveryStateStr")]
     pub delivery_state_str: Option<String>,
     pub history: Vec<i32>,
+
+    /// Message ids handed to this subscriber and still awaiting confirmation.
+    /// Absent on nodes older than the delivery-details contract.
+    #[serde(rename = "onDelivery", default)]
+    pub on_delivery: Vec<QueueIntervalModel>,
+    #[serde(rename = "onDeliveryAmount", default)]
+    pub on_delivery_amount: i64,
+    /// Ids of the current delivery already confirmed by the subscriber.
+    #[serde(rename = "confirmed", default)]
+    pub confirmed: Vec<QueueIntervalModel>,
+    #[serde(rename = "confirmedAmount", default)]
+    pub confirmed_amount: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
