@@ -52,7 +52,8 @@ impl SubPageLoaderSchedulerMock {
             &app.persistence_client,
             task.sub_page_id,
         )
-        .await;
+        .await
+        .expect("the mock persistence never fails");
 
         let mut topic_access = task.topic.get_access();
         crate::operations::delivery::try_to_deliver_to_subscribers(

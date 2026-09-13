@@ -1,12 +1,15 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
+use my_logger::LogEventCtx;
 use my_service_bus::abstractions::AsMessageId;
 use my_service_bus::shared::sub_page::SubPageId;
-use rust_extensions::events_loop::EventsLoopTick;
+use rust_extensions::events_loop::{EventsLoopTick, RepeatIteration};
 
 use crate::app::AppContext;
 
 use super::RestorePageTask;
+
+const REPEAT_DELAY: Duration = Duration::from_secs(1);
 
 pub struct RestoreSubPagesEventLoop {
     pub app: Arc<AppContext>,
@@ -22,7 +25,7 @@ impl RestoreSubPagesEventLoop {
 impl EventsLoopTick<RestorePageTask> for RestoreSubPagesEventLoop {
     async fn started(&self) {}
     async fn finished(&self) {}
-    async fn tick(&self, model: RestorePageTask) {
+    async fn tick(&self, model: RestorePageTask) -> RepeatIteration<RestorePageTask> {
         // DEBUG: trace page restore for the topic selected via /api/Debug/Console/Target
         let dbg = self
             .app
@@ -70,7 +73,7 @@ impl EventsLoopTick<RestorePageTask> for RestoreSubPagesEventLoop {
                     reason
                 ));
             }
-            return;
+            return RepeatIteration::No;
         }
 
         if dbg {
@@ -81,12 +84,41 @@ impl EventsLoopTick<RestorePageTask> for RestoreSubPagesEventLoop {
             ));
         }
 
-        crate::operations::page_loader::load_page_to_cache(
+        let load_result = crate::operations::page_loader::load_page_to_cache(
             &model.topic,
             &self.app.persistence_client,
             model.sub_page_id,
         )
         .await;
+
+        if let Err(err) = load_result {
+            // Persistence is unreachable (or failed to answer): the page is still needed, so the
+            // very same task is repeated. The pause keeps a dead persistence from being hammered.
+            my_logger::LOGGER.write_error(
+                "restore_sub_page",
+                format!(
+                    "Can not load sub_page #{} from persistence. Repeating. Err: {:?}",
+                    model.sub_page_id.get_value(),
+                    err
+                ),
+                LogEventCtx::new()
+                    .add("namespace", model.topic.namespace.as_str())
+                    .add("topicId", model.topic.topic_id.as_str())
+                    .add("subPageId", model.sub_page_id.get_value().to_string()),
+            );
+
+            if dbg {
+                self.app.debug_console.write(format!(
+                    "[restore] REPEAT topic={} sub_page={} ({:?})",
+                    model.topic.topic_id.as_str(),
+                    model.sub_page_id.get_value(),
+                    err
+                ));
+            }
+
+            tokio::time::sleep(REPEAT_DELAY).await;
+            return RepeatIteration::Yes(model);
+        }
 
         if dbg {
             let result = {
@@ -117,5 +149,7 @@ impl EventsLoopTick<RestorePageTask> for RestoreSubPagesEventLoop {
                 &mut topic_access,
             );
         });
+
+        RepeatIteration::No
     }
 }

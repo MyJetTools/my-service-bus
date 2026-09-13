@@ -86,6 +86,6 @@ Shutdown is cooperative: `app.states.wait_until_shutdown()` then `app::shutdown:
 
 - **Locking**: topic state lives behind a single `Mutex<TopicInner>`; go through `Topic`'s accessor methods. `arc-swap` and `parking_lot` are used for low-contention shared state. Never `.await` while holding a sync mutex.
 - **Dependencies**: most MyJetTools crates are pinned to git tags in `Cargo.toml` (e.g. `my-service-bus` SDK, `my-http-server`, `my-tcp-sockets`, `rust-extensions`, `my-grpc-extensions`). Consult the development-best-practices MCP docs before using these APIs — they evolve and signatures change between tags.
-- **Allocator**: `mimalloc` is the global allocator (set in `main.rs`).
+- **Allocator**: jemalloc (`tikv-jemallocator`) is the global allocator on Linux only (set in `main.rs`, target-specific dependency in `Cargo.toml`); other platforms use the system allocator. `main.rs` bakes in `malloc_conf` (background thread + short decay) so freed memory is returned to the OS promptly.
 - **Versioning**: `APP_VERSION` comes from `CARGO_PKG_VERSION` (the crate version in the root `Cargo.toml`); bump the changelog in `README.md`.
 - Tests use `#[cfg(test)]` mocks (`src/test_tools.rs`, `SubPageLoaderSchedulerMock`, the grpc mock repo) so the node can run without the persistence service.

@@ -49,8 +49,7 @@ impl PersistenceGrpcService {
                         version: 1,
                         namespace,
                     })
-                    .await
-                    .unwrap();
+                    .await?;
 
                 let result: BTreeMap<i64, MySbMessageContent> = result
                     .into_b_tree_map(|itm| (itm.message_id, itm.into()))

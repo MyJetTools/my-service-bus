@@ -1,10 +1,5 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-    time::Duration,
-};
+use std::{collections::BTreeMap, sync::Arc};
 
-use my_logger::LogEventCtx;
 use my_service_bus::shared::sub_page::SubPageId;
 
 use crate::{
@@ -14,86 +9,36 @@ use crate::{
     topics::Topic,
 };
 
+/// A single attempt. An error means persistence could not be reached or failed to answer - the
+/// caller decides whether to repeat it (the restore events loop repeats the iteration).
 pub async fn load_page(
     topic: &Topic,
     messages_pages_repo: &Arc<PersistenceGrpcService>,
     sub_page_id: SubPageId,
-) -> SubPage {
-    let mut attempt_no = 0;
-    loop {
-        let result = messages_pages_repo
-            .load_page(
-                topic.as_grpc_namespace(),
-                topic.topic_id.as_str(),
-                sub_page_id.into(),
-                sub_page_id.get_first_message_id(),
-                sub_page_id.get_last_message_id(),
-            )
-            .await;
+) -> Result<SubPage, PersistenceError> {
+    let messages = messages_pages_repo
+        .load_page(
+            topic.as_grpc_namespace(),
+            topic.topic_id.as_str(),
+            sub_page_id.into(),
+            sub_page_id.get_first_message_id(),
+            sub_page_id.get_last_message_id(),
+        )
+        .await?;
 
-        if let Ok(result) = result {
-            match result {
-                Some(mut messages) => {
-                    let mut result = BTreeMap::new();
-                    for message_id in sub_page_id.iterate_message_ids() {
-                        if let Some(message) = messages.remove(&message_id) {
-                            result.insert(message_id, message.into());
-                        } else {
-                            result
-                                .insert(message_id, MySbCachedMessage::Missing(message_id.into()));
-                        }
-                    }
+    let Some(mut messages) = messages else {
+        return Ok(SubPage::new_as_brand_new(sub_page_id));
+    };
 
-                    let sub_page_inner = SubPageInner::restore(result);
-                    return SubPage::restore(sub_page_id, sub_page_inner);
-                }
-                None => return SubPage::new_as_brand_new(sub_page_id),
-            }
+    let mut result = BTreeMap::new();
+    for message_id in sub_page_id.iterate_message_ids() {
+        if let Some(message) = messages.remove(&message_id) {
+            result.insert(message_id, message.into());
+        } else {
+            result.insert(message_id, MySbCachedMessage::Missing(message_id.into()));
         }
-
-        let err = result.err().unwrap();
-        match err {
-            PersistenceError::ZipOperationError(zip_error) => {
-                my_logger::LOGGER.write_error(
-                    "load_page",
-                    format!(
-                        "Can not load page from persistence storage. Creating empty page. Err:{}",
-                        zip_error
-                    ),
-                    LogEventCtx::new()
-                        .add("namespace", topic.namespace.as_str())
-                        .add("topicId", topic.topic_id.as_str())
-                        .add("subPageId", sub_page_id.get_value().to_string())
-                        .add("attemptNo", attempt_no.to_string()),
-                );
-
-                return SubPage::new_as_brand_new(sub_page_id);
-            }
-            _ => {
-                let mut ctx = HashMap::new();
-                ctx.insert("subPageId".to_string(), sub_page_id.get_value().to_string());
-                ctx.insert("attemptNo".to_string(), attempt_no.to_string());
-
-                my_logger::LOGGER.write_error(
-                    "load_page",
-                    format!(
-                        "Can not load sub_page #{} from persistence storage. Retrying...",
-                        sub_page_id.get_value(),
-                    ),
-                    LogEventCtx::new()
-                        .add("namespace", topic.namespace.as_str())
-                        .add("topicId", topic.topic_id.as_str())
-                        .add("subPageId", sub_page_id.get_value().to_string())
-                        .add("attemptNo", attempt_no.to_string()),
-                );
-            }
-        }
-
-        attempt_no += 1;
-
-        if attempt_no == 5 {
-            return SubPage::new_as_brand_new(sub_page_id);
-        }
-        tokio::time::sleep(Duration::from_secs(1)).await
     }
+
+    let sub_page_inner = SubPageInner::restore(result);
+    Ok(SubPage::restore(sub_page_id, sub_page_inner))
 }

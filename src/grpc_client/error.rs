@@ -2,11 +2,9 @@
 
 use my_grpc_extensions::GrpcReadError;
 use my_service_bus::shared::page_compressor::CompressedPageReaderError;
-use my_service_bus::shared::zip::result::ZipError;
 
 #[derive(Debug)]
 pub enum PersistenceError {
-    ZipOperationError(ZipError),
     TonicError(tonic::Status),
     InvalidProtobufPayload(String),
     CompressedPageReaderError(CompressedPageReaderError),
@@ -41,11 +39,5 @@ impl From<tonic::Status> for PersistenceError {
 impl From<prost::DecodeError> for PersistenceError {
     fn from(src: prost::DecodeError) -> Self {
         Self::InvalidProtobufPayload(format!("{:?}", src))
-    }
-}
-
-impl From<ZipError> for PersistenceError {
-    fn from(src: ZipError) -> Self {
-        Self::ZipOperationError(src)
     }
 }
