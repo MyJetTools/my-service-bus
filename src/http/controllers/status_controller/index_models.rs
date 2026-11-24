@@ -37,9 +37,7 @@ pub struct StatusJsonResult {
 
 impl StatusJsonResult {
     pub async fn new(app: &AppContext, namespace: &crate::namespaces::Namespace) -> Self {
-        let mut sys_info = sysinfo::System::new_all();
-
-        sys_info.refresh_all();
+        let (totalmem, usedmem) = crate::utils::memory_of_the_machine();
 
         let snapshot = namespace.topic_list.get_all_with_snapshot_id();
 
@@ -66,10 +64,7 @@ impl StatusJsonResult {
             topics,
             queues,
             sessions,
-            system: SystemStatusModel {
-                totalmem: sys_info.total_memory(),
-                usedmem: sys_info.used_memory(),
-            },
+            system: SystemStatusModel { totalmem, usedmem },
             persistence_version: app.persistence_version.get(),
             version: crate::app::APP_VERSION.to_string(),
             mcp_writes_remaining_secs: app.mcp_writes_remaining_secs(),

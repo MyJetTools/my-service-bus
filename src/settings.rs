@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use my_grpc_extensions::*;
@@ -6,6 +8,10 @@ use tokio::{fs::File, io::AsyncReadExt};
 
 #[cfg(test)]
 const TEST_GRPC_URL: &str = "test";
+
+/// Where the TCP and HTTP listeners bind when `listen_ip` is not set: every interface, as the
+/// node always has.
+const DEFAULT_LISTEN_IP: IpAddr = IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SettingsModelYaml {
@@ -24,6 +30,10 @@ pub struct SettingsModelYaml {
     pub auto_create_topic_on_subscribe: Option<bool>,
 
     pub listen_unix_socket: Option<String>,
+
+    /// The address the TCP port (6421) and the HTTP port (6123) bind to. Absent: `0.0.0.0`.
+    /// Neither port asks who is calling, so `127.0.0.1` is how a node is kept to its own machine.
+    pub listen_ip: Option<String>,
 }
 
 pub struct SettingsModel {
@@ -38,6 +48,20 @@ pub struct SettingsModel {
     pub auto_create_topic_on_subscribe: bool,
 
     pub listen_unix_socket: Option<String>,
+
+    pub listen_ip: IpAddr,
+}
+
+/// The settings file named on the command line (`--settings <file>`, Windows), read instead of
+/// `$HOME/.myservicebus`.
+static EXPLICIT_SETTINGS_FILE: OnceLock<String> = OnceLock::new();
+
+/// Names the settings file for the rest of the process; called once, before the settings are read.
+#[cfg(windows)]
+pub fn set_settings_file(file: String) -> Result<(), String> {
+    EXPLICIT_SETTINGS_FILE
+        .set(file)
+        .map_err(|_| "The settings file is named once".to_string())
 }
 
 #[async_trait::async_trait]
@@ -89,22 +113,38 @@ impl SettingsModel {
             auto_create_topic_on_publish: true,
             auto_create_topic_on_subscribe: true,
             listen_unix_socket: None,
+            listen_ip: DEFAULT_LISTEN_IP,
         }
     }
 }
 
-#[cfg(target_os = "windows")]
+/// `--settings <file>` when it was given, otherwise `.myservicebus` in the home directory of
+/// whoever runs the node - read when the node starts. It used to be `env!("HOME")`, which is the
+/// home directory of the machine the binary was BUILT on, baked in at compile time.
 fn get_settings_filename() -> String {
-    let home_path = env!("HOME");
-    let filename = format!("{}\\{}", home_path, ".myservicebus");
-    filename
+    if let Some(file) = EXPLICIT_SETTINGS_FILE.get() {
+        return file.clone();
+    }
+
+    let home_path = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| {
+            panic!("Neither HOME nor USERPROFILE is set: the settings file .myservicebus is looked for there")
+        });
+
+    std::path::Path::new(home_path.as_str())
+        .join(".myservicebus")
+        .to_string_lossy()
+        .to_string()
 }
 
-#[cfg(not(target_os = "windows"))]
-fn get_settings_filename() -> String {
-    let home_path = env!("HOME");
-    let filename = format!("{}/{}", home_path, ".myservicebus");
-    filename
+fn parse_listen_ip(value: Option<String>) -> IpAddr {
+    match value {
+        None => DEFAULT_LISTEN_IP,
+        Some(value) => value.trim().parse().unwrap_or_else(|err| {
+            panic!("listen_ip '{value}' is not an IP address: {err}");
+        }),
+    }
 }
 
 impl Into<SettingsModel> for SettingsModelYaml {
@@ -170,6 +210,7 @@ impl Into<SettingsModel> for SettingsModelYaml {
             auto_create_topic_on_publish,
             auto_create_topic_on_subscribe,
             listen_unix_socket: self.listen_unix_socket,
+            listen_ip: parse_listen_ip(self.listen_ip),
         }
     }
 }
@@ -185,5 +226,23 @@ mod tests {
         let diration = Duration::from_str("100ms").unwrap();
 
         println!("{:?}", diration);
+    }
+
+    #[test]
+    fn listen_ip_is_every_interface_unless_set() {
+        assert_eq!(
+            super::parse_listen_ip(None),
+            std::net::IpAddr::from([0, 0, 0, 0])
+        );
+        assert_eq!(
+            super::parse_listen_ip(Some(" 127.0.0.1 ".to_string())),
+            std::net::IpAddr::from([127, 0, 0, 1])
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "is not an IP address")]
+    fn a_listen_ip_which_is_no_address_stops_the_start() {
+        super::parse_listen_ip(Some("localhost".to_string()));
     }
 }

@@ -89,7 +89,7 @@ pub async fn create_app_context() -> Arc<AppContext> {
     // Tests don't exercise the persist path; register a no-op so publish's
     // persist_executor.trigger() doesn't panic on an unstarted executor.
     app.persist_executor.register(Arc::new(NoOpBackgroundJob));
-    app.persist_executor.start(my_logger::LOGGER.clone());
+    app.persist_executor.start();
 
     app.restore_page_scheduler.apply_app_ctx(app.clone());
 

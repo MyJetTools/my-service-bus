@@ -56,6 +56,45 @@ MaxDeliverySize: 4194304
 Install rust: https://www.rust-lang.org/tools/install
 execute: **cargo run --release**
 
+`listen_ip` (optional) is the address the TCP port (6421) and the HTTP port (6123) bind to;
+absent, `0.0.0.0`. **Neither port asks who is calling** - publishing, subscribing, deleting a
+topic or a queue, moving a queue's message id, reading messages over `/mcp` and opening the MCP
+write window are open to whoever reaches them. `127.0.0.1` keeps the node to its own machine.
+
+## Running on Windows
+
+The node builds and runs on Windows (`x86_64-pc-windows-msvc`), in the console or as a native
+Windows service - the command line and the install checks of my-reverse-proxy's Windows service:
+
+```powershell
+.\my-service-bus-main-node.exe --settings C:\my-sb\bus\config\settings.yaml   # the console
+.\my-service-bus-main-node.exe --install --settings C:\my-sb\bus\config\settings.yaml
+.\my-service-bus-main-node.exe --start      # --uninstall to remove it
+```
+
+- `--settings <file>` is read instead of `%HOME%\.myservicebus` (HOME, or USERPROFILE, at run
+  time - it used to be the HOME of the machine the binary was built on); its folder is what `~`
+  stands for.
+- `--install` registers the service `my-service-bus`: auto-start, restarted 10 s after a failure,
+  running as `NT SERVICE\my-service-bus` - an account with the rights of a plain user, given the
+  settings folder and the exe folder to read and `logs\` of the settings folder to write. It is
+  refused when a folder of the exe or of the settings - or one above them - can be changed by an
+  account other than the system and the administrators; the message gives the `icacls` commands
+  which close it.
+- A service has no console: what the node prints goes to `logs\my-service-bus.log` next to the
+  settings (the previous start's as `.prev.log`).
+- Stopping the service is the graceful shutdown: the node hands what it still holds to the
+  persistence (at most 20 s per topic when the persistence does not answer), then saves the
+  topics and queues.
+- A release build does not run under a debugger and closes its process to everybody but the
+  system, the administrators and its own account - the messages are in its memory.
+- There are no unix sockets on Windows: `listen_unix_socket` is ignored, and says so.
+
+`tools\windows\install.ps1` (elevated) puts the node and my-service-bus-persistence on one
+machine together: closed folders, both services, the bus depending on the persistence, both on
+`127.0.0.1`, an inbound firewall block on their ports. Run again, it replaces the exes.
+`tools\windows\uninstall.ps1` removes the services and keeps the data.
+
 
 ## Changes
 ### 2.2.4

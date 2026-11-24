@@ -9,7 +9,7 @@ use crate::app::AppContext;
 use super::auth::AuthMiddleware;
 
 pub fn setup_server(app: &Arc<AppContext>) -> HttpConnectionsCounter {
-    let mut http_server = MyHttpServer::new(SocketAddr::from(([0, 0, 0, 0], 6123)));
+    let mut http_server = MyHttpServer::new(SocketAddr::new(app.settings.listen_ip, 6123));
 
     let controllers = Arc::new(crate::http::controllers::builder::build(app));
 

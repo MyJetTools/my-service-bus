@@ -20,10 +20,16 @@ impl LoadSubPageScheduler {
     }
 }
 
-impl Default for LoadSubPageScheduler {
-    fn default() -> Self {
+impl LoadSubPageScheduler {
+    /// The events loop of rust-extensions 0.1.5 takes the application states and the logger when
+    /// it is made, not when it is started.
+    pub fn new(app_states: Arc<rust_extensions::AppStates>) -> Self {
         Self {
-            restore_page_events_loop: EventsLoop::new("RestorePageTasks"),
+            restore_page_events_loop: EventsLoop::new(
+                "RestorePageTasks",
+                app_states,
+                my_logger::LOGGER.clone(),
+            ),
         }
     }
 }

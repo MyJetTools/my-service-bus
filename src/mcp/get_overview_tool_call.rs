@@ -79,8 +79,7 @@ impl McpToolCall<GetOverviewInput, GetOverviewResponse> for GetOverviewHandler {
 
         let (_, sessions) = self.app.sessions.get_snapshot();
 
-        let mut sys_info = sysinfo::System::new_all();
-        sys_info.refresh_all();
+        let (total_memory, used_memory) = crate::utils::memory_of_the_machine();
 
         Ok(GetOverviewResponse {
             namespaces_count: namespaces.len(),
@@ -88,8 +87,8 @@ impl McpToolCall<GetOverviewInput, GetOverviewResponse> for GetOverviewHandler {
             queues_count,
             subscribers_count,
             sessions_count: sessions.len(),
-            used_memory: sys_info.used_memory(),
-            total_memory: sys_info.total_memory(),
+            used_memory,
+            total_memory,
             persistence_version: self.app.persistence_version.get(),
             app_version: APP_VERSION.to_string(),
         })

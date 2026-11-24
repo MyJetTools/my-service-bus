@@ -26,7 +26,7 @@ my-http-utils = { tag = "0.1.0", git = "https://github.com/MyJetTools/my-http-ut
 ] }
 
 
-my-tcp-sockets = { tag = "0.1.12", git = "https://github.com/MyJetTools/my-tcp-sockets.git" }
+my-tcp-sockets = { tag = "0.1.12", git = "https://github.com/my-jet-tools/my-tcp-sockets.git" }
 
 rust-extensions = { tag = "0.1.5", git = "https://github.com/MyJetTools/rust-extensions.git", features = [
     "with-tokio",
@@ -81,15 +81,23 @@ parking_lot = "*"
 [target.'cfg(target_os = "linux")'.dependencies]
 tikv-jemallocator = "*"
 
+# Windows: the node as a native Windows service (src/win_service/), the way my-reverse-proxy runs
+# there - `--install` / `--start` / `--uninstall` / `--run-as-service` and `--settings <file>`.
+[target.'cfg(windows)'.dependencies]
+win-service-host = { tag = "0.2.0", git = "https://github.com/my-jet-tools/win-utils.git" }
+# The access lists `--install` checks, the process a release build closes to debuggers, and the
+# log file a service writes its console to.
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_System_Console",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Threading",
+] }
+
 
 [build-dependencies]
-# `with-tls`: build.rs downloads the persistence proto over https.
-ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.3", features = [
-    "with-tls",
-] }
-# ci-utils/with-tls pulls flurl -> my-http-utils into the build graph without `server`, while its
-# proc-macro crate is shared with the normal graph (where `server` is on) and emits server-only
-# code. Enabling `server` here keeps both copies of my-http-utils consistent.
-my-http-utils = { tag = "0.1.0", git = "https://github.com/MyJetTools/my-http-utils.git", features = [
-    "server",
-] }
+# No `with-tls`: the proto is compiled from the local copy (see build.rs), so the build script
+# downloads nothing and does not pull fl-url in at all.
+ci-utils = { git = "https://github.com/MyJetTools/ci-utils.git", tag = "0.1.3" }
