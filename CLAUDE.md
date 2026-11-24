@@ -30,7 +30,7 @@ The UI is built with the Dioxus CLI. Use `build-ui.sh` from the root — it buil
 ### Runtime prerequisites
 
 - The `my-service-bus-persistence` service must already be running — the node persists messages to it over gRPC and will try to connect on startup.
-- A settings file is required. Its path comes from `get_settings_filename()` in `src/settings.rs` (resolves under `HOME`, file `.myservicebus`). It is **YAML** (despite the README's older C#-style example). Keys map to `SettingsModelYaml`: `persistence_grpc_url`, `queue_gc_timeout`, `debug_mode`, `max_delivery_size`, `delivery_timeout` (optional), `auto_create_topic_on_publish` (optional), `auto_create_topic_on_subscribe` (optional), `listen_unix_socket` (optional).
+- A settings file is required. Its path comes from `get_settings_filename()` in `src/settings.rs` (resolves under `HOME`, file `.myservicebus`). It is **YAML** (despite the README's older C#-style example). Keys map to `SettingsModelYaml`: `persistence_grpc_url`, `queue_gc_timeout`, `debug_mode`, `max_delivery_size`, `delivery_timeout` (optional), `auto_create_topic_on_publish` (optional), `auto_create_topic_on_subscribe` (optional), `listen_unix_socket` (optional, unix only), `listen_ip` (optional, the bind address of both ports; `0.0.0.0` when absent). On Windows `--settings <file>` names the file instead - see README "Running on Windows".
 
 ### Ports
 

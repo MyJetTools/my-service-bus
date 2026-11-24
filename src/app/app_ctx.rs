@@ -54,8 +54,10 @@ pub struct AppContext {
 
 impl AppContext {
     pub async fn new(messages_repo: PersistenceGrpcService, settings: Arc<SettingsModel>) -> Self {
+        let states = Arc::new(AppStates::create_un_initialized());
+
         Self {
-            states: Arc::new(AppStates::create_un_initialized()),
+            states: states.clone(),
             namespaces: NamespacesList::new(),
 
             persistence_client: Arc::new(messages_repo),
@@ -71,9 +73,13 @@ impl AppContext {
             },
             persist_executor: rust_extensions::background_executor::BackgroundExecutor::new(
                 "Persist",
+                my_logger::LOGGER.clone(),
             ),
             persistence_version: MultiThreadedShortString::new(),
 
+            #[cfg(not(test))]
+            restore_page_scheduler: super::LoadSubPageScheduler::new(states),
+            #[cfg(test)]
             restore_page_scheduler: Default::default(),
             debug_console: super::DebugConsole::new(),
             settings,

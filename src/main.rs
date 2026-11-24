@@ -3,7 +3,9 @@ use app::AppContext;
 use background::{
     DeadSubscribersKickerTimer, GcDeletedTopicsTimer, GcTimer, MetricsTimer, PersistJob,
 };
-use my_tcp_sockets::{unix_socket_server::UnixSocketServer, TcpServer};
+#[cfg(unix)]
+use my_tcp_sockets::unix_socket_server::UnixSocketServer;
+use my_tcp_sockets::TcpServer;
 use rust_extensions::MyTimer;
 use tcp::socket_events::TcpServerEvents;
 
@@ -33,6 +35,8 @@ mod utils;
 mod background;
 mod namespaces;
 mod topics;
+#[cfg(windows)]
+mod win_service;
 pub mod persistence_grpc {
     tonic::include_proto!("persistence");
 }
@@ -50,8 +54,24 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 pub static malloc_conf: Option<&'static u8> =
     Some(&b"background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:0\0"[0]);
 
+/// Linux and macOS: the node in the console, until SIGTERM or Ctrl+C.
+#[cfg(not(windows))]
 #[tokio::main]
 async fn main() {
+    run_node(|_| {}).await;
+}
+
+/// Windows: the console run, and the node as a Windows service - see `win_service`.
+#[cfg(windows)]
+fn main() {
+    win_service::main();
+}
+
+/// The whole life of the node: it reads its settings, comes up, calls `on_started` once every
+/// listener and timer runs, waits for the shutdown (a signal, or `AppStates::set_shutting_down`),
+/// and hands what it holds over to the persistence before it returns. One function, so that what
+/// the node runs on - the TCP server, the timers - lives exactly as long as the node.
+pub async fn run_node(on_started: impl FnOnce(Arc<AppContext>)) {
     let settings = settings::SettingsModel::read().await;
     let settings = Arc::new(settings);
 
@@ -67,7 +87,7 @@ async fn main() {
 
     let tcp_server = TcpServer::new(
         "MySbTcpServer".to_string(),
-        SocketAddr::from(([0, 0, 0, 0], 6421)),
+        SocketAddr::new(app.settings.listen_ip, 6421),
     );
 
     tcp_server
@@ -79,6 +99,7 @@ async fn main() {
         )
         .await;
 
+    #[cfg(unix)]
     let _unix_socket = if let Some(unix_socket_addr) = app.settings.listen_unix_socket.as_ref() {
         let unix_socket_addr = rust_extensions::file_utils::format_path(unix_socket_addr);
         let unix_socket = UnixSocketServer::new("MySbTcpServerUnixSocket", unix_socket_addr);
@@ -96,9 +117,18 @@ async fn main() {
         None
     };
 
+    // There are no unix sockets to listen on here: a setting which asks for one is said out loud
+    // rather than ignored, and the TCP port serves.
+    #[cfg(not(unix))]
+    if let Some(unix_socket_addr) = app.settings.listen_unix_socket.as_ref() {
+        println!(
+            "listen_unix_socket '{unix_socket_addr}' is ignored: unix sockets are not supported on this platform"
+        );
+    }
+
     let http_connections_counter = crate::http::start_up::setup_server(&app);
 
-    let mut metrics_timer = MyTimer::new(Duration::from_secs(1));
+    let mut metrics_timer = MyTimer::new(Duration::from_secs(1), my_logger::LOGGER.clone());
     metrics_timer.register_timer(
         "Metrics",
         Arc::new(MetricsTimer::new(
@@ -108,23 +138,24 @@ async fn main() {
         )),
     );
 
-    let mut gc_timer = MyTimer::new(Duration::from_secs(3));
+    let mut gc_timer = MyTimer::new(Duration::from_secs(3), my_logger::LOGGER.clone());
     gc_timer.register_timer("GC", Arc::new(GcTimer::new(app.clone())));
     gc_timer.register_timer(
         "DeadSubscribers",
         Arc::new(DeadSubscribersKickerTimer::new(app.clone())),
     );
 
-    let mut gc_deleted_topics_timer = MyTimer::new(Duration::from_secs(60));
+    let mut gc_deleted_topics_timer =
+        MyTimer::new(Duration::from_secs(60), my_logger::LOGGER.clone());
     gc_deleted_topics_timer.register_timer(
         "GcDeletedTopics",
         Arc::new(GcDeletedTopicsTimer::new(app.clone())),
     );
 
-    metrics_timer.start(app.clone(), my_logger::LOGGER.clone());
-    gc_timer.start(app.clone(), my_logger::LOGGER.clone());
-    gc_deleted_topics_timer.start(app.clone(), my_logger::LOGGER.clone());
-    app.persist_executor.start(my_logger::LOGGER.clone());
+    metrics_timer.start();
+    gc_timer.start();
+    gc_deleted_topics_timer.start();
+    app.persist_executor.start();
 
     #[cfg(not(test))]
     app.restore_page_scheduler
@@ -134,9 +165,9 @@ async fn main() {
         )));
 
     #[cfg(not(test))]
-    app.restore_page_scheduler
-        .restore_page_events_loop
-        .start(app.states.clone(), my_logger::LOGGER.clone());
+    app.restore_page_scheduler.restore_page_events_loop.start();
+
+    on_started(app.clone());
 
     app.states.wait_until_shutdown().await;
 
