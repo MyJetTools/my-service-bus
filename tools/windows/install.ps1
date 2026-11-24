@@ -39,8 +39,11 @@
 param(
     [string]$Root = 'C:\my-sb',
     [string]$Data = 'D:\my-sb-data',
-    [string]$BusBuild = (Resolve-Path "$PSScriptRoot\..\..").Path,
-    [string]$PersistenceBuild = (Join-Path (Split-Path (Resolve-Path "$PSScriptRoot\..\..").Path -Parent) 'my-service-bus-persistence')
+    # Empty: the repository this script is in, and my-service-bus-persistence next to it. Worked
+    # out below, not here: Windows PowerShell 5.1 run with -File has no $PSScriptRoot yet while it
+    # binds the defaults of param().
+    [string]$BusBuild = '',
+    [string]$PersistenceBuild = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,15 +52,21 @@ $BusService = 'my-service-bus'
 $PersistenceService = 'my-service-bus-persistence'
 $Ports = 6421, 6123, 7123, 7124
 
-$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
-    [Security.Principal.WindowsBuiltInRole]::Administrator)
-if (-not $isAdmin) { throw 'Run this from an elevated PowerShell (Run as administrator).' }
+$scriptFolder = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $BusBuild) { $BusBuild = (Resolve-Path (Join-Path $scriptFolder '..\..')).Path }
+if (-not $PersistenceBuild) { $PersistenceBuild = Join-Path (Split-Path -Parent $BusBuild) 'my-service-bus-persistence' }
 
 $busExe = Join-Path $BusBuild 'target\release\my-service-bus-main-node.exe'
 $persistenceExe = Join-Path $PersistenceBuild 'target\release\my-sb-persistence.exe'
 foreach ($file in $busExe, $persistenceExe) {
     if (-not (Test-Path $file)) { throw "$file is not built: cargo build --release in its repository first." }
 }
+"bus:         $busExe"
+"persistence: $persistenceExe"
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw 'Run this from an elevated PowerShell (Run as administrator).' }
 
 function Close-Folder([string]$folder) {
     # Owned by the administrators, not inheriting, open to the system and the administrators only;
